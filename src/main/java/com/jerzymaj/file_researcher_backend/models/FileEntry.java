@@ -28,6 +28,7 @@ public class FileEntry {
     @Column(nullable = false)
     private String path;
 
+    @Column(nullable = false)
     private Long size;
 
     @NotBlank
@@ -36,5 +37,5 @@ public class FileEntry {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "file_set_id", nullable = false)
-    private Long fileSetId;
+    private FileSet fileSet;
 }
