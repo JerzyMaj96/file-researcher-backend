@@ -1,11 +1,11 @@
 package com.jerzymaj.file_researcher_backend.models;
 
+import com.jerzymaj.file_researcher_backend.models.suplementary_classes.SendStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Getter
