@@ -62,6 +62,6 @@ public class ZipArchive {
     private User user;
 
     @OneToMany(mappedBy = "zipArchive", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SendHistory> sendHistoryList;
+    private List<SentHistory> sentHistoryList;
 
 }

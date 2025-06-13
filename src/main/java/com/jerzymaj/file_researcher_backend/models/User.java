@@ -26,6 +26,11 @@ public class User {
     @EqualsAndHashCode.Include
     private Long id;
 
+    @NotBlank
+    @Column(unique = true, nullable = false)
+    @ToString.Include
+    private String name;
+
     @Email
     @NotBlank
     @Column(unique = true)

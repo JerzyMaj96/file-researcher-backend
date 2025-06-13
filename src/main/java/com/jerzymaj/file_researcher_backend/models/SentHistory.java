@@ -2,18 +2,18 @@ package com.jerzymaj.file_researcher_backend.models;
 
 import com.jerzymaj.file_researcher_backend.models.suplementary_classes.SendStatus;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Getter
-@Setter
+@Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SendHistory {
+public class SentHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,6 +33,7 @@ public class SendHistory {
 
     private String errorMessage;
 
+    @Email
     @Column(nullable = false)
     private String sentToEmail;
 
