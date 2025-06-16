@@ -17,7 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserController {
 
-//PROPERTIES--------------------------------------------------------
+//CONTROLLER PROPERTIES--------------------------------------------------------
 
     private final UserService userService;
 //METHODS-------------------------------------------------------------

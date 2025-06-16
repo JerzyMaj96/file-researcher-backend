@@ -54,7 +54,7 @@ public class UserService {
         return convertUserToDTO(userRepository.save(user));
     }
 
-//MAPPER----------------------------------------------------------------------------------------------
+//DTO MAPPER----------------------------------------------------------------------------------------------
 
     private UserDTO convertUserToDTO(User user) {
         return UserDTO.builder()

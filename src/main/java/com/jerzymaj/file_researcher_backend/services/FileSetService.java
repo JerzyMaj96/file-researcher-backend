@@ -12,12 +12,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-public class FileService {
+public class FileSetService {
 
     private final FileEntryRepository fileEntryRepository;
     private final FileSetRepository fileSetRepository;
 
-    public FileService(FileEntryRepository fileEntryRepository, FileSetRepository fileSetRepository) {
+    public FileSetService(FileEntryRepository fileEntryRepository, FileSetRepository fileSetRepository) {
         this.fileEntryRepository = fileEntryRepository;
         this.fileSetRepository = fileSetRepository;
     }
@@ -57,7 +57,7 @@ public class FileService {
                               fileSet.getStatus(),
                               fileSet.getCreationDate(),
                               fileSet.getFiles().stream()
-                                                .map(FileService::convertFileEntryToDTO)
+                                                .map(FileSetService::convertFileEntryToDTO)
                                                 .collect(Collectors.toList()));
     }
 }
