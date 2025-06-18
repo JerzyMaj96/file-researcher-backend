@@ -2,62 +2,115 @@ package com.jerzymaj.file_researcher_backend.services;
 
 import com.jerzymaj.file_researcher_backend.DTOs.FileEntryDTO;
 import com.jerzymaj.file_researcher_backend.DTOs.FileSetDTO;
+import com.jerzymaj.file_researcher_backend.exceptions.UserNotFoundException;
 import com.jerzymaj.file_researcher_backend.models.FileEntry;
 import com.jerzymaj.file_researcher_backend.models.FileSet;
+import com.jerzymaj.file_researcher_backend.models.User;
+import com.jerzymaj.file_researcher_backend.models.suplementary_classes.FileSetStatus;
 import com.jerzymaj.file_researcher_backend.repositories.FileEntryRepository;
 import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
+import com.jerzymaj.file_researcher_backend.repositories.UserRepository;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class FileSetService {
+//PROPERTIES-------------------------------------------------------------------------------------------------
 
     private final FileEntryRepository fileEntryRepository;
     private final FileSetRepository fileSetRepository;
+    private final UserRepository userRepository;
 
-    public FileSetService(FileEntryRepository fileEntryRepository, FileSetRepository fileSetRepository) {
-        this.fileEntryRepository = fileEntryRepository;
-        this.fileSetRepository = fileSetRepository;
+//MAIN METHODS------------------------------------------------------------------------------------------------------
+
+    @Transactional
+    public FileSetDTO createFileSet(String name,
+                                    String description,
+                                    String recipientEmail,
+                                    List<String> selectedPaths,
+                                    Long userId) throws IOException {
+
+        User owner = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User " + userId + " not found"));
+
+        FileSet fileSet = fileSetRepository.save(
+                FileSet.builder()
+                        .name(name)
+                        .description(description)
+                        .recipientEmail(recipientEmail)
+                        .status(FileSetStatus.ACTIVE)
+                        .user(owner)
+                        .build()
+        );
+
+        List<FileEntry> entries = selectedPaths.stream()
+                .map(path -> convertFileTreeNodeDTOToFileEntry(path, fileSet))
+                .toList();
+
+        fileEntryRepository.saveAll(entries);
+
+        fileSet.setFiles(entries);
+
+        return convertFileSetToDTO(fileSet);
+
+    }
+//MAPPERS -----------------------------------------------------------------------------------------------------------
+
+
+    private FileEntry convertFileTreeNodeDTOToFileEntry(String path, FileSet parentFileSet) {
+        try {
+            Path p = Path.of(path);
+            boolean directory = Files.isDirectory(p);
+
+            return FileEntry.builder()
+                    .name(p.getFileName().toString())
+                    .path(p.toAbsolutePath().toString())
+                    .size(directory ? null : Files.size(p))
+                    .extension(directory ? null : getExtension(p))
+                    .fileSet(parentFileSet)
+                    .build();
+        } catch (IOException exception){
+            throw new UncheckedIOException("Unable to read file info: " + path, exception);
+        }
+    }
+//SUPPLEMENTARY METHOD
+    private String getExtension(Path path){
+        String node = path.getFileName().toString();
+        int index = node.lastIndexOf('.');
+        return (index > 0) ? node.substring(index + 1) : "";
     }
 
-    public FileEntry createFileEntry(FileEntry fileEntry){
-        return fileEntryRepository.save(fileEntry);
+    private FileSetDTO convertFileSetToDTO(FileSet fileSet){
+        return FileSetDTO.builder()
+                .id(fileSet.getId())
+                .name(fileSet.getName())
+                .description(fileSet.getDescription())
+                .recipientEmail(fileSet.getRecipientEmail())
+                .status(fileSet.getStatus())
+                .creationDate(fileSet.getCreationDate())
+                .userId(fileSet.getUser().getId())
+                .files(fileSet.getFiles().stream()
+                        .map(this::convertFileEntryToDTO)
+                        .toList())
+                .build();
     }
 
-    public Optional<FileEntry> getFileEntryById(Long id){
-        return fileEntryRepository.findById(id);
-    }
-
-    public FileSet createFileSet(FileSet fileSet){
-        return fileSetRepository.save(fileSet);
-    }
-
-    public Optional<FileSet> getFileSetById(Long id){
-        return fileSetRepository.findById(id);
-    }
-
-    public static FileEntryDTO convertFileEntryToDTO(FileEntry fileEntry){
-        return new FileEntryDTO(fileEntry.getId(),
-                                fileEntry.getName(),
-                                fileEntry.getOriginalName(),
-                                fileEntry.getPath(),
-                                fileEntry.getSize(),
-                                fileEntry.getExtension(),
-                                fileEntry.getFileSet().getId());
-    }
-
-    public FileSetDTO convertFileSetToDTO(FileSet fileSet){
-        return new FileSetDTO(fileSet.getId(),
-                              fileSet.getName(),
-                              fileSet.getUser().getId(),
-                              fileSet.getDescription(),
-                              fileSet.getRecipientEmail(),
-                              fileSet.getStatus(),
-                              fileSet.getCreationDate(),
-                              fileSet.getFiles().stream()
-                                                .map(FileSetService::convertFileEntryToDTO)
-                                                .collect(Collectors.toList()));
+    private FileEntryDTO convertFileEntryToDTO(FileEntry fileEntry){
+        return FileEntryDTO.builder()
+                .id(fileEntry.getId())
+                .name(fileEntry.getName())
+                .path(fileEntry.getPath())
+                .size(fileEntry.getSize())
+                .extension(fileEntry.getExtension())
+                .fileSetId(fileEntry.getFileSet().getId())
+                .build();
     }
 }

@@ -16,7 +16,7 @@ import java.util.Map;
 @RequestMapping("/file-researcher/explorer")
 @RequiredArgsConstructor
 public class FileExplorerController {
-//PROPERTIES -------------------------------------------------------------------------------------
+//CONTROLLER PROPERTIES ---------------------------------------------------------------------------
 
     private final FileExplorerService fileExplorerService;
 

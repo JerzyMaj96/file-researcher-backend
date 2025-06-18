@@ -17,8 +17,6 @@ public class FileEntryDTO {
     @NotBlank
     private String name;
 
-    private String originalName;
-
     @NotBlank
     private String path;
 

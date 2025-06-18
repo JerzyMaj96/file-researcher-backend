@@ -20,7 +20,7 @@ public class UserController {
 //CONTROLLER PROPERTIES--------------------------------------------------------
 
     private final UserService userService;
-//METHODS-------------------------------------------------------------
+//METHODS----------------------------------------------------------------------
     @GetMapping
     public List<UserDTO> retrieveAllUsers(){
         return userService.findAllUsers();

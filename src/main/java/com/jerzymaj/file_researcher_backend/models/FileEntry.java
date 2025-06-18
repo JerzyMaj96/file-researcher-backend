@@ -22,8 +22,6 @@ public class FileEntry {
     @Column(nullable = false)
     private String name;
 
-    private String originalName;
-
     @NotBlank
     @Column(nullable = false)
     private String path;
