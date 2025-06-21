@@ -52,7 +52,7 @@ public class FileSetService {
         );
 
         List<FileEntry> entries = selectedPaths.stream()
-                .map(path -> convertFileTreeNodeDTOToFileEntry(path, fileSet))
+                .map(path -> convertPathToFileEntry(path, fileSet))
                 .toList();
 
         fileEntryRepository.saveAll(entries);
@@ -65,7 +65,7 @@ public class FileSetService {
 //MAPPERS -----------------------------------------------------------------------------------------------------------
 
 
-    private FileEntry convertFileTreeNodeDTOToFileEntry(String path, FileSet parentFileSet) {
+    private FileEntry convertPathToFileEntry(String path, FileSet parentFileSet) {
         try {
             Path p = Path.of(path);
             boolean directory = Files.isDirectory(p);
