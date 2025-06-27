@@ -38,6 +38,10 @@ public class FileSetService {
                                     List<String> selectedPaths,
                                     Long userId) throws IOException {
 
+        if (selectedPaths == null || selectedPaths.isEmpty()) {
+            throw new IllegalArgumentException("At least one file must be selected");
+        }
+
         User owner = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User " + userId + " not found"));
 

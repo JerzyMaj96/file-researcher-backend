@@ -38,8 +38,8 @@ public class UserServiceUnitTests {
         when(userRepository.existsByName("jerzy")).thenReturn(false);
         when(userRepository.existsByEmail("jerzy@mail.com")).thenReturn(false);
         when(passwordEncoder.encode("secret123")).thenReturn("HASH");
-        when(userRepository.save(any(User.class))).thenAnswer(i -> {
-            User user = i.getArgument(0);
+        when(userRepository.save(any(User.class))).thenAnswer(invocationOnMock -> {
+            User user = invocationOnMock.getArgument(0);
             user.setId(1L);
             return user;
         });
