@@ -2,6 +2,7 @@ package com.jerzymaj.file_researcher_backend.unit_tests;
 
 import com.jerzymaj.file_researcher_backend.DTOs.FileSetDTO;
 import com.jerzymaj.file_researcher_backend.DTOs.UserDTO;
+import com.jerzymaj.file_researcher_backend.exceptions.NoFilesSelectedException;
 import com.jerzymaj.file_researcher_backend.exceptions.UserNotFoundException;
 import com.jerzymaj.file_researcher_backend.models.FileSet;
 import com.jerzymaj.file_researcher_backend.models.User;
@@ -95,10 +96,10 @@ public class FileSetServiceUnitTests {
     }
 
     @Test
-    public void shouldThrowException_WhenNoFilesSelected() {
+    public void shouldThrowNoFilesSelectedException_WhenNoFilesSelected() {
         assertThatThrownBy(() ->
                 fileSetService.createFileSet(name, description, recipientEmail, List.of(), ownerDTO.getId())
-        ).isInstanceOf(IllegalArgumentException.class);
+        ).isInstanceOf(NoFilesSelectedException.class);
     }
 
 

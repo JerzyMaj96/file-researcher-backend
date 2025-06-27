@@ -2,6 +2,7 @@ package com.jerzymaj.file_researcher_backend.services;
 
 import com.jerzymaj.file_researcher_backend.DTOs.FileEntryDTO;
 import com.jerzymaj.file_researcher_backend.DTOs.FileSetDTO;
+import com.jerzymaj.file_researcher_backend.exceptions.NoFilesSelectedException;
 import com.jerzymaj.file_researcher_backend.exceptions.UserNotFoundException;
 import com.jerzymaj.file_researcher_backend.models.FileEntry;
 import com.jerzymaj.file_researcher_backend.models.FileSet;
@@ -39,7 +40,7 @@ public class FileSetService {
                                     Long userId) throws IOException {
 
         if (selectedPaths == null || selectedPaths.isEmpty()) {
-            throw new IllegalArgumentException("At least one file must be selected");
+            throw new NoFilesSelectedException("At least one file must be selected");
         }
 
         User owner = userRepository.findById(userId)
