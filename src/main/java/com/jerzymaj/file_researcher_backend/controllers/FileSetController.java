@@ -2,6 +2,7 @@ package com.jerzymaj.file_researcher_backend.controllers;
 
 import com.jerzymaj.file_researcher_backend.DTOs.CreateFileSetDTO;
 import com.jerzymaj.file_researcher_backend.DTOs.FileSetDTO;
+import com.jerzymaj.file_researcher_backend.models.suplementary_classes.FileSetStatus;
 import com.jerzymaj.file_researcher_backend.services.FileSetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 
 @RestController
 @RequestMapping("/file-researcher/file-sets")
@@ -34,5 +36,31 @@ public class FileSetController {
 
         return ResponseEntity.created(URI.create("/file-researcher/file-sets/" + createdFileSet.getId()))
                 .body(createdFileSet);
+    }
+
+    @GetMapping
+    public List<FileSetDTO> retrieveAllFileSets(){
+        return fileSetService.getAllFileSets();
+    }
+
+    @GetMapping("/{fileSetId}")
+    public ResponseEntity<FileSetDTO> retrieveFileSetById(@PathVariable Long fileSetId){
+        FileSetDTO fileSetDTO = fileSetService.getFileSetById(fileSetId);
+
+        return ResponseEntity.ok(fileSetDTO);
+    }
+
+    @DeleteMapping("/{fileSetId}")
+    public void deleteFileSetById(@PathVariable Long fileSetId){
+        fileSetService.deleteFileSetById(fileSetId);
+    }
+
+    @PatchMapping("/{fileSetId}/status")
+    public ResponseEntity<FileSetDTO> updateFileSetStatus(@PathVariable Long fileSetId,
+                                                          @RequestParam FileSetStatus status){
+
+        FileSetDTO updatedFileSetStatus = fileSetService.changeFileSetStatus(fileSetId, status);
+
+        return ResponseEntity.ok(updatedFileSetStatus);
     }
 }

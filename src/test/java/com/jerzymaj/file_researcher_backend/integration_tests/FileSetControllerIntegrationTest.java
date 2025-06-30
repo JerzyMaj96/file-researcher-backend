@@ -2,7 +2,6 @@ package com.jerzymaj.file_researcher_backend.integration_tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jerzymaj.file_researcher_backend.DTOs.CreateFileSetDTO;
-import com.jerzymaj.file_researcher_backend.DTOs.UserDTO;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +13,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;

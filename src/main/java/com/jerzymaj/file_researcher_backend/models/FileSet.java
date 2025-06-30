@@ -9,6 +9,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -50,7 +51,12 @@ public class FileSet {
     @Column(nullable = false)
     private FileSetStatus status;
 
-    @OneToMany(mappedBy = "fileSet", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<FileEntry> files;
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "file_set_files",
+            joinColumns = @JoinColumn(name = "file_set_id"),
+            inverseJoinColumns = @JoinColumn(name = "file_entry_id")
+    )
+    @Builder.Default
+    private List<FileEntry> files = new ArrayList<>();
 }
-

@@ -27,7 +27,4 @@ public class FileEntryDTO {
     @Size(max = 10)
     private String extension;
 
-    @NotNull
-    private Long fileSetId;
-
 }

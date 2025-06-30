@@ -2,6 +2,7 @@ package com.jerzymaj.file_researcher_backend.services;
 
 import com.jerzymaj.file_researcher_backend.DTOs.FileEntryDTO;
 import com.jerzymaj.file_researcher_backend.DTOs.FileSetDTO;
+import com.jerzymaj.file_researcher_backend.exceptions.FileSetNotFoundException;
 import com.jerzymaj.file_researcher_backend.exceptions.NoFilesSelectedException;
 import com.jerzymaj.file_researcher_backend.exceptions.UserNotFoundException;
 import com.jerzymaj.file_researcher_backend.models.FileEntry;
@@ -13,6 +14,7 @@ import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
 import com.jerzymaj.file_researcher_backend.repositories.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -57,20 +59,35 @@ public class FileSetService {
         );
 
         List<FileEntry> entries = selectedPaths.stream()
-                .map(path -> convertPathToFileEntry(path, fileSet))
+                .map(path -> fileEntryRepository.findByPath(path)
+                        .orElseGet(() -> fileEntryRepository.save(convertPathToFileEntry(path))))
                 .toList();
-
-        fileEntryRepository.saveAll(entries);
 
         fileSet.setFiles(entries);
 
         return convertFileSetToDTO(fileSet);
+    }
 
+    public List<FileSetDTO> getAllFileSets(){
+        return fileSetRepository.findAll().stream()
+                .map(this::convertFileSetToDTO)
+                .toList();
+    }
+
+    public FileSetDTO getFileSetById (Long fileSetId){
+        FileSet fileSet = fileSetRepository.findById(fileSetId)
+                .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
+
+        return this.convertFileSetToDTO(fileSet);
+    }
+
+    public void deleteFileSetById(Long fileSetId) {
+        fileSetRepository.deleteById(fileSetId);
     }
 //MAPPERS -----------------------------------------------------------------------------------------------------------
 
 
-    private FileEntry convertPathToFileEntry(String path, FileSet parentFileSet) {
+    private FileEntry convertPathToFileEntry(String path) {
         try {
             Path p = Path.of(path);
             boolean directory = Files.isDirectory(p);
@@ -80,17 +97,10 @@ public class FileSetService {
                     .path(p.toAbsolutePath().toString())
                     .size(directory ? null : Files.size(p))
                     .extension(directory ? null : getExtension(p))
-                    .fileSet(parentFileSet)
                     .build();
         } catch (IOException exception){
             throw new UncheckedIOException("Unable to read file info: " + path, exception);
         }
-    }
-//SUPPLEMENTARY METHOD
-    private String getExtension(Path path){
-        String node = path.getFileName().toString();
-        int index = node.lastIndexOf('.');
-        return (index > 0) ? node.substring(index + 1) : "";
     }
 
     private FileSetDTO convertFileSetToDTO(FileSet fileSet){
@@ -115,7 +125,24 @@ public class FileSetService {
                 .path(fileEntry.getPath())
                 .size(fileEntry.getSize())
                 .extension(fileEntry.getExtension())
-                .fileSetId(fileEntry.getFileSet().getId())
                 .build();
+    }
+
+// SUPPLEMENTARY METHODS------------------------------------------------------------------------------------------
+
+    private String getExtension(Path path){
+        String fileName = path.getFileName().toString();
+        int index = fileName.lastIndexOf('.');
+        return (index > 0) ? fileName.substring(index + 1) : "";
+    }
+
+    public FileSetDTO changeFileSetStatus(Long fileSetId, FileSetStatus newFileSetStatus) {
+        FileSet fileSet = fileSetRepository.findById(fileSetId)
+                .orElseThrow(() -> new  FileSetNotFoundException("FileSet not found: " + fileSetId));
+
+        fileSet.setStatus(newFileSetStatus);
+        fileSetRepository.save(fileSet);
+
+        return convertFileSetToDTO(fileSet);
     }
 }

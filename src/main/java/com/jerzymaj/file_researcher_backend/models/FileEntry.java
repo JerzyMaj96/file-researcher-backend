@@ -1,9 +1,10 @@
 package com.jerzymaj.file_researcher_backend.models;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter @Setter
@@ -18,22 +19,17 @@ public class FileEntry {
     @ToString.Include
     private Long id;
 
-    @NotBlank
     @Column(nullable = false)
     private String name;
 
-    @NotBlank
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String path;
 
-    @Column(nullable = false)
     private Long size;
 
-    @NotBlank
-    @Size(max = 10)
     private String extension;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "file_set_id", nullable = false)
-    private FileSet fileSet;
+    @ManyToMany(mappedBy = "files")
+    @Builder.Default
+    private List<FileSet> fileSets = new ArrayList<>();
 }
