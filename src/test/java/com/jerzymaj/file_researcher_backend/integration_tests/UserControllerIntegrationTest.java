@@ -12,6 +12,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -41,5 +43,30 @@ public class UserControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(registerUserDTO)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.email").value("jerzy@mail.com"));
+    }
+
+    @Test
+    @WithMockUser(username = "tester", roles = "ADMIN")
+    public void shouldDeleteUser() throws Exception {
+        String uniqueName = "jerzy_" + System.currentTimeMillis();
+        String uniqueEmail = "jerzy_" + System.currentTimeMillis() + "@mail.com";
+
+        RegisterUserDTO registerUserDTO = new RegisterUserDTO(uniqueName,uniqueEmail,"secret123");
+
+        String response = mockMvc.perform(post("/file-researcher/users")
+                        .with(csrf())
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(registerUserDTO)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        Long userId = objectMapper.readTree(response).get("id").asLong();
+
+        mockMvc.perform(delete("/file-researcher/users/{userId}", userId)
+                        .with(csrf()))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/file-researcher/users/{userId}", userId))
+                .andExpect(status().isNotFound());
     }
 }

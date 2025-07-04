@@ -54,6 +54,12 @@ public class UserService {
         return convertUserToDTO(userRepository.save(user));
     }
 
+    public void deleteUserById(Long userId){
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User " + userId + " not found"));
+        userRepository.delete(user);
+    }
+
 //DTO MAPPER----------------------------------------------------------------------------------------------
 
     private UserDTO convertUserToDTO(User user) {
