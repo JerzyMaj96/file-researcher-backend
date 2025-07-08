@@ -2,6 +2,7 @@ package com.jerzymaj.file_researcher_backend.integration_tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jerzymaj.file_researcher_backend.DTOs.CreateFileSetDTO;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = {
         "springdoc.api-docs.enabled=false",
         "springdoc.swagger-ui.enabled=false"})
+@Transactional
 public class FileSetControllerIntegrationTest {
 
     @Autowired
