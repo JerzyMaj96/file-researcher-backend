@@ -2,7 +2,10 @@ package com.jerzymaj.file_researcher_backend.integration_tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jerzymaj.file_researcher_backend.DTOs.RegisterUserDTO;
+import com.jerzymaj.file_researcher_backend.models.User;
+import com.jerzymaj.file_researcher_backend.repositories.UserRepository;
 import jakarta.transaction.Transactional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -33,8 +36,21 @@ public class UserControllerIntegrationTest {
     @Autowired
     ObjectMapper objectMapper;
 
+    @Autowired
+    UserRepository userRepository;
+
+    @BeforeEach
+    void setUp() {
+        if (userRepository.findByName("tester").isEmpty()) {
+            User tester = new User();
+            tester.setName("tester");
+            tester.setEmail("tester@mail.com");
+            tester.setPassword("secret123");
+            userRepository.save(tester);
+        }
+    }
+
     @Test
-    @WithMockUser(username = "tester", roles = "ADMIN")
     public void shouldRegisterUser() throws Exception {
         RegisterUserDTO registerUserDTO = new RegisterUserDTO("jerzy","jerzy@mail.com","secret123");
 
@@ -71,3 +87,4 @@ public class UserControllerIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 }
+

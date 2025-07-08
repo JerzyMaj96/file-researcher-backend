@@ -34,7 +34,7 @@ public class FileSet {
     @Column(updatable = false)
     private LocalDateTime creationDate;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false, updatable = false)
     private User user;
 

@@ -17,9 +17,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -81,6 +85,15 @@ public class FileSetServiceUnitTests {
         user.setName(ownerDTO.getName());
         user.setEmail(ownerDTO.getEmail());
 
+        Authentication authentication = Mockito.mock(Authentication.class);
+        when(authentication.getName()).thenReturn(user.getName());
+
+        SecurityContext securityContext = Mockito.mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+
+        when(userRepository.findByName(user.getName())).thenReturn(Optional.of(user));
         when(userRepository.findById(ownerDTO.getId())).thenReturn(Optional.of(user));
         lenient().when(fileEntryRepository.findByPath(anyString())).thenReturn(Optional.empty());
         lenient().when(fileEntryRepository.save(any(FileEntry.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -94,7 +107,7 @@ public class FileSetServiceUnitTests {
     @Test
     public void shouldCreateFileSet_IfSuccess() throws IOException {
         FileSetDTO actualResult = fileSetService
-                .createFileSet(name, description, recipientEmail, selectedPaths, ownerDTO.getId());
+                .createFileSet(name, description, recipientEmail, selectedPaths);
 
         assertThat(actualResult).isNotNull();
         assertThat(actualResult.getId()).isEqualTo(1L);
@@ -107,7 +120,7 @@ public class FileSetServiceUnitTests {
     @Test
     public void shouldThrowNoFilesSelectedException_WhenNoFilesSelected() {
         assertThatThrownBy(() ->
-                fileSetService.createFileSet(name, description, recipientEmail, List.of(), ownerDTO.getId())
+                fileSetService.createFileSet(name, description, recipientEmail, List.of())
         ).isInstanceOf(NoFilesSelectedException.class);
     }
 
@@ -115,7 +128,7 @@ public class FileSetServiceUnitTests {
     public void shouldThrowUserNotFoundException_IfFailed() {
         when(userRepository.findById(ownerDTO.getId())).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> fileSetService.createFileSet(name, description, recipientEmail, selectedPaths, ownerDTO.getId()))
+        assertThatThrownBy(() -> fileSetService.createFileSet(name, description, recipientEmail, selectedPaths))
                 .isInstanceOf(UserNotFoundException.class);
     }
 }

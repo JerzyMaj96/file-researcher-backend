@@ -28,7 +28,4 @@ public class CreateFileSetDTO {
 
     @NotEmpty
     private List<String> selectedPaths;
-
-    @NotNull
-    private Long userId;
 }

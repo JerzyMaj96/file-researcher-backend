@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 @RestController
@@ -31,8 +32,7 @@ public class FileSetController {
                 createFileSetDTO.getName(),
                 createFileSetDTO.getDescription(),
                 createFileSetDTO.getRecipientEmail(),
-                createFileSetDTO.getSelectedPaths(),
-                createFileSetDTO.getUserId());
+                createFileSetDTO.getSelectedPaths());
 
         return ResponseEntity.created(URI.create("/file-researcher/file-sets/" + createdFileSet.getId()))
                 .body(createdFileSet);
@@ -51,13 +51,13 @@ public class FileSetController {
     }
 
     @DeleteMapping("/{fileSetId}")
-    public void deleteFileSetById(@PathVariable Long fileSetId){
+    public void deleteFileSetById(@PathVariable Long fileSetId) throws AccessDeniedException {
         fileSetService.deleteFileSetById(fileSetId);
     }
 
     @PatchMapping("/{fileSetId}/status")
     public ResponseEntity<FileSetDTO> updateFileSetStatus(@PathVariable Long fileSetId,
-                                                          @RequestParam FileSetStatus status){
+                                                          @RequestParam FileSetStatus status) throws AccessDeniedException {
 
         FileSetDTO updatedFileSetStatus = fileSetService.changeFileSetStatus(fileSetId, status);
 

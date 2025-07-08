@@ -15,10 +15,13 @@ import com.jerzymaj.file_researcher_backend.repositories.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -38,15 +41,17 @@ public class FileSetService {
     public FileSetDTO createFileSet(String name,
                                     String description,
                                     String recipientEmail,
-                                    List<String> selectedPaths,
-                                    Long userId) throws IOException {
+                                    List<String> selectedPaths
+                                    ) throws IOException {
 
         if (selectedPaths == null || selectedPaths.isEmpty()) {
             throw new NoFilesSelectedException("At least one file must be selected");
         }
 
-        User owner = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User " + userId + " not found"));
+        Long currentUserId = getCurrentUserId();
+
+        User owner = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new UserNotFoundException("User " + currentUserId + " not found"));
 
         FileSet fileSet = fileSetRepository.save(
                 FileSet.builder()
@@ -69,7 +74,9 @@ public class FileSetService {
     }
 
     public List<FileSetDTO> getAllFileSets(){
-        return fileSetRepository.findAll().stream()
+        Long currentUserId = getCurrentUserId();
+
+        return fileSetRepository.findAllByUserId(currentUserId).stream()
                 .map(this::convertFileSetToDTO)
                 .toList();
     }
@@ -81,7 +88,16 @@ public class FileSetService {
         return this.convertFileSetToDTO(fileSet);
     }
 
-    public void deleteFileSetById(Long fileSetId) {
+    public void deleteFileSetById(Long fileSetId) throws AccessDeniedException {
+        FileSet fileSet = fileSetRepository.findById(fileSetId)
+                .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
+
+        Long currentUserId = getCurrentUserId();
+
+        if (!fileSet.getUser().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("You do not have permission to delete this FileSet.");
+        }
+
         fileSetRepository.deleteById(fileSetId);
     }
 //MAPPERS -----------------------------------------------------------------------------------------------------------
@@ -136,9 +152,25 @@ public class FileSetService {
         return (index > 0) ? fileName.substring(index + 1) : "";
     }
 
-    public FileSetDTO changeFileSetStatus(Long fileSetId, FileSetStatus newFileSetStatus) {
+    private Long getCurrentUserId(){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userName = authentication.getName();
+
+        return userRepository.findByName(userName)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + userName))
+                .getId();
+    }
+
+    public FileSetDTO changeFileSetStatus(Long fileSetId, FileSetStatus newFileSetStatus) throws AccessDeniedException {
         FileSet fileSet = fileSetRepository.findById(fileSetId)
                 .orElseThrow(() -> new  FileSetNotFoundException("FileSet not found: " + fileSetId));
+
+
+        Long currentUserId = getCurrentUserId();
+
+        if (!fileSet.getUser().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("You do not have permission to change this FileSet status.");
+        }
 
         fileSet.setStatus(newFileSetStatus);
         fileSetRepository.save(fileSet);

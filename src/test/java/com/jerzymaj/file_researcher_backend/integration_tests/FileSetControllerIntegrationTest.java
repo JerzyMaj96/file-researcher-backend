@@ -2,6 +2,8 @@ package com.jerzymaj.file_researcher_backend.integration_tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jerzymaj.file_researcher_backend.DTOs.CreateFileSetDTO;
+import com.jerzymaj.file_researcher_backend.models.User;
+import com.jerzymaj.file_researcher_backend.repositories.UserRepository;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -36,11 +38,20 @@ public class FileSetControllerIntegrationTest {
     MockMvc mockMvc;
 
     @Autowired
+    UserRepository userRepository;
+
+    @Autowired
     ObjectMapper objectMapper;
 
     @Test
     @WithMockUser(username = "tester", roles = "ADMIN")
     public void shouldCreateNewFileSet(@TempDir Path tempDir) throws Exception {
+        User testUser = new User();
+        testUser.setName("tester");
+        testUser.setEmail("tester@mail.com");
+        testUser.setPassword("password");
+        userRepository.save(testUser);
+
         Long userId = 1L;
 
         Path tempFile1 = Files.createFile(tempDir.resolve("test1.txt"));
@@ -50,8 +61,8 @@ public class FileSetControllerIntegrationTest {
         CreateFileSetDTO createFileSetDTO = new CreateFileSetDTO("test","This is a test fileset description","jerzy@mail.com",
                 List.of(tempFile1.toString(),
                         tempFile2.toString(),
-                        tempFile3.toString()),
-                userId);
+                        tempFile3.toString())
+                );
 
         mockMvc.perform(post("/file-researcher/file-sets")
                 .with(csrf())
@@ -63,8 +74,7 @@ public class FileSetControllerIntegrationTest {
                 .andExpect(jsonPath("$.recipientEmail").value("jerzy@mail.com"))
                 .andExpect(jsonPath("$.files", hasSize(3)))
                 .andExpect(jsonPath("$.files[*].name", containsInAnyOrder("test1.txt", "test2.txt", "test3.csv")))
-                .andExpect(jsonPath("$.files[*].extension", containsInAnyOrder("txt","txt","csv")))
-                .andExpect(jsonPath("$.userId").value(userId));
+                .andExpect(jsonPath("$.files[*].extension", containsInAnyOrder("txt","txt","csv")));
 
     }
 }
