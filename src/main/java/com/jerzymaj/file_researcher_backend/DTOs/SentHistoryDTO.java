@@ -22,7 +22,7 @@ public class SentHistoryDTO {
     @NotNull
     private Long zipArchiveId;
 
-    private LocalDateTime sendAttemptDate;
+    private LocalDateTime sentAttemptDate;
 
     @NotNull
     private SendStatus status;

@@ -85,7 +85,7 @@ public class FileSetService {
         FileSet fileSet = fileSetRepository.findById(fileSetId)
                 .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
 
-        return this.convertFileSetToDTO(fileSet);
+        return convertFileSetToDTO(fileSet);
     }
 
     public void deleteFileSetById(Long fileSetId) throws AccessDeniedException {
@@ -152,7 +152,7 @@ public class FileSetService {
         return (index > 0) ? fileName.substring(index + 1) : "";
     }
 
-    private Long getCurrentUserId(){
+    protected Long getCurrentUserId(){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userName = authentication.getName();
 

@@ -42,5 +42,5 @@ public class ZipArchiveDTO {
     @NotNull
     private Long userId;
 
-    private List<SentHistoryDTO> sendHistoryList;
+    private List<SentHistoryDTO> sentHistoryList;
 }

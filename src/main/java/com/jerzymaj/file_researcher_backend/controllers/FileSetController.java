@@ -51,7 +51,7 @@ public class FileSetController {
     }
 
     @DeleteMapping("/{fileSetId}")
-    public void deleteFileSetById(@PathVariable Long fileSetId) throws AccessDeniedException {
+    public void deleteFileSetById(@PathVariable Long fileSetId) throws AccessDeniedException { //Check response status
         fileSetService.deleteFileSetById(fileSetId);
     }
 
