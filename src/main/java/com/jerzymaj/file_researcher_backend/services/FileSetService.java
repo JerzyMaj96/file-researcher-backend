@@ -14,7 +14,6 @@ import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
 import com.jerzymaj.file_researcher_backend.repositories.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -57,7 +56,7 @@ public class FileSetService {
                 FileSet.builder()
                         .name(name)
                         .description(description)
-                        .recipientEmail(recipientEmail)
+                        .recipientEmail(recipientEmail)// Check this, shouldn't it be set after sending a zip
                         .status(FileSetStatus.ACTIVE)
                         .user(owner)
                         .build()
