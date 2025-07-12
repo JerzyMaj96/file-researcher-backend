@@ -87,34 +87,43 @@ public class ZipArchiveService {
         return convertZipArchiveToDTO(zipArchive);
     }
 
-    public List<ZipArchiveDTO> getAllZipArchives(){
+    public List<ZipArchiveDTO> getAllZipArchives(Long fileSetId) throws AccessDeniedException {
         Long currentUserId = fileSetService.getCurrentUserId();
+
+        FileSet fileSet = fileSetRepository.findById(fileSetId)
+                .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
+
+        if (!fileSet.getUser().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("You do not have permission to access this FileSet.");
+        }
 
         return zipArchiveRepository.findAllByUserId(currentUserId).stream()
                 .map(this::convertZipArchiveToDTO)
                 .toList();
     }
 
-    public ZipArchiveDTO getZipArchiveById(Long zipArchiveId) throws AccessDeniedException {
+    public ZipArchiveDTO getZipArchiveById(Long fileSetId, Long zipArchiveId) throws AccessDeniedException {
         Long currentUserId = fileSetService.getCurrentUserId();
 
         ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId)
                 .orElseThrow(() -> new ZipArchiveNotFoundException("ZipArchive not found: " + zipArchiveId));
 
-        if (!zipArchive.getUser().getId().equals(currentUserId)) {
+        if (!zipArchive.getUser().getId().equals(currentUserId)
+              || !zipArchive.getFileSet().getId().equals(fileSetId)) {
             throw new AccessDeniedException("You do not have permission to delete this FileSet.");
         }
 
         return convertZipArchiveToDTO(zipArchive);
     }
 
-    public void deleteZipArchive(Long zipArchiveId) throws AccessDeniedException {
+    public void deleteZipArchive(Long fileSetId, Long zipArchiveId) throws AccessDeniedException {
         ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId)
                 .orElseThrow(() -> new ZipArchiveNotFoundException("ZipArchive not found: " + zipArchiveId));
 
         Long currentUserId = fileSetService.getCurrentUserId();
 
-        if (!zipArchive.getUser().getId().equals(currentUserId)) {
+        if (!zipArchive.getUser().getId().equals(currentUserId)
+                || !zipArchive.getFileSet().getId().equals(fileSetId)) {
             throw new AccessDeniedException("You do not have permission to delete this FileSet.");
         }
 
