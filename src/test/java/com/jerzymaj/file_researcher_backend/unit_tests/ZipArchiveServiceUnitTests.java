@@ -20,12 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -35,11 +30,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
 public class ZipArchiveServiceUnitTests {
 
     @Mock
@@ -59,7 +52,6 @@ public class ZipArchiveServiceUnitTests {
 
     private User user;
     private FileSet fileSet;
-    private List<FileEntry> entries;
 
     @BeforeEach
     public void setUp(@TempDir Path tempDir) throws IOException {
@@ -68,23 +60,13 @@ public class ZipArchiveServiceUnitTests {
         user.setName("jerzy");
 
 
-        Path tempFile1 = Files.createFile(tempDir.resolve("test1.txt"));
-        Path tempFile2 = Files.createFile(tempDir.resolve("test2.txt"));
-        Path tempFile3 = Files.createFile(tempDir.resolve("test3.csv"));
-
-
         FileEntry fe1 = new FileEntry();
-        fe1.setPath(tempFile1.toString());
+        fe1.setPath(Files.createFile(tempDir.resolve("test1.txt")).toString());
         FileEntry fe2 = new FileEntry();
-        fe2.setPath(tempFile2.toString());
+        fe2.setPath(Files.createFile(tempDir.resolve("test2.txt")).toString());
         FileEntry fe3 = new FileEntry();
-        fe3.setPath(tempFile3.toString());
+        fe3.setPath(Files.createFile(tempDir.resolve("test3.csv")).toString());
 
-        entries = List.of(
-                fe1,
-                fe2,
-                fe3
-        );
 
         fileSet = new FileSet();
         fileSet.setId(1L);
@@ -94,18 +76,10 @@ public class ZipArchiveServiceUnitTests {
         fileSet.setUser(user);
         fileSet.setRecipientEmail("someone@mail.com");
         fileSet.setStatus(FileSetStatus.ACTIVE);
-        fileSet.setFiles(entries);
+        fileSet.setFiles(List.of(fe1, fe2, fe3));
 
-        Authentication authentication = Mockito.mock(Authentication.class);
-        when(authentication.getName()).thenReturn(user.getName());
-
-        SecurityContext securityContext = Mockito.mock(SecurityContext.class);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-
-        SecurityContextHolder.setContext(securityContext);
-
-        lenient().when(fileSetRepository.findById(fileSet.getId())).thenReturn(Optional.of(fileSet));
-        lenient().when(fileSetService.getCurrentUserId()).thenReturn(user.getId());
+        when(fileSetRepository.findById(fileSet.getId())).thenReturn(Optional.of(fileSet));
+        when(fileSetService.getCurrentUserId()).thenReturn(user.getId());
 
         MimeMessage dummyMessage = new MimeMessage((jakarta.mail.Session)null);
         when(mailSender.createMimeMessage()).thenReturn(dummyMessage);
@@ -123,11 +97,15 @@ public class ZipArchiveServiceUnitTests {
 
         ZipArchiveDTO actualResult = zipArchiveService.createAndSendZipArchive(fileSet.getId(), fileSet.getRecipientEmail());
 
-        assertNotNull(actualResult, "ZipArchiveDTO should not be null");
-        assertTrue(actualResult.getFileSetId() > 0, "FileSet ID should be greater than zero");
-        assertNotNull(actualResult.getCreationDate(), "Creation date should be set");
-        assertTrue(actualResult.getArchivePath() != null && !actualResult.getArchivePath().isEmpty(), "File path should not be empty");
+        assertNotNull(actualResult);
+        assertEquals(fileSet.getId(), actualResult.getFileSetId());
+        assertNotNull(actualResult.getArchivePath());
+        assertFalse(actualResult.getArchivePath().isBlank());
+        assertEquals("SUCCESS", actualResult.getStatus().name());
 
-        System.out.println("ZipArchiveDTO: " + actualResult); }
-
+        verify(fileSetRepository, atLeastOnce()).findById(fileSet.getId());
+        verify(fileSetService).getCurrentUserId();
+        verify(mailSender).send((MimeMessage) any());
+        verify(zipArchiveRepository, atLeastOnce()).save(any());
+    }
 }
