@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -54,6 +55,7 @@ public class ZipArchiveService {
                 .recipientEmail(recipientEmail)
                 .fileSet(fileSet)
                 .user(fileSet.getUser())
+                .creationDate(LocalDateTime.now())
                 .build();
 
         zipArchive = zipArchiveRepository.save(zipArchive);

@@ -151,7 +151,7 @@ public class FileSetService {
         return (index > 0) ? fileName.substring(index + 1) : "";
     }
 
-    protected Long getCurrentUserId(){
+    public Long getCurrentUserId(){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userName = authentication.getName();
 
