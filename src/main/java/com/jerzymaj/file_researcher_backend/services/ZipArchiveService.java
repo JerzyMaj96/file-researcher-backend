@@ -47,6 +47,10 @@ public class ZipArchiveService {
             throw new AccessDeniedException("You do not have permission to access this FileSet.");
         }
 
+        if (fileSet.getFiles() == null || fileSet.getFiles().isEmpty()) {
+            throw new FileSetNotFoundException("FileSet has no files to archive.");
+        }
+
         ZipArchive zipArchive = ZipArchive.builder()
                 .archiveName("")
                 .archivePath("")

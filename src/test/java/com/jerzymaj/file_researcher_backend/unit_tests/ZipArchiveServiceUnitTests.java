@@ -1,6 +1,7 @@
 package com.jerzymaj.file_researcher_backend.unit_tests;
 
 import com.jerzymaj.file_researcher_backend.DTOs.ZipArchiveDTO;
+import com.jerzymaj.file_researcher_backend.exceptions.FileSetNotFoundException;
 import com.jerzymaj.file_researcher_backend.models.FileEntry;
 import com.jerzymaj.file_researcher_backend.models.FileSet;
 import com.jerzymaj.file_researcher_backend.models.User;
@@ -20,9 +21,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.mail.javamail.JavaMailSender;
 
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -33,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class ZipArchiveServiceUnitTests {
 
     @Mock
@@ -78,19 +83,18 @@ public class ZipArchiveServiceUnitTests {
         fileSet.setStatus(FileSetStatus.ACTIVE);
         fileSet.setFiles(List.of(fe1, fe2, fe3));
 
-        when(fileSetRepository.findById(fileSet.getId())).thenReturn(Optional.of(fileSet));
-        when(fileSetService.getCurrentUserId()).thenReturn(user.getId());
+        lenient().when(fileSetRepository.findById(fileSet.getId())).thenReturn(Optional.of(fileSet));
+        lenient().when(fileSetService.getCurrentUserId()).thenReturn(user.getId());
 
         MimeMessage dummyMessage = new MimeMessage((jakarta.mail.Session)null);
-        when(mailSender.createMimeMessage()).thenReturn(dummyMessage);
+        lenient().when(mailSender.createMimeMessage()).thenReturn(dummyMessage);
 
-        when(zipArchiveRepository.save(Mockito.any())).thenAnswer(invocation -> {
+        lenient().when(zipArchiveRepository.save(Mockito.any())).thenAnswer(invocation -> {
             ZipArchive za = invocation.getArgument(0);
             za.setSentHistoryList(List.of());
             return za;
         });
     }
-
 
     @Test
     public void shouldCreateAndSendZipArchive_IfSuccess() throws MessagingException, IOException {
@@ -107,5 +111,42 @@ public class ZipArchiveServiceUnitTests {
         verify(fileSetService).getCurrentUserId();
         verify(mailSender).send((MimeMessage) any());
         verify(zipArchiveRepository, atLeastOnce()).save(any());
+    }
+
+    @Test
+    public void shouldThrowException_WhenFileSetNotFound() {
+        when(fileSetRepository.findById(789L)).thenReturn(Optional.empty());
+
+        Exception exception = assertThrows(
+                RuntimeException.class,
+                () -> zipArchiveService.createAndSendZipArchive(789L, "abc@de.com")
+        );
+
+        assertTrue(exception.getMessage().contains("FileSet not found"));
+    }
+
+    @Test
+    public void shouldThrowException_WhenUserDoesNotHaveFileSet() {
+        when(fileSetService.getCurrentUserId()).thenReturn(29L);
+
+        Exception exception = assertThrows(
+                AccessDeniedException.class,
+                () -> zipArchiveService.createAndSendZipArchive(fileSet.getId(), "abc@de.com")
+        );
+
+        assertTrue(exception.getMessage().contains("You do not have permission to access this FileSet."));
+    }
+
+    @Test
+    public void shouldThrowException_WhenFileSetIsEmpty() {
+        fileSet.setFiles(List.of());
+        when(fileSetRepository.findById(fileSet.getId())).thenReturn(Optional.of(fileSet));
+
+        Exception ex = assertThrows(
+                FileSetNotFoundException.class,
+                () -> zipArchiveService.createAndSendZipArchive(fileSet.getId(), fileSet.getRecipientEmail())
+        );
+
+        assertTrue(ex.getMessage().contains("FileSet has no files to archive."));
     }
 }
