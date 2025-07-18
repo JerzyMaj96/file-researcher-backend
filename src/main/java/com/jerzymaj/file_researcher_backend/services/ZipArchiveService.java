@@ -51,10 +51,22 @@ public class ZipArchiveService {
             throw new FileSetNotFoundException("FileSet has no files to archive.");
         }
 
+        Path zipFilePath;
+        String archiveName;
+        Long size;
+
+        try {
+            zipFilePath = createZipFromFileSet(fileSetId);
+            archiveName = zipFilePath.getFileName().toString();
+            size = Files.size(zipFilePath);
+        } catch (IOException e) {
+            throw new IOException("Failed to create ZIP archive.", e);
+        }
+
         ZipArchive zipArchive = ZipArchive.builder()
-                .archiveName("")
-                .archivePath("")
-                .size(0L)
+                .archiveName(archiveName)
+                .archivePath(zipFilePath.toAbsolutePath().toString())
+                .size(size)
                 .status(ZipArchiveStatus.PENDING)
                 .recipientEmail(recipientEmail)
                 .fileSet(fileSet)
@@ -65,33 +77,24 @@ public class ZipArchiveService {
         zipArchive = zipArchiveRepository.save(zipArchive);
 
         try {
-            Path zipFilePath = createZipFromFileSet(fileSetId);
-
-            String archiveName = zipFilePath.getFileName().toString();
-            Long size = Files.size(zipFilePath);
-
-            zipArchive.setArchiveName(archiveName);
-            zipArchive.setArchivePath(zipFilePath.toAbsolutePath().toString());
-            zipArchive.setSize(size);
-            zipArchive.setStatus(ZipArchiveStatus.PENDING);
-            zipArchiveRepository.save(zipArchive);
-
-            sendZipArchiveByEmail(recipientEmail, zipFilePath,
+            sendZipArchiveByEmail(
+                    recipientEmail,
+                    zipFilePath,
                     "Files",
-                    "Please find attached the ZIP archive of your selected files.");
+                    "Please find attached the ZIP archive of your selected files."
+            );
 
             zipArchive.setStatus(ZipArchiveStatus.SUCCESS);
-            zipArchiveRepository.save(zipArchive);
-
-        } catch (IOException | MessagingException exception) {
+        } catch (MessagingException exception) {
             zipArchive.setStatus(ZipArchiveStatus.FAILED);
             zipArchiveRepository.save(zipArchive);
-
             throw exception;
         }
 
+        zipArchiveRepository.save(zipArchive);
         return convertZipArchiveToDTO(zipArchive);
     }
+
 
     public List<ZipArchiveDTO> getAllZipArchives(Long fileSetId) throws AccessDeniedException {
         Long currentUserId = fileSetService.getCurrentUserId();

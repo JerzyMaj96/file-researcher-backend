@@ -9,6 +9,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -62,6 +63,7 @@ public class ZipArchive {
     private User user;
 
     @OneToMany(mappedBy = "zipArchive", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SentHistory> sentHistoryList;
+    @Builder.Default
+    private List<SentHistory> sentHistoryList = new ArrayList<>();
 
 }
