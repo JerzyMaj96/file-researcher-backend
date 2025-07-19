@@ -118,7 +118,7 @@ public class ZipArchiveServiceUnitTests {
         when(fileSetRepository.findById(789L)).thenReturn(Optional.empty());
 
         Exception exception = assertThrows(
-                RuntimeException.class,
+                FileSetNotFoundException.class,
                 () -> zipArchiveService.createAndSendZipArchive(789L, "abc@de.com")
         );
 

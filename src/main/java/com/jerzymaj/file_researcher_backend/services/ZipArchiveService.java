@@ -119,7 +119,7 @@ public class ZipArchiveService {
 
         if (!zipArchive.getUser().getId().equals(currentUserId)
               || !zipArchive.getFileSet().getId().equals(fileSetId)) {
-            throw new AccessDeniedException("You do not have permission to delete this FileSet.");
+            throw new AccessDeniedException("You do not have permission to access this FileSet.");
         }
 
         return convertZipArchiveToDTO(zipArchive);
