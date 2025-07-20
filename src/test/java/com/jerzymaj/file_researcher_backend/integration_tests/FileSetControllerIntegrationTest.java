@@ -52,8 +52,6 @@ public class FileSetControllerIntegrationTest {
         testUser.setPassword("password");
         userRepository.save(testUser);
 
-        Long userId = 1L;
-
         Path tempFile1 = Files.createFile(tempDir.resolve("test1.txt"));
         Path tempFile2 = Files.createFile(tempDir.resolve("test2.txt"));
         Path tempFile3 = Files.createFile(tempDir.resolve("test3.csv"));
