@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -100,6 +101,40 @@ public class ZipArchiveService {
         return convertZipArchiveToDTO(zipArchive);
     }
 
+    public void resendExistingZip(Long fileSetId, Long zipArchiveId, String recipientEmail) throws AccessDeniedException, MessagingException {
+        ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId)
+                .orElseThrow(() -> new ZipArchiveNotFoundException("ZipArchive not found: " + zipArchiveId));
+
+        Long currentUserId = fileSetService.getCurrentUserId();
+
+        if(!zipArchive.getUser().getId().equals(currentUserId)
+           || !zipArchive.getFileSet().getId().equals(fileSetId)) {
+            throw new AccessDeniedException("You do not have permission to resend this archive.");
+        }
+
+        Path zipPath = Path.of(zipArchive.getArchiveName());
+
+        try {
+            sendZipArchiveByEmail(
+                    recipientEmail,
+                    zipPath,
+                    "Files",
+                    "Please find attached the ZIP archive of your selected files."
+            );
+
+            zipArchive.setStatus(ZipArchiveStatus.SUCCESS);
+            sentHistoryService.saveSentHistory(zipArchive, recipientEmail, true, null);
+
+        } catch (MessagingException exception) {
+            zipArchive.setStatus(ZipArchiveStatus.FAILED);
+            zipArchiveRepository.save(zipArchive);
+            sentHistoryService.saveSentHistory(zipArchive, recipientEmail, false, exception.getMessage());
+            throw exception;
+        }
+
+        zipArchiveRepository.save(zipArchive);
+    }
+
 
     public List<ZipArchiveDTO> getAllZipArchives(Long fileSetId) throws AccessDeniedException {
         Long currentUserId = fileSetService.getCurrentUserId();
@@ -143,6 +178,22 @@ public class ZipArchiveService {
 
         zipArchiveRepository.deleteById(zipArchiveId);
     }
+
+    public Map<String, Object> getZipStatsForCurrentUser() {
+        Long userId = fileSetService.getCurrentUserId();
+
+        return zipArchiveRepository.countSuccessAndFailuresByUser(userId);
+    }
+
+    public List<ZipArchiveDTO> getLargeZipFiles(Long minSize) {
+        Long userId = fileSetService.getCurrentUserId();
+
+        return zipArchiveRepository.findLargeZipArchives(userId, minSize).stream()
+                .map(this::convertZipArchiveToDTO)
+                .toList();
+    }
+
+
 
 //SUPPLEMENTARY METHODS--------------------------------------------------------------
 private Path createZipFromFileSet(Long fileSetId) throws IOException {

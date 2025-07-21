@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/file-researcher/file-sets/{fileSetId}/zip")
@@ -34,6 +35,15 @@ public class ZipArchiveController {
         }
     }
 
+    @PutMapping("/{zipArchiveId}/resend")
+    public ResponseEntity<?> resendZipArchive(@PathVariable Long fileSetId,
+                                              @PathVariable Long zipArchiveId,
+                                              @RequestParam String recipientEmail) throws AccessDeniedException, MessagingException {
+
+        zipArchiveService.resendExistingZip(fileSetId, zipArchiveId, recipientEmail);
+        return ResponseEntity.ok("ZIP archive resent successfully.");
+    }
+
     @GetMapping
     public List<ZipArchiveDTO> retrieveAllZipArchives(@PathVariable Long fileSetId) throws AccessDeniedException {
         return zipArchiveService.getAllZipArchives(fileSetId);
@@ -46,6 +56,17 @@ public class ZipArchiveController {
 
         return ResponseEntity.ok(zipArchiveDTO);
     }
+
+    @GetMapping("/stats")
+    public Map<String, Object> retrieveSentStatistics() {
+        return zipArchiveService.getZipStatsForCurrentUser();
+    }
+
+    @GetMapping("/large")
+    public List<ZipArchiveDTO> retrieveLargeZipArchives(@RequestParam(defaultValue = "10000000") Long minSize) {
+        return zipArchiveService.getLargeZipFiles(minSize);
+    }
+
 
     @DeleteMapping("/{zipArchiveId}")
     public ResponseEntity<Void> deleteZipArchiveById(@PathVariable Long fileSetId,
