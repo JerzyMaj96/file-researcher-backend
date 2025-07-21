@@ -7,6 +7,7 @@ import com.jerzymaj.file_researcher_backend.exceptions.ZipArchiveNotFoundExcepti
 import com.jerzymaj.file_researcher_backend.models.*;
 import com.jerzymaj.file_researcher_backend.models.suplementary_classes.ZipArchiveStatus;
 import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
+import com.jerzymaj.file_researcher_backend.repositories.SentHistoryRepository;
 import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -34,6 +35,7 @@ public class ZipArchiveService {
     private final FileSetRepository fileSetRepository;
     private final FileSetService fileSetService;
     private final ZipArchiveRepository zipArchiveRepository;
+    private final SentHistoryService sentHistoryService;
 
 //MAIN METHODS---------------------------------------------------------------------------
 
@@ -85,9 +87,12 @@ public class ZipArchiveService {
             );
 
             zipArchive.setStatus(ZipArchiveStatus.SUCCESS);
+            sentHistoryService.saveSentHistory(zipArchive, recipientEmail, true, null);
+
         } catch (MessagingException exception) {
             zipArchive.setStatus(ZipArchiveStatus.FAILED);
             zipArchiveRepository.save(zipArchive);
+            sentHistoryService.saveSentHistory(zipArchive, recipientEmail, false, exception.getMessage());
             throw exception;
         }
 

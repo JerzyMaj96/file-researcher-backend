@@ -1,16 +1,18 @@
 package com.jerzymaj.file_researcher_backend.services;
 
 import com.jerzymaj.file_researcher_backend.DTOs.SentHistoryDTO;
-import com.jerzymaj.file_researcher_backend.DTOs.ZipArchiveDTO;
 import com.jerzymaj.file_researcher_backend.exceptions.SentHistoryNotFoundException;
 import com.jerzymaj.file_researcher_backend.exceptions.ZipArchiveNotFoundException;
 import com.jerzymaj.file_researcher_backend.models.SentHistory;
 import com.jerzymaj.file_researcher_backend.models.ZipArchive;
+import com.jerzymaj.file_researcher_backend.models.suplementary_classes.SendStatus;
 import com.jerzymaj.file_researcher_backend.repositories.SentHistoryRepository;
 import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.AccessDeniedException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -24,14 +26,30 @@ public class SentHistoryService {
 
 //METHODS-----------------------------------------------------------------------
 
-    public SentHistoryDTO createSentHistory(ZipArchiveDTO zipArchiveDTO) {
+    public SentHistory saveSentHistory(ZipArchive zipArchive, String sentToEmail,
+                                          boolean success, String errorMessage) {
 
-        return ;
+        SentHistory sentHistory = new SentHistory();
+        sentHistory.setZipArchive(zipArchive);
+        sentHistory.setSentToEmail(sentToEmail);
+        sentHistory.setSendAttemptDate(LocalDateTime.now());
+        sentHistory.setStatus(success ? SendStatus.SUCCESS : SendStatus.FAILURE);
+        sentHistory.setErrorMessage(errorMessage);
+
+        return sentHistoryRepository.save(sentHistory);
     }
 
-    public List<SentHistoryDTO> getAllSentHistory() {
+    public List<SentHistoryDTO> getAllSentHistoryForZipArchive(Long zipArchiveId) throws AccessDeniedException {
+        ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId)
+                .orElseThrow(() -> new  ZipArchiveNotFoundException("Zip archive not found: " + zipArchiveId));
 
-       return sentHistoryRepository.findAll().stream()
+        Long currentUserId = fileSetService.getCurrentUserId();
+
+        if (!zipArchive.getUser().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("You do not have permission to access this FileSet.");
+        }
+
+       return sentHistoryRepository.findAllByZipArchiveId(zipArchiveId).stream()
                .map(this::convertToSentHistoryDTO)
                .toList();
     }
