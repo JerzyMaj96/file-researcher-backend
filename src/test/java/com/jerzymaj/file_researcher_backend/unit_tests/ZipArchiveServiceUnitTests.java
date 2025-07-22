@@ -2,16 +2,17 @@ package com.jerzymaj.file_researcher_backend.unit_tests;
 
 import com.jerzymaj.file_researcher_backend.DTOs.ZipArchiveDTO;
 import com.jerzymaj.file_researcher_backend.exceptions.FileSetNotFoundException;
-import com.jerzymaj.file_researcher_backend.models.FileEntry;
-import com.jerzymaj.file_researcher_backend.models.FileSet;
-import com.jerzymaj.file_researcher_backend.models.User;
-import com.jerzymaj.file_researcher_backend.models.ZipArchive;
+import com.jerzymaj.file_researcher_backend.exceptions.ZipArchiveNotFoundException;
+import com.jerzymaj.file_researcher_backend.models.*;
 import com.jerzymaj.file_researcher_backend.models.suplementary_classes.FileSetStatus;
+import com.jerzymaj.file_researcher_backend.models.suplementary_classes.ZipArchiveStatus;
 import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
 import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
 import com.jerzymaj.file_researcher_backend.services.FileSetService;
+import com.jerzymaj.file_researcher_backend.services.SentHistoryService;
 import com.jerzymaj.file_researcher_backend.services.ZipArchiveService;
 import jakarta.mail.MessagingException;
+import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -52,11 +54,15 @@ public class ZipArchiveServiceUnitTests {
     @Mock
     private ZipArchiveRepository zipArchiveRepository;
 
+    @Mock
+    private SentHistoryService sentHistoryService;
+
     @InjectMocks
     private ZipArchiveService zipArchiveService;
 
     private User user;
     private FileSet fileSet;
+    private SentHistory sentHistory;
 
     @BeforeEach
     public void setUp(@TempDir Path tempDir) throws IOException {
@@ -83,15 +89,24 @@ public class ZipArchiveServiceUnitTests {
         fileSet.setStatus(FileSetStatus.ACTIVE);
         fileSet.setFiles(List.of(fe1, fe2, fe3));
 
+        sentHistory = new SentHistory();
+        sentHistory.setId(1L);
+
         lenient().when(fileSetRepository.findById(fileSet.getId())).thenReturn(Optional.of(fileSet));
         lenient().when(fileSetService.getCurrentUserId()).thenReturn(user.getId());
 
-        MimeMessage dummyMessage = new MimeMessage((jakarta.mail.Session)null);
+        MimeMessage dummyMessage = new MimeMessage((Session)null);
         lenient().when(mailSender.createMimeMessage()).thenReturn(dummyMessage);
+
+
+        lenient().when(sentHistoryService.saveSentHistory(any(), anyString(), anyBoolean(), any()))
+                .thenReturn(sentHistory);
+
 
         lenient().when(zipArchiveRepository.save(Mockito.any())).thenAnswer(invocation -> {
             ZipArchive za = invocation.getArgument(0);
-            za.setSentHistoryList(List.of());
+            sentHistory.setZipArchive(za);
+            za.setSentHistoryList(List.of(sentHistory));
             return za;
         });
     }
@@ -148,5 +163,76 @@ public class ZipArchiveServiceUnitTests {
         );
 
         assertTrue(ex.getMessage().contains("FileSet has no files to archive."));
+    }
+
+    @Test
+    public void shouldResendExistingZipSuccessfully() throws AccessDeniedException, MessagingException {
+
+        ZipArchive zipArchive = ZipArchive.builder()
+                .id(1L)
+                .archiveName("test.zip")
+                .archivePath("/tmp/test.zip")
+                .fileSet(fileSet)
+                .user(user)
+                .recipientEmail(fileSet.getRecipientEmail())
+                .build();
+
+        when(zipArchiveRepository.findById(zipArchive.getId())).thenReturn(Optional.of(zipArchive));
+        when(fileSetService.getCurrentUserId()).thenReturn(user.getId());
+
+        zipArchiveService.resendExistingZip(fileSet.getId(), zipArchive.getId(), zipArchive.getRecipientEmail());
+
+        verify(mailSender).send(any(MimeMessage.class));
+        verify(sentHistoryService).saveSentHistory(eq(zipArchive),
+                eq(zipArchive.getRecipientEmail()),
+                eq(true),
+                isNull());
+    }
+
+    @Test
+    public void shouldThrowIfZipArchiveNotFound() {
+        when(zipArchiveRepository.findById(20L)).thenReturn(Optional.empty());
+
+        assertThrows(ZipArchiveNotFoundException.class, () ->
+                zipArchiveService.resendExistingZip(fileSet.getId(), 999L, "a@b.com")
+        );
+    }
+
+    @Test
+    public void shouldReturnStatsMap() {
+        when(zipArchiveRepository.countSuccessAndFailuresByUser(user.getId()))
+                .thenReturn(Map.of("SUCCESS", 3, "FAILED", 1));
+
+        Map<String, Object> result = zipArchiveService.getZipStatsForCurrentUser();
+
+        assertEquals(3, result.get("SUCCESS"));
+        assertEquals(1, result.get("FAILED"));
+    }
+
+    @Test
+    public void shouldReturnLargeZipFiles() {
+        ZipArchive zipArchive = ZipArchive.builder()
+                .id(1L)
+                .size(100_000L)
+                .fileSet(fileSet)
+                .user(user)
+                .status(ZipArchiveStatus.SUCCESS)
+                .archiveName("test.zip")
+                .archivePath("/tmp/test.zip")
+                .recipientEmail("a@b.com")
+                .creationDate(LocalDateTime.now())
+                .sentHistoryList(List.of(sentHistory))
+                .build();
+
+        zipArchive.setSentHistoryList(List.of(sentHistory));
+        sentHistory.setZipArchive(zipArchive);
+
+        when(zipArchiveRepository.findLargeZipArchives(user.getId(), 50_000L))
+                .thenReturn(List.of(zipArchive));
+
+        List<ZipArchiveDTO> result = zipArchiveService.getLargeZipFiles(50_000L);
+
+        assertEquals(1, result.size());
+        assertEquals("test.zip", result.get(0).getArchiveName());
     }
 }

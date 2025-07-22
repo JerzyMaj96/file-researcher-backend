@@ -63,7 +63,7 @@ public class ZipArchiveController {
     }
 
     @GetMapping("/large")
-    public List<ZipArchiveDTO> retrieveLargeZipArchives(@RequestParam(defaultValue = "10000000") Long minSize) {
+    public List<ZipArchiveDTO> retrieveLargeZipArchives(@RequestParam(defaultValue = "10000000") Long minSize) { // check which default size to set
         return zipArchiveService.getLargeZipFiles(minSize);
     }
 

@@ -40,7 +40,8 @@ public class ZipArchiveService {
 
 //MAIN METHODS---------------------------------------------------------------------------
 
-    public ZipArchiveDTO createAndSendZipArchive(Long fileSetId, String recipientEmail) throws IOException, MessagingException {
+    public ZipArchiveDTO createAndSendZipArchive(Long fileSetId,
+                                                 String recipientEmail) throws IOException, MessagingException {
         Long currentUserId = fileSetService.getCurrentUserId();
 
         FileSet fileSet = fileSetRepository.findById(fileSetId)
