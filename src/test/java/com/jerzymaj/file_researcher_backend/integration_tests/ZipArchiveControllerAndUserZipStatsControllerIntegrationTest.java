@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "springdoc.api-docs.enabled=false",
         "springdoc.swagger-ui.enabled=false"})
 @Transactional
-public class ZipArchiveControllerIntegrationTest {
+public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -130,7 +130,7 @@ public class ZipArchiveControllerIntegrationTest {
 
     @Test
     @WithMockUser(username = "tester", roles = "ADMIN")
-    public void shouldDeleteZipArchiveById() throws Exception {
+    public void shouldDeleteZipArchiveById() throws Exception { //REPAIR
         String response = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip/send", fileSet.getId())
                         .param("recipientEmail", "email@mail.com")
                         .with(csrf()))
@@ -144,7 +144,39 @@ public class ZipArchiveControllerIntegrationTest {
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(get("/file-researcher/file-sets/{fileSetId}/zip/{zipArchiveId}", fileSet.getId(), zipArchiveId))
-                .andExpect(status().is4xxClientError());
+                .andExpect(status().isNotFound());
     }
 
+    @Test
+    @WithMockUser(username = "tester", roles = "ADMIN")
+    public void shouldRetrieveSentStatistics() throws Exception {
+        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip/send", fileSet.getId())
+                        .param("recipientEmail", "email@mail.com")
+                        .with(csrf()))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/file-researcher/zip/stats")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.successCount").exists())
+                .andExpect(jsonPath("$.failureCount").exists());
+
+    }
+
+    @Test
+    @WithMockUser(username = "tester", roles = "ADMIN")
+    public void shouldRetrieveLargeZipArchives() throws Exception {
+        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip/send", fileSet.getId())
+                        .param("recipientEmail", "email@mail.com")
+                        .with(csrf()))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/file-researcher/zip/large")
+                        .param("minSize", "50")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].fileSetId").value(fileSet.getId()));
+    }
 }

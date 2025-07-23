@@ -57,17 +57,6 @@ public class ZipArchiveController {
         return ResponseEntity.ok(zipArchiveDTO);
     }
 
-    @GetMapping("/stats")
-    public Map<String, Object> retrieveSentStatistics() {
-        return zipArchiveService.getZipStatsForCurrentUser();
-    }
-
-    @GetMapping("/large")
-    public List<ZipArchiveDTO> retrieveLargeZipArchives(@RequestParam(defaultValue = "10000000") Long minSize) { // check which default size to set
-        return zipArchiveService.getLargeZipFiles(minSize);
-    }
-
-
     @DeleteMapping("/{zipArchiveId}")
     public ResponseEntity<Void> deleteZipArchiveById(@PathVariable Long fileSetId,
                                                      @PathVariable Long zipArchiveId) throws AccessDeniedException {

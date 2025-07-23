@@ -12,15 +12,11 @@ public interface ZipArchiveRepository extends JpaRepository<ZipArchive, Long> {
 
     List<ZipArchive> findAllByUserId(Long userId);
 
-    @Query(value = """
-            SELECT
-               SUM(CASE WHEN status = 'SUCCESS' THEN 1 ELSE 0 END) AS success_count,
-               SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) AS failed_count
-            FROM zip_archive
-            WHERE user_id = :userId
-           """, nativeQuery = true)
-    Map<String, Object> countSuccessAndFailuresByUser(@Param("userId")Long userId);
-
+    @Query("SELECT new map(" +
+            "SUM(CASE WHEN z.status = 'SUCCESS' THEN 1 ELSE 0 END) as successCount, " +
+            "SUM(CASE WHEN z.status = 'FAILED' THEN 1 ELSE 0 END) as failureCount) " +
+            "FROM ZipArchive z WHERE z.fileSet.user.id = :userId")
+    Map<String, Object> countSuccessAndFailuresByUser(@Param("userId") Long userId);
 
     @Query(value = """
             SELECT * FROM zip_archive
