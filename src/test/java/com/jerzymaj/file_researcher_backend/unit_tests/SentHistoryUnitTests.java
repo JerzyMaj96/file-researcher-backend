@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -51,15 +52,12 @@ public class SentHistoryUnitTests {
         zipArchive.setId(1L);
         zipArchive.setUser(user);
         zipArchive.setRecipientEmail("someone@mail.com");
-
-
-        when(sentHistoryRepository.save(any(SentHistory.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(zipArchiveRepository.findById(zipArchive.getId())).thenReturn(Optional.of(zipArchive));
-        when(fileSetService.getCurrentUserId()).thenReturn(user.getId());
     }
 
     @Test
     public void shouldSaveSentHistory_WhenSuccess() {
+
+        when(sentHistoryRepository.save(any(SentHistory.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         SentHistory actualResult = sentHistoryService.saveSentHistory(zipArchive, zipArchive.getRecipientEmail(), true, null);
 
@@ -73,6 +71,8 @@ public class SentHistoryUnitTests {
 
     @Test
     public void shouldSaveSentHistory_WhenFailure() {
+
+        when(sentHistoryRepository.save(any(SentHistory.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         SentHistory actualResult = sentHistoryService.saveSentHistory(zipArchive, zipArchive.getRecipientEmail(), false,
                 "Test error message");
@@ -89,7 +89,39 @@ public class SentHistoryUnitTests {
     @Test
     public void shouldGetAllSentHistoryForZipArchive() throws AccessDeniedException {
 
+        SentHistory sentHistory = new SentHistory();
+        sentHistory.setId(1L);
+        sentHistory.setZipArchive(zipArchive);
+
+        when(zipArchiveRepository.findById(zipArchive.getId())).thenReturn(Optional.of(zipArchive));
+        when(fileSetService.getCurrentUserId()).thenReturn(user.getId());
+        when(sentHistoryRepository.findAllByZipArchiveIdSorted(zipArchive.getId())).thenReturn(List.of(sentHistory));
+
         List<SentHistoryDTO> actualResult = sentHistoryService.getAllSentHistoryForZipArchive(zipArchive.getId());
 
+        SentHistoryDTO expectedDTO = sentHistoryService.convertToSentHistoryDTO(sentHistory);
+
+        assertNotNull(actualResult);
+        assertEquals(1, actualResult.size());
+        assertEquals(expectedDTO, actualResult.getFirst());
+    }
+
+    @Test
+    public void shouldGetLastRecipient() throws AccessDeniedException {
+
+        SentHistory sentHistory = new SentHistory();
+        sentHistory.setId(1L);
+        sentHistory.setZipArchive(zipArchive);
+
+        String expectedEmail = "someone@mail.com";
+
+        when(zipArchiveRepository.findById(zipArchive.getId())).thenReturn(Optional.of(zipArchive));
+        when(fileSetService.getCurrentUserId()).thenReturn(user.getId());
+        when(sentHistoryRepository.findLastRecipient(zipArchive.getId())).thenReturn(expectedEmail);
+
+        String actualResult = sentHistoryService.getLastRecipient(zipArchive.getId());
+
+        assertNotNull(actualResult);
+        assertEquals(expectedEmail, actualResult);
     }
 }

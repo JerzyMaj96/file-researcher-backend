@@ -54,7 +54,14 @@ public class SentHistoryService {
                .toList();
     }
 
-    public SentHistoryDTO getSentHistoryById(Long sentHistoryId) {
+    public SentHistoryDTO getSentHistoryById(Long zipArchiveId, Long sentHistoryId) throws AccessDeniedException {
+        ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId)
+                .orElseThrow(() -> new  ZipArchiveNotFoundException("Zip archive not found: " + zipArchiveId));
+
+        Long currentUserId = fileSetService.getCurrentUserId();
+
+        if (!zipArchive.getUser().getId().equals(currentUserId))
+            throw new AccessDeniedException("You do not have permission to access this history.");
 
         SentHistory sentHistory = sentHistoryRepository.findById(sentHistoryId)
                 .orElseThrow(() -> new SentHistoryNotFoundException("Sent history not found: " + sentHistoryId));
@@ -62,7 +69,22 @@ public class SentHistoryService {
         return convertToSentHistoryDTO(sentHistory);
     }
 
-    public void deleteSentHistoryById(Long sentHistoryId) {
+    public void deleteSentHistoryById(Long zipArchiveId, Long sentHistoryId) throws AccessDeniedException {
+        ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId)
+                .orElseThrow(() -> new  ZipArchiveNotFoundException("Zip archive not found: " + zipArchiveId));
+
+        Long currentUserId = fileSetService.getCurrentUserId();
+
+        if (!zipArchive.getUser().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("You do not have permission to access this history.");
+        }
+
+        SentHistory sentHistory = sentHistoryRepository.findById(sentHistoryId)
+                .orElseThrow(() -> new SentHistoryNotFoundException("History not found: " + sentHistoryId));
+
+        if (!sentHistory.getZipArchive().getId().equals(zipArchiveId)) {
+            throw new AccessDeniedException("History does not belong to this archive.");
+        }
 
         sentHistoryRepository.deleteById(sentHistoryId);
     }
@@ -81,7 +103,7 @@ public class SentHistoryService {
     }
 //MAPPER--------------------------------------------------------------------------
 
-    private SentHistoryDTO convertToSentHistoryDTO(SentHistory sentHistory) {
+    public SentHistoryDTO convertToSentHistoryDTO(SentHistory sentHistory) {
 
         return SentHistoryDTO.builder()
                 .id(sentHistory.getId())
