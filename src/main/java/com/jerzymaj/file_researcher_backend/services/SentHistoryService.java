@@ -79,21 +79,6 @@ public class SentHistoryService {
 
         return sentHistoryRepository.findLastRecipient(zipArchiveId);
     }
-
-    public List<SentHistoryDTO> getSortedHistoryForZipArchive(Long zipArchiveId) throws AccessDeniedException {
-        ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId)
-                .orElseThrow(() -> new ZipArchiveNotFoundException("Zip archive not found: " + zipArchiveId));
-
-        Long currentUserId = fileSetService.getCurrentUserId();
-
-        if(!zipArchive.getUser().getId().equals(currentUserId)) {
-            throw new AccessDeniedException("You do not have permission to access this history.");
-        }
-
-        return sentHistoryRepository.findAllByZipArchiveIdSorted(zipArchiveId).stream()
-                .map(this::convertToSentHistoryDTO)
-                .toList();
-    }
 //MAPPER--------------------------------------------------------------------------
 
     private SentHistoryDTO convertToSentHistoryDTO(SentHistory sentHistory) {
