@@ -113,7 +113,7 @@ public class ZipArchiveService {
             throw new AccessDeniedException("You do not have permission to resend this archive.");
         }
 
-        Path zipPath = Path.of(zipArchive.getArchiveName());
+        Path zipPath = Path.of(zipArchive.getArchivePath());
 
         try {
             sendZipArchiveByEmail(

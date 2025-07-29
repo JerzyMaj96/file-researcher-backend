@@ -19,8 +19,8 @@ public interface SentHistoryRepository extends JpaRepository<SentHistory, Long> 
     @Query(value = """
             SELECT sent_to_email
             FROM sent_history
-            WHERE zip_archive_id = :ziparchiveId
-            ORDER BY sent_attempt_date DESC
+            WHERE zip_archive_id = :zipArchiveId
+            ORDER BY send_attempt_date DESC
             LIMIT 1
             """,nativeQuery = true)
     String findLastRecipient(@Param("zipArchiveId") Long zipArchiveId);
