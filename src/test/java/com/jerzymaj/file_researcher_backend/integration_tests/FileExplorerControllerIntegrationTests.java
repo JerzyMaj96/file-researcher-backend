@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = {
         "springdoc.api-docs.enabled=false",
         "springdoc.swagger-ui.enabled=false"})
-public class FileExplorerControllerIntegrationTest {
+public class FileExplorerControllerIntegrationTests {
 
     @Autowired
     MockMvc mockMvc;

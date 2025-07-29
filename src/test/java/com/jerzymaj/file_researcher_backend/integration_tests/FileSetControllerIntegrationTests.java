@@ -32,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "springdoc.api-docs.enabled=false",
         "springdoc.swagger-ui.enabled=false"})
 @Transactional
-public class FileSetControllerIntegrationTest {
+public class FileSetControllerIntegrationTests {
 
     @Autowired
     MockMvc mockMvc;

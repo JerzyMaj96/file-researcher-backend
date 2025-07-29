@@ -2,7 +2,7 @@ package com.jerzymaj.file_researcher_backend.controllers;
 
 import com.jerzymaj.file_researcher_backend.DTOs.CreateFileSetDTO;
 import com.jerzymaj.file_researcher_backend.DTOs.FileSetDTO;
-import com.jerzymaj.file_researcher_backend.models.suplementary_classes.FileSetStatus;
+import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
 import com.jerzymaj.file_researcher_backend.services.FileSetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

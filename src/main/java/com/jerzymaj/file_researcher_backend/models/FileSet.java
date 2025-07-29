@@ -1,7 +1,7 @@
 package com.jerzymaj.file_researcher_backend.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.jerzymaj.file_researcher_backend.models.suplementary_classes.FileSetStatus;
+import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

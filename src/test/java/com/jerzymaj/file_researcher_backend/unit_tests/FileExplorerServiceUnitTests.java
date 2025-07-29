@@ -13,7 +13,7 @@ import java.nio.file.Path;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class FileExplorerServiceUnitTest {
+public class FileExplorerServiceUnitTests {
 
     FileExplorerService fileExplorerService;
 

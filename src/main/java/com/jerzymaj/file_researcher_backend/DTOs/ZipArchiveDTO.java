@@ -1,6 +1,6 @@
 package com.jerzymaj.file_researcher_backend.DTOs;
 
-import com.jerzymaj.file_researcher_backend.models.suplementary_classes.ZipArchiveStatus;
+import com.jerzymaj.file_researcher_backend.models.enum_classes.ZipArchiveStatus;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

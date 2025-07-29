@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "springdoc.api-docs.enabled=false",
         "springdoc.swagger-ui.enabled=false"})
 @Transactional
-public class UserControllerIntegrationTest {
+public class UserControllerIntegrationTests {
 
     @Autowired
     MockMvc mockMvc;

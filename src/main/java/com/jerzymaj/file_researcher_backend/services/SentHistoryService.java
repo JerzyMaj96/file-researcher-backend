@@ -5,7 +5,7 @@ import com.jerzymaj.file_researcher_backend.exceptions.SentHistoryNotFoundExcept
 import com.jerzymaj.file_researcher_backend.exceptions.ZipArchiveNotFoundException;
 import com.jerzymaj.file_researcher_backend.models.SentHistory;
 import com.jerzymaj.file_researcher_backend.models.ZipArchive;
-import com.jerzymaj.file_researcher_backend.models.suplementary_classes.SendStatus;
+import com.jerzymaj.file_researcher_backend.models.enum_classes.SendStatus;
 import com.jerzymaj.file_researcher_backend.repositories.SentHistoryRepository;
 import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
 import lombok.RequiredArgsConstructor;

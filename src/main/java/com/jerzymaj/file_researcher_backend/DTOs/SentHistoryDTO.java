@@ -1,6 +1,6 @@
 package com.jerzymaj.file_researcher_backend.DTOs;
 
-import com.jerzymaj.file_researcher_backend.models.suplementary_classes.SendStatus;
+import com.jerzymaj.file_researcher_backend.models.enum_classes.SendStatus;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

@@ -5,10 +5,12 @@ import com.jerzymaj.file_researcher_backend.configuration.TestMailConfig;
 import com.jerzymaj.file_researcher_backend.models.FileEntry;
 import com.jerzymaj.file_researcher_backend.models.FileSet;
 import com.jerzymaj.file_researcher_backend.models.User;
-import com.jerzymaj.file_researcher_backend.models.suplementary_classes.FileSetStatus;
+import com.jerzymaj.file_researcher_backend.models.ZipArchive;
+import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
 import com.jerzymaj.file_researcher_backend.repositories.FileEntryRepository;
 import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
 import com.jerzymaj.file_researcher_backend.repositories.UserRepository;
+import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +27,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -38,7 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "springdoc.api-docs.enabled=false",
         "springdoc.swagger-ui.enabled=false"})
 @Transactional
-public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTest {
+public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
 
     @Autowired
     private MockMvc mockMvc;
@@ -51,6 +55,9 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTest {
 
     @Autowired
     private FileEntryRepository fileEntryRepository;
+
+    @Autowired
+    private ZipArchiveRepository zipArchiveRepository;
 
     @Autowired
     private JavaMailSender mailSender;
@@ -67,6 +74,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTest {
         user.setEmail("tester@mail.com");
         user.setPassword("secret123");
         userRepository.save(user);
+        userRepository.flush();
 
         FileEntry fileEntry = new FileEntry();
         fileEntry.setName("test1.txt");
@@ -74,6 +82,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTest {
         fileEntry.setExtension("txt");
         fileEntry.setSize(123L);
         fileEntryRepository.save(fileEntry);
+        fileEntryRepository.flush();
 
         fileSet = new FileSet();
         fileSet.setName("test set");
@@ -84,6 +93,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTest {
         fileSet.setUser(user);
         fileSet.setFiles(List.of(fileEntry));
         fileSetRepository.save(fileSet);
+        fileEntryRepository.flush();
     }
 
     @Test
@@ -143,8 +153,8 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTest {
                 .with(csrf()))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(get("/file-researcher/file-sets/{fileSetId}/zip/{zipArchiveId}", fileSet.getId(), zipArchiveId))
-                .andExpect(status().isNotFound());
+        Optional<ZipArchive> deleteZip = zipArchiveRepository.findById(zipArchiveId);
+        assertTrue(deleteZip.isEmpty(), "ZipArchive should be deleted from repository");
     }
 
     @Test
