@@ -52,7 +52,7 @@ A Spring Boot backend service that allows users to upload sets of files, compres
 ./mvnw clean install
 ./mvnw spring-boot:run
 
-4. License
+## License
 
 This project is licensed under the MIT License.
 
