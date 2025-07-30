@@ -36,6 +36,13 @@ public class UserService {
         return convertUserToDTO(user);
     }
 
+    public UserDTO findUserByName(String userName) {
+        User user = userRepository.findByName(userName)
+                .orElseThrow(() -> new UserNotFoundException("User not found with username: " + userName));
+
+        return convertUserToDTO(user);
+    }
+
     public UserDTO registerUser(RegisterUserDTO registerUserDTO) {
 
         if (userRepository.existsByName(registerUserDTO.getName())) {

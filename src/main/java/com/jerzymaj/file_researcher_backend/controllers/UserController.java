@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -31,6 +32,14 @@ public class UserController {
     public ResponseEntity<UserDTO> retrieveUserById(@PathVariable Long userId){
 
         UserDTO userDTO = userService.findUserById(userId);
+
+        return ResponseEntity.ok(userDTO);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserDTO> retrieveCurrentUser(Authentication authentication) {
+        String userName = authentication.getName();
+        UserDTO userDTO = userService.findUserByName(userName);
 
         return ResponseEntity.ok(userDTO);
     }
