@@ -63,7 +63,6 @@ public class FileSetControllerIntegrationTests {
                 );
 
         mockMvc.perform(post("/file-researcher/file-sets")
-                .with(csrf())
                 .contentType(APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(createFileSetDTO)))
                 .andExpect(status().isCreated())

@@ -40,7 +40,6 @@ public class FileExplorerControllerIntegrationTests {
         String jsonRequest = objectMapper.writeValueAsString(Map.of("path", tempFile.toString()));
 
         mockMvc.perform(post("/file-researcher/explorer/scan")
-                        .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isOk())

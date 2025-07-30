@@ -55,7 +55,6 @@ public class UserControllerIntegrationTests {
         RegisterUserDTO registerUserDTO = new RegisterUserDTO("jerzy","jerzy@mail.com","secret123");
 
         mockMvc.perform(post("/file-researcher/users")
-                        .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registerUserDTO)))
                 .andExpect(status().isCreated())
@@ -71,7 +70,6 @@ public class UserControllerIntegrationTests {
         RegisterUserDTO registerUserDTO = new RegisterUserDTO(uniqueName,uniqueEmail,"secret123");
 
         String response = mockMvc.perform(post("/file-researcher/users")
-                        .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registerUserDTO)))
                 .andExpect(status().isCreated())

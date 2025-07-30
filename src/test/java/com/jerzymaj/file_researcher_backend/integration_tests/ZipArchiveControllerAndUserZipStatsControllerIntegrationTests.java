@@ -100,8 +100,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     @WithMockUser(username = "tester", roles = "ADMIN")
     public void shouldSendZipArchive() throws Exception {
         mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip/send", fileSet.getId())
-                        .param("recipientEmail", "email@mail.com")
-                .with(csrf()))
+                        .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.fileSetId").value(fileSet.getId()))
                 .andExpect(jsonPath("$.archivePath").isNotEmpty());
@@ -111,8 +110,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     @WithMockUser(username = "tester", roles = "ADMIN")
     public void shouldRetrieveAllZipArchives() throws Exception {
         mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip/send", fileSet.getId())
-                        .param("recipientEmail", "email@mail.com")
-                        .with(csrf()))
+                        .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/file-researcher/file-sets/{fileSetId}/zip", fileSet.getId()))
@@ -126,8 +124,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     @WithMockUser(username = "tester", roles = "ADMIN")
     public void shouldRetrieveZipArchiveById() throws Exception {
         String response = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip/send", fileSet.getId())
-                        .param("recipientEmail", "email@mail.com")
-                        .with(csrf()))
+                        .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
 
@@ -142,15 +139,13 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     @WithMockUser(username = "tester", roles = "ADMIN")
     public void shouldDeleteZipArchiveById() throws Exception { //REPAIR
         String response = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip/send", fileSet.getId())
-                        .param("recipientEmail", "email@mail.com")
-                        .with(csrf()))
+                        .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
 
         Long zipArchiveId = objectMapper.readTree(response).get("id").asLong();
 
-        mockMvc.perform(delete("/file-researcher/file-sets/{fileSetId}/zip/{zipArchiveId}", fileSet.getId(), zipArchiveId)
-                .with(csrf()))
+        mockMvc.perform(delete("/file-researcher/file-sets/{fileSetId}/zip/{zipArchiveId}", fileSet.getId(), zipArchiveId))
                 .andExpect(status().isNoContent());
 
         Optional<ZipArchive> deleteZip = zipArchiveRepository.findById(zipArchiveId);
@@ -161,12 +156,10 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     @WithMockUser(username = "tester", roles = "ADMIN")
     public void shouldRetrieveSentStatistics() throws Exception {
         mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip/send", fileSet.getId())
-                        .param("recipientEmail", "email@mail.com")
-                        .with(csrf()))
+                        .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/file-researcher/zip/stats")
-                        .with(csrf()))
+        mockMvc.perform(get("/file-researcher/zip/stats"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.successCount").exists())
                 .andExpect(jsonPath("$.failureCount").exists());
@@ -177,13 +170,11 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     @WithMockUser(username = "tester", roles = "ADMIN")
     public void shouldRetrieveLargeZipArchives() throws Exception {
         mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip/send", fileSet.getId())
-                        .param("recipientEmail", "email@mail.com")
-                        .with(csrf()))
+                        .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/file-researcher/zip/large")
-                        .param("minSize", "50")
-                        .with(csrf()))
+                        .param("minSize", "50"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.length()").value(1))

@@ -85,15 +85,13 @@ public class SentHistoryControllerIntegrationTest {
     public void shouldRetrieveAllSentHistoryForZipArchive() throws Exception {
 
         String response = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip/send", fileSet.getId())
-                        .param("recipientEmail", "email@mail.com")
-                        .with(csrf()))
+                        .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
 
         Long zipArchiveId = objectMapper.readTree(response).get("id").asLong();
 
-        mockMvc.perform(get("/file-researcher/zip-archives/{zipArchiveId}/history", zipArchiveId)
-                        .with(csrf()))
+        mockMvc.perform(get("/file-researcher/zip-archives/{zipArchiveId}/history", zipArchiveId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].zipArchiveId").value(zipArchiveId));
@@ -104,15 +102,13 @@ public class SentHistoryControllerIntegrationTest {
     public void shouldRetrieveLastRecipient() throws Exception {
 
         String response = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip/send", fileSet.getId())
-                        .param("recipientEmail", "email@mail.com")
-                        .with(csrf()))
+                        .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
 
         Long zipArchiveId = objectMapper.readTree(response).get("id").asLong();
 
-        mockMvc.perform(get("/file-researcher/zip-archives/{zipArchiveId}/history/last-recipient", zipArchiveId)
-                        .with(csrf()))
+        mockMvc.perform(get("/file-researcher/zip-archives/{zipArchiveId}/history/last-recipient", zipArchiveId))
                 .andExpect(status().isOk())
                 .andExpect(content().string("email@mail.com"));
     }
@@ -122,15 +118,13 @@ public class SentHistoryControllerIntegrationTest {
     public void shouldRetrieveSentHistoryById() throws Exception {
 
         String sendZipResponse = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip/send", fileSet.getId())
-                        .param("recipientEmail", "email@mail.com")
-                        .with(csrf()))
+                        .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
 
         Long zipArchiveId = objectMapper.readTree(sendZipResponse).get("id").asLong();
 
-        String historyResponse = mockMvc.perform(get("/file-researcher/zip-archives/{zipArchiveId}/history", zipArchiveId)
-                        .with(csrf()))
+        String historyResponse = mockMvc.perform(get("/file-researcher/zip-archives/{zipArchiveId}/history", zipArchiveId))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
 
@@ -141,8 +135,7 @@ public class SentHistoryControllerIntegrationTest {
 
         mockMvc.perform(get("/file-researcher/zip-archives/{zipArchiveId}/history/{sentHistoryId}",
                         zipArchiveId,
-                        sentHistoryId)
-                        .with(csrf()))
+                        sentHistoryId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(sentHistoryId));
     }
@@ -152,8 +145,7 @@ public class SentHistoryControllerIntegrationTest {
     public void shouldDeleteSentHistoryById() throws Exception {
 
         String sendZipResponse = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip/send", fileSet.getId())
-                        .param("recipientEmail", "email@mail.com")
-                        .with(csrf()))
+                        .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
 
@@ -171,14 +163,12 @@ public class SentHistoryControllerIntegrationTest {
 
         mockMvc.perform(delete("/file-researcher/zip-archives/{zipArchiveId}/history/{sentHistoryId}",
                 zipArchiveId,
-                sentHistoryId)
-                .with(csrf()))
+                sentHistoryId))
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(get("/file-researcher/zip-archives/{zipArchiveId}/history/{sentHistoryId}",
                         zipArchiveId,
-                        sentHistoryId)
-                        .with(csrf()))
+                        sentHistoryId))
                 .andExpect(status().isNotFound());
     }
 }
