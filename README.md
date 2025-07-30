@@ -47,11 +47,12 @@ A Spring Boot backend service that allows users to upload sets of files, compres
 1. Clone the repository:
    ```bash
    git clone https://github.com/JerzyMaj96/file-researcher-backend.git
-Configure your database and SMTP settings in application.properties or application.yml.
-Build and run the application:
+2. Configure your database and SMTP settings in application.properties or application.yml.
+3. Build and run the application:
 ./mvnw clean install
 ./mvnw spring-boot:run
-License
+
+## License
 
 This project is licensed under the MIT License.
 
