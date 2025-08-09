@@ -14,7 +14,7 @@ import java.util.List;
 public class FileTreeNodeDTO {
     private String name;
     private String path;
-    private boolean isDirectory;
+    private boolean directory;
     private Long size;
     private List<FileTreeNodeDTO> children;
 }

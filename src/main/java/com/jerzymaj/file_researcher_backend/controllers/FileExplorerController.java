@@ -23,16 +23,20 @@ public class FileExplorerController {
 //METHODS -----------------------------------------------------------------------------------------
 
     @PostMapping("/scan")
-    public ResponseEntity<FileTreeNodeDTO> scanPath(@RequestBody Map<String, String> request){
+    public ResponseEntity<?> scanPath(@RequestBody Map<String, String> request) {
         String pathString = request.get("path");
 
-        if(pathString == null || pathString.isBlank()){
-            return ResponseEntity.badRequest().build();
+        if (pathString == null || pathString.isBlank()) {
+            return ResponseEntity.badRequest().body("Path cannot be empty");
         }
 
-        Path path = Path.of(pathString);
-        FileTreeNodeDTO scannedPaths = fileExplorerService.scanPath(path);
-
-        return ResponseEntity.ok(scannedPaths);
+        try {
+            Path path = Path.of(pathString);
+            FileTreeNodeDTO scannedPaths = fileExplorerService.scanPath(path);
+            return ResponseEntity.ok(scannedPaths);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error scanning path: " + e.getMessage());
+        }
     }
 }
+

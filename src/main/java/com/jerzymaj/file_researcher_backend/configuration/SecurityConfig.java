@@ -42,6 +42,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/file-researcher/users/me").authenticated()
                         .requestMatchers("/file-researcher/users/**").permitAll()
+                        .requestMatchers("/file-researcher/explorer/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults());
