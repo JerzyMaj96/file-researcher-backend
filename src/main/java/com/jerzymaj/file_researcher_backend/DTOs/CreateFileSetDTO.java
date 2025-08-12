@@ -23,7 +23,6 @@ public class CreateFileSetDTO {
     private String description;
 
     @Email
-    @NotBlank
     private String recipientEmail;
 
     @NotEmpty
