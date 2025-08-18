@@ -12,6 +12,9 @@ public interface ZipArchiveRepository extends JpaRepository<ZipArchive, Long> {
 
     List<ZipArchive> findAllByUserId(Long userId);
 
+    @Query("SELECT COALESCE(MAX(z.sendNumber),0) FROM ZipArchive z WHERE z.fileSet.id = :fileSetId")
+    int findMaxSendNumberByFileSetId(@Param("fileSetId") Long fileSetId);
+
     @Query("SELECT new map(" +
             "SUM(CASE WHEN z.status = 'SUCCESS' THEN 1 ELSE 0 END) as successCount, " +
             "SUM(CASE WHEN z.status = 'FAILED' THEN 1 ELSE 0 END) as failureCount) " +

@@ -45,6 +45,8 @@ public class ZipArchive {
     @ToString.Include
     private LocalDateTime creationDate;
 
+    private Integer sendNumber;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ZipArchiveStatus status;

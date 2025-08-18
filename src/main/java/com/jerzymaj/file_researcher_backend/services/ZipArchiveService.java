@@ -54,27 +54,20 @@ public class ZipArchiveService {
             throw new FileSetNotFoundException("FileSet has no files to archive.");
         }
 
-        Path zipFilePath;
-        String archiveName;
-        Long size;
+        int sendCounter = zipArchiveRepository.findMaxSendNumberByFileSetId(fileSetId) + 1;
 
-        try {
-            zipFilePath = createZipFromFileSet(fileSetId);
-            archiveName = zipFilePath.getFileName().toString();
-            size = Files.size(zipFilePath);
-        } catch (IOException e) {
-            throw new IOException("Failed to create ZIP archive.", e);
-        }
+        ZipFileResult zipFileResult = createZipFromFileSet(fileSetId, sendCounter);
 
         ZipArchive zipArchive = ZipArchive.builder()
-                .archiveName(archiveName)
-                .archivePath(zipFilePath.toAbsolutePath().toString())
-                .size(size)
+                .archiveName(zipFileResult.fileName())
+                .archivePath(zipFileResult.filePath().toAbsolutePath().toString())
+                .size(zipFileResult.size())
                 .status(ZipArchiveStatus.PENDING)
                 .recipientEmail(recipientEmail)
                 .fileSet(fileSet)
                 .user(fileSet.getUser())
                 .creationDate(LocalDateTime.now())
+                .sendNumber(sendCounter)
                 .build();
 
         zipArchive = zipArchiveRepository.save(zipArchive);
@@ -82,7 +75,7 @@ public class ZipArchiveService {
         try {
             sendZipArchiveByEmail(
                     recipientEmail,
-                    zipFilePath,
+                    zipFileResult.filePath(),
                     "Files",
                     "Please find attached the ZIP archive of your selected files."
             );
@@ -95,6 +88,8 @@ public class ZipArchiveService {
             zipArchiveRepository.save(zipArchive);
             sentHistoryService.saveSentHistory(zipArchive, recipientEmail, false, exception.getMessage());
             throw exception;
+        } finally {
+            Files.deleteIfExists(zipFileResult.filePath());
         }
 
         zipArchiveRepository.save(zipArchive);
@@ -196,11 +191,11 @@ public class ZipArchiveService {
 
 
 //SUPPLEMENTARY METHODS--------------------------------------------------------------
-private Path createZipFromFileSet(Long fileSetId) throws IOException {
+private ZipFileResult createZipFromFileSet(Long fileSetId, int sendCounter) throws IOException {
     FileSet fileSet = fileSetRepository.findById(fileSetId)
             .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
 
-    String zipFileName = "fileset-" + fileSetId + ".zip";
+    String zipFileName = "fileset-" + fileSetId + "-" + sendCounter + ".zip" ;
     Path zipFilePath = Path.of(System.getProperty("java.io.tmpdir"), zipFileName);
 
     try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipFilePath))) {
@@ -211,8 +206,11 @@ private Path createZipFromFileSet(Long fileSetId) throws IOException {
             }
         }
     }
-    return zipFilePath;
+    long size = Files.size(zipFilePath);
+    return new ZipFileResult(zipFilePath, zipFileName, size);
 }
+
+private record ZipFileResult(Path filePath, String fileName, long size) {}
 
     private void addToZipFile(Path filePath, ZipOutputStream zos) throws IOException {
         ZipEntry zipEntry = new ZipEntry(filePath.getFileName().toString());
