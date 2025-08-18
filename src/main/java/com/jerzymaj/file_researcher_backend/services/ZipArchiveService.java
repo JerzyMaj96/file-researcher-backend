@@ -96,6 +96,7 @@ public class ZipArchiveService {
         return convertZipArchiveToDTO(zipArchive);
     }
 
+//    POSSIBLY USELESS
     public void resendExistingZip(Long fileSetId, Long zipArchiveId, String recipientEmail) throws AccessDeniedException, MessagingException {
         ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId)
                 .orElseThrow(() -> new ZipArchiveNotFoundException("ZipArchive not found: " + zipArchiveId));

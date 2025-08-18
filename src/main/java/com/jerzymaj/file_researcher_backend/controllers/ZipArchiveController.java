@@ -35,6 +35,7 @@ public class ZipArchiveController {
         }
     }
 
+//    POSSIBLY USELESS
     @PutMapping("/{zipArchiveId}/resend")
     public ResponseEntity<?> resendZipArchive(@PathVariable Long fileSetId,
                                               @PathVariable Long zipArchiveId,
