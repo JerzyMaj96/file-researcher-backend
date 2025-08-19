@@ -10,23 +10,39 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
-import java.util.Map;
 
 @RestController
-@RequestMapping("/file-researcher/file-sets/{fileSetId}/zip")
+@RequestMapping("/file-researcher")
 @RequiredArgsConstructor
 public class ZipArchiveController {
-//PROPERTIES---------------------------------------------------------------------
 
     private final ZipArchiveService zipArchiveService;
 
-//MAIN METHODS---------------------------------------------------------------------
+    @GetMapping("/zip-archives")
+    public List<ZipArchiveDTO> retrieveAllZipArchivesForUser() {
+        return zipArchiveService.getAllZipArchives();
+    }
 
-    @PostMapping("/send")
+    @GetMapping("/file-sets/{fileSetId}/zip-archives")
+    public List<ZipArchiveDTO> retrieveAllZipArchivesForFileSet(@PathVariable Long fileSetId)
+            throws AccessDeniedException {
+        return zipArchiveService.getAllZipArchivesForFileSet(fileSetId);
+    }
+
+    @GetMapping("/file-sets/{fileSetId}/zip-archives/{zipArchiveId}")
+    public ResponseEntity<ZipArchiveDTO> retrieveZipArchiveById(@PathVariable Long fileSetId,
+                                                                @PathVariable Long zipArchiveId)
+            throws AccessDeniedException {
+        ZipArchiveDTO zipArchiveDTO = zipArchiveService.getZipArchiveById(fileSetId, zipArchiveId);
+        return ResponseEntity.ok(zipArchiveDTO);
+    }
+
+    @PostMapping("/file-sets/{fileSetId}/zip-archives/send")
     public ResponseEntity<ZipArchiveDTO> sendZipArchive(@PathVariable Long fileSetId,
                                                         @RequestParam String recipientEmail) {
         try {
-            ZipArchiveDTO zipArchiveDTO = zipArchiveService.createAndSendZipArchive(fileSetId, recipientEmail);
+            ZipArchiveDTO zipArchiveDTO =
+                    zipArchiveService.createAndSendZipArchive(fileSetId, recipientEmail);
             return ResponseEntity.ok(zipArchiveDTO);
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(403).build();
@@ -35,34 +51,21 @@ public class ZipArchiveController {
         }
     }
 
-//    POSSIBLY USELESS
-    @PutMapping("/{zipArchiveId}/resend")
+    @PutMapping("/file-sets/{fileSetId}/zip-archives/{zipArchiveId}/resend")
     public ResponseEntity<?> resendZipArchive(@PathVariable Long fileSetId,
                                               @PathVariable Long zipArchiveId,
-                                              @RequestParam String recipientEmail) throws AccessDeniedException, MessagingException {
+                                              @RequestParam String recipientEmail)
+            throws AccessDeniedException, MessagingException {
 
         zipArchiveService.resendExistingZip(fileSetId, zipArchiveId, recipientEmail);
         return ResponseEntity.ok("ZIP archive resent successfully.");
     }
 
-    @GetMapping
-    public List<ZipArchiveDTO> retrieveAllZipArchives(@PathVariable Long fileSetId) throws AccessDeniedException {
-        return zipArchiveService.getAllZipArchives(fileSetId);
-    }
-
-    @GetMapping("/{zipArchiveId}")
-    public ResponseEntity<ZipArchiveDTO> retrieveZipArchiveById(@PathVariable Long fileSetId,
-                                                                @PathVariable Long zipArchiveId) throws AccessDeniedException {
-        ZipArchiveDTO zipArchiveDTO = zipArchiveService.getZipArchiveById(fileSetId, zipArchiveId);
-
-        return ResponseEntity.ok(zipArchiveDTO);
-    }
-
-    @DeleteMapping("/{zipArchiveId}")
+    @DeleteMapping("/file-sets/{fileSetId}/zip-archives/{zipArchiveId}")
     public ResponseEntity<Void> deleteZipArchiveById(@PathVariable Long fileSetId,
-                                                     @PathVariable Long zipArchiveId) throws AccessDeniedException {
+                                                     @PathVariable Long zipArchiveId)
+            throws AccessDeniedException {
         zipArchiveService.deleteZipArchive(fileSetId, zipArchiveId);
-
         return ResponseEntity.noContent().build();
     }
 }

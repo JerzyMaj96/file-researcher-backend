@@ -131,8 +131,15 @@ public class ZipArchiveService {
         zipArchiveRepository.save(zipArchive);
     }
 
+    public List<ZipArchiveDTO> getAllZipArchives() {
+        Long currentUserId = fileSetService.getCurrentUserId();
 
-    public List<ZipArchiveDTO> getAllZipArchives(Long fileSetId) throws AccessDeniedException {
+        return zipArchiveRepository.findAllByUserId(currentUserId).stream()
+                .map(this::convertZipArchiveToDTO)
+                .toList();
+    }
+
+    public List<ZipArchiveDTO> getAllZipArchivesForFileSet(Long fileSetId) throws AccessDeniedException {
         Long currentUserId = fileSetService.getCurrentUserId();
 
         FileSet fileSet = fileSetRepository.findById(fileSetId)

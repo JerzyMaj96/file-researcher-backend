@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/file-researcher/zip")
+@RequestMapping("/file-researcher/zip-archives")
 @RequiredArgsConstructor
 public class UserZipStatsController {
 
