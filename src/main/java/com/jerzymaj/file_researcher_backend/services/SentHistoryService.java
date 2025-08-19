@@ -39,6 +39,15 @@ public class SentHistoryService {
         return sentHistoryRepository.save(sentHistory);
     }
 
+    public List<SentHistoryDTO> getAllSentHistory() {
+
+        Long currentUserId = fileSetService.getCurrentUserId();
+
+        return sentHistoryRepository.findAllByUserIdSorted(currentUserId).stream()
+                .map(this::convertToSentHistoryDTO)
+                .toList();
+    }
+
     public List<SentHistoryDTO> getAllSentHistoryForZipArchive(Long zipArchiveId) throws AccessDeniedException {
         ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId)
                 .orElseThrow(() -> new  ZipArchiveNotFoundException("Zip archive not found: " + zipArchiveId));

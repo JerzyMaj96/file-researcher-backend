@@ -84,7 +84,7 @@ public class SentHistoryControllerIntegrationTest {
     @WithMockUser(username = "tester", roles = "ADMIN")
     public void shouldRetrieveAllSentHistoryForZipArchive() throws Exception {
 
-        String response = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip/send", fileSet.getId())
+        String response = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
@@ -101,7 +101,7 @@ public class SentHistoryControllerIntegrationTest {
     @WithMockUser(username = "tester", roles = "ADMIN")
     public void shouldRetrieveLastRecipient() throws Exception {
 
-        String response = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip/send", fileSet.getId())
+        String response = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
@@ -117,7 +117,7 @@ public class SentHistoryControllerIntegrationTest {
     @WithMockUser(username = "tester", roles = "ADMIN")
     public void shouldRetrieveSentHistoryById() throws Exception {
 
-        String sendZipResponse = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip/send", fileSet.getId())
+        String sendZipResponse = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
@@ -144,7 +144,7 @@ public class SentHistoryControllerIntegrationTest {
     @WithMockUser(username = "tester", roles = "ADMIN")
     public void shouldDeleteSentHistoryById() throws Exception {
 
-        String sendZipResponse = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip/send", fileSet.getId())
+        String sendZipResponse = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();

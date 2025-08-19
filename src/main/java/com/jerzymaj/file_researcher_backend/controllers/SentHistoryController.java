@@ -10,7 +10,7 @@ import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/file-researcher/zip-archives/{zipArchiveId}/history")
+@RequestMapping("/file-researcher/zip-archives")
 @RequiredArgsConstructor
 public class SentHistoryController {
 //PROPERTIES------------------------------------------------------------------------------------------------------------
@@ -19,7 +19,12 @@ public class SentHistoryController {
 
 //METHODS---------------------------------------------------------------------------------------------------------------
 
-    @GetMapping
+    @GetMapping("/history")
+    public List<SentHistoryDTO> retrieveAllSentHistoryForUser() {
+        return sentHistoryService.getAllSentHistory();
+    }
+
+    @GetMapping("/{zipArchiveId}/history")
     public ResponseEntity<List<SentHistoryDTO>> retrieveAllSentHistoryForZipArchive(@PathVariable Long zipArchiveId) throws AccessDeniedException {
 
         List<SentHistoryDTO> sentHistoryDTOList = sentHistoryService.getAllSentHistoryForZipArchive(zipArchiveId);
@@ -31,7 +36,7 @@ public class SentHistoryController {
         return ResponseEntity.ok(sentHistoryDTOList);
     }
 
-    @GetMapping("/last-recipient")
+    @GetMapping("/{zipArchiveId}/history/last-recipient")
     public ResponseEntity<String> retrieveLastRecipient(@PathVariable Long zipArchiveId) throws AccessDeniedException {
 
         String email = sentHistoryService.getLastRecipient(zipArchiveId);
@@ -43,14 +48,14 @@ public class SentHistoryController {
         return ResponseEntity.ok(email);
     }
 
-    @GetMapping("/{sentHistoryId}")
+    @GetMapping("/{zipArchiveId}/history/{sentHistoryId}")
     public ResponseEntity<SentHistoryDTO> retrieveSentHistoryById(@PathVariable Long zipArchiveId,
                                                                   @PathVariable Long sentHistoryId) throws AccessDeniedException {
 
         return ResponseEntity.ok(sentHistoryService.getSentHistoryById(zipArchiveId, sentHistoryId));
     }
 
-    @DeleteMapping("/{sentHistoryId}")
+    @DeleteMapping("/{zipArchiveId}/history/{sentHistoryId}")
     public  ResponseEntity<Void> deleteSentHistoryById(@PathVariable Long zipArchiveId,
                                                        @PathVariable Long sentHistoryId) throws AccessDeniedException {
 

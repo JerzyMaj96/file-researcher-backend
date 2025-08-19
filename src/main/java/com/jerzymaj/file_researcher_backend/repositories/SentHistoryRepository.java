@@ -9,12 +9,22 @@ import java.util.List;
 
 public interface SentHistoryRepository extends JpaRepository<SentHistory, Long> {
 
+    @Query("""
+            SELECT sh
+                FROM SentHistory sh
+                JOIN sh.zipArchive za
+                JOIN za.user u
+                WHERE u.id = :userId
+                ORDER BY sh.sendAttemptDate DESC
+            """)
+    List<SentHistory> findAllByUserIdSorted(@Param("userId") Long userId);
+
     @Query(value = """
             SELECT * FROM sent_history
             WHERE zip_archive_id = :zipArchiveId
             ORDER BY send_attempt_date DESC
             """, nativeQuery = true)
-    List<SentHistory> findAllByZipArchiveIdSorted(Long zipArchiveId);
+    List<SentHistory> findAllByZipArchiveIdSorted(@Param("zipArchiveId") Long zipArchiveId);
 
     @Query(value = """
             SELECT sent_to_email
