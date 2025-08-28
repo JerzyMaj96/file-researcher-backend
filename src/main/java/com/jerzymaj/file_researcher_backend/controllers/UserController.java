@@ -22,6 +22,7 @@ public class UserController {
 //CONTROLLER PROPERTIES--------------------------------------------------------
 
     private final UserService userService;
+
 //METHODS----------------------------------------------------------------------
     @GetMapping
     public List<UserDTO> retrieveAllUsers(){

@@ -1,6 +1,7 @@
 package com.jerzymaj.file_researcher_backend.unit_tests;
 
 import com.jerzymaj.file_researcher_backend.DTOs.FileTreeNodeDTO;
+import com.jerzymaj.file_researcher_backend.exceptions.PathNotFoundException;
 import com.jerzymaj.file_researcher_backend.services.FileExplorerService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,7 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class FileExplorerServiceUnitTests {
 
@@ -52,12 +53,10 @@ public class FileExplorerServiceUnitTests {
     }
 
     @Test
-    public void shouldThrowIllegalArgumentException_ForNonExistingPath() {
+    public void shouldThrowPathNotFoundException_ForNonExistingPath() {
         Path nonExistingPath = Path.of("some/nonexisting/path");
 
-        assertThrows(IllegalArgumentException.class,
-                () -> {
-                    fileExplorerService.scanPath(nonExistingPath);
-                });
+        assertThatThrownBy(() -> fileExplorerService.scanPath(nonExistingPath))
+                .isInstanceOf(PathNotFoundException.class);
     }
 }

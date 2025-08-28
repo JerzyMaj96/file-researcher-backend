@@ -56,7 +56,7 @@ public class FileSetService {
                 FileSet.builder()
                         .name(name)
                         .description(description)
-                        .recipientEmail(recipientEmail)// Check this, shouldn't it be set after sending a zip
+                        .recipientEmail(recipientEmail)
                         .status(FileSetStatus.ACTIVE)
                         .user(owner)
                         .build()

@@ -77,7 +77,7 @@ public class ZipArchiveService {
                     recipientEmail,
                     zipFileResult.filePath(),
                     "Files",
-                    "Please find attached the ZIP archive of your selected files."
+                    "Please find attached the ZIP archive of requested files."
             );
 
             zipArchive.setStatus(ZipArchiveStatus.SUCCESS);

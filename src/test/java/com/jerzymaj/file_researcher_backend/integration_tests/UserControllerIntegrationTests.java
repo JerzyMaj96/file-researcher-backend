@@ -40,7 +40,7 @@ public class UserControllerIntegrationTests {
     UserRepository userRepository;
 
     @BeforeEach
-    void setUp() {
+    public void setUp() {
         if (userRepository.findByName("tester").isEmpty()) {
             User tester = new User();
             tester.setName("tester");
