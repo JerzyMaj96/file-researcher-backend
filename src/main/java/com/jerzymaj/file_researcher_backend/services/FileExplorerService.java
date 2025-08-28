@@ -1,6 +1,7 @@
 package com.jerzymaj.file_researcher_backend.services;
 
 import com.jerzymaj.file_researcher_backend.DTOs.FileTreeNodeDTO;
+import com.jerzymaj.file_researcher_backend.exceptions.PathNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -19,7 +20,7 @@ public class FileExplorerService {
                 " | isFile=" + file.isFile());
 
         if(!file.exists()){
-            throw new IllegalArgumentException("Path " + path + " doesn't exist");
+            throw new PathNotFoundException("Path " + path + " doesn't exist");
         }
 
         if (!file.canRead()) {
