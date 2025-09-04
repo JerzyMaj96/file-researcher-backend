@@ -1,0 +1,54 @@
+version: '3.9'
+services:
+  db:
+    image: mysql:9.3
+    container_name: fr_db
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p${MYSQL_PASSWORD} || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    restart: unless-stopped
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: fr_mailhog
+    ports:
+      - "8025:8025"
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./file-researcher-backend
+    container_name: fr_backend
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./fileresearcher-frontend
+    container_name: fr_frontend
+    depends_on:
+     - backend
+    ports:
+     - "3000:80"
+    restart: unless-stopped
+
+
+volumes:
+  db_data:

@@ -32,5 +32,8 @@ build/
 ### VS Code ###
 .vscode/
 
-# Ignore Spring Boot config
+### Spring Boot config ###
 application.yml
+
+### .env ###
+fragile-data.env
