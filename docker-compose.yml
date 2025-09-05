@@ -1,7 +1,7 @@
 version: '3.9'
 services:
   db:
-    image: mysql:9.3
+    image: mysql:8.0
     container_name: fr_db
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -28,7 +28,7 @@ services:
 
   backend:
     build:
-      context: ./file-researcher-backend
+      context: ./fileresearcher-backend
     container_name: fr_backend
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
