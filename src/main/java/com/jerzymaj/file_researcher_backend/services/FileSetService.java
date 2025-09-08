@@ -145,7 +145,7 @@ public class FileSetService {
 
 // SUPPLEMENTARY METHODS------------------------------------------------------------------------------------------
 
-    private String getExtension(Path path){
+    protected static String getExtension(Path path){
         String fileName = path.getFileName().toString();
         int index = fileName.lastIndexOf('.');
         return (index > 0) ? fileName.substring(index + 1) : "";
