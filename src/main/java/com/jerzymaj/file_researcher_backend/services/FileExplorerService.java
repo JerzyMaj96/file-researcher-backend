@@ -15,6 +15,8 @@ import java.util.Objects;
 @Service
 public class FileExplorerService {
 
+//MAIN METHODS------------------------------------------------------------------------------------
+
     public FileTreeNodeDTO scanPath(Path path){
         File file = validateFile(path);
 

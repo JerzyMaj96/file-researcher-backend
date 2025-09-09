@@ -15,8 +15,11 @@ import java.util.List;
 @RequestMapping("/file-researcher")
 @RequiredArgsConstructor
 public class ZipArchiveController {
+//CONTROLLER PROPERTIES---------------------------------------------------------------------------------------------
 
     private final ZipArchiveService zipArchiveService;
+
+//METHODS-------------------------------------------------------------------------------------------------------------
 
     @GetMapping("/zip-archives")
     public List<ZipArchiveDTO> retrieveAllZipArchivesForUser() {

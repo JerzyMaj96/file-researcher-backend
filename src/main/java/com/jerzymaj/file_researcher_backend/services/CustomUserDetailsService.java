@@ -1,4 +1,4 @@
-package com.jerzymaj.file_researcher_backend.security;
+package com.jerzymaj.file_researcher_backend.services;
 
 import com.jerzymaj.file_researcher_backend.models.User;
 import com.jerzymaj.file_researcher_backend.repositories.UserRepository;
