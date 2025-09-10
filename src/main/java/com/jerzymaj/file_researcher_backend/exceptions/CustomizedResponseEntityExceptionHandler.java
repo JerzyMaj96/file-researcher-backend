@@ -21,7 +21,7 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     }
 
     @ExceptionHandler(ExistingUserException.class)
-    public final ResponseEntity<ErrorDetails> handleExistingUserExceptions(Exception ex, WebRequest request) throws Exception {
+    public final ResponseEntity<ErrorDetails> handleExistingUserExceptions(ExistingUserException ex, WebRequest request) throws Exception {
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
                 request.getDescription(false));
 
@@ -29,7 +29,7 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     }
 
     @ExceptionHandler(UserNotFoundException.class)
-    public final ResponseEntity<ErrorDetails> handleUserNotFoundExceptions(Exception ex, WebRequest request) throws Exception {
+    public final ResponseEntity<ErrorDetails> handleUserNotFoundExceptions(UserNotFoundException ex, WebRequest request) throws Exception {
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
                 request.getDescription(false));
 
@@ -37,7 +37,7 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     }
 
     @ExceptionHandler(PathNotFoundException.class)
-    public final ResponseEntity<ErrorDetails> handlePathNotFoundException(Exception ex, WebRequest request) throws Exception {
+    public final ResponseEntity<ErrorDetails> handlePathNotFoundException(PathNotFoundException ex, WebRequest request) throws Exception {
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
                 request.getDescription(false));
 
@@ -45,7 +45,7 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     }
 
     @ExceptionHandler(NoFilesSelectedException.class)
-    public final ResponseEntity<ErrorDetails> handleNoFilesSelectedExceptions(Exception ex, WebRequest request) throws Exception {
+    public final ResponseEntity<ErrorDetails> handleNoFilesSelectedExceptions(NoFilesSelectedException ex, WebRequest request) throws Exception {
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
                 request.getDescription(false));
 
@@ -53,7 +53,7 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     }
 
     @ExceptionHandler(FileSetNotFoundException.class)
-    public final ResponseEntity<ErrorDetails> handleFileSetNotFoundExceptions(Exception ex, WebRequest request) throws Exception{
+    public final ResponseEntity<ErrorDetails> handleFileSetNotFoundExceptions(FileSetNotFoundException ex, WebRequest request) throws Exception{
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
                 request.getDescription(false));
 
@@ -61,7 +61,7 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     }
 
     @ExceptionHandler(ZipArchiveNotFoundException.class)
-    public final ResponseEntity<ErrorDetails> handleZipArchiveNotFoundExceptions(Exception ex, WebRequest request) throws Exception{
+    public final ResponseEntity<ErrorDetails> handleZipArchiveNotFoundExceptions(ZipArchiveNotFoundException ex, WebRequest request) throws Exception{
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
                 request.getDescription(false));
 
@@ -69,7 +69,7 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     }
 
     @ExceptionHandler(SentHistoryNotFoundException.class)
-    public final ResponseEntity<ErrorDetails> handleSentHistoryNotFoundExceptions(Exception ex, WebRequest request) throws Exception{
+    public final ResponseEntity<ErrorDetails> handleSentHistoryNotFoundExceptions(SentHistoryNotFoundException ex, WebRequest request) throws Exception{
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
                 request.getDescription(false));
 

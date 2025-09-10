@@ -1,4 +1,6 @@
 package com.jerzymaj.file_researcher_backend.DTOs;
 
-public record ScanRequest(String path, String extension) {
+import jakarta.validation.constraints.NotBlank;
+
+public record ScanRequest(@NotBlank String path, @NotBlank String extension) {
 }
