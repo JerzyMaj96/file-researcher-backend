@@ -13,7 +13,7 @@ import java.util.List;
 @RequestMapping("/file-researcher/zip-archives")
 @RequiredArgsConstructor
 public class SentHistoryController {
-//PROPERTIES------------------------------------------------------------------------------------------------------------
+//CONTROLLER PROPERTIES------------------------------------------------------------------------------------------------------------
 
     private final SentHistoryService sentHistoryService;
 

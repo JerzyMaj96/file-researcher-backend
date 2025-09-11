@@ -15,8 +15,11 @@ import java.util.Map;
 @RequestMapping("/file-researcher/zip-archives")
 @RequiredArgsConstructor
 public class UserZipStatsController {
+//CONTROLLER PROPERTIES------------------------------------------------------------------------------------------------
 
     private final ZipArchiveService zipArchiveService;
+
+//METHODS--------------------------------------------------------------------------------------------------------------
 
     @GetMapping("/stats")
     public Map<String, Object> retrieveSentStatistics() {

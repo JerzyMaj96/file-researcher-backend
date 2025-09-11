@@ -1,6 +1,7 @@
 package com.jerzymaj.file_researcher_backend.controllers;
 
 import com.jerzymaj.file_researcher_backend.DTOs.FileTreeNodeDTO;
+import com.jerzymaj.file_researcher_backend.DTOs.ScanFilteredRequest;
 import com.jerzymaj.file_researcher_backend.DTOs.ScanRequest;
 import com.jerzymaj.file_researcher_backend.services.FileExplorerService;
 import jakarta.validation.Valid;
@@ -30,7 +31,7 @@ public class FileExplorerController {
     }
 
     @PostMapping("/scan/filtered")
-    public ResponseEntity<FileTreeNodeDTO> scanFilteredPath(@Valid @RequestBody ScanRequest request) {
+    public ResponseEntity<FileTreeNodeDTO> scanFilteredPath(@Valid @RequestBody ScanFilteredRequest request) {
 
         Path path = Path.of(request.path());
         log.info("Scanning filtered path: {} with extension: {}", path, request.extension());

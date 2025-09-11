@@ -1,5 +1,6 @@
 package com.jerzymaj.file_researcher_backend.exceptions;
 
+import jakarta.mail.MessagingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -7,6 +8,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 
 @ControllerAdvice
@@ -21,7 +24,7 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     }
 
     @ExceptionHandler(ExistingUserException.class)
-    public final ResponseEntity<ErrorDetails> handleExistingUserExceptions(ExistingUserException ex, WebRequest request) throws Exception {
+    public final ResponseEntity<ErrorDetails> handleExistingUserException(ExistingUserException ex, WebRequest request) throws Exception {
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
                 request.getDescription(false));
 
@@ -29,7 +32,7 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     }
 
     @ExceptionHandler(UserNotFoundException.class)
-    public final ResponseEntity<ErrorDetails> handleUserNotFoundExceptions(UserNotFoundException ex, WebRequest request) throws Exception {
+    public final ResponseEntity<ErrorDetails> handleUserNotFoundException(UserNotFoundException ex, WebRequest request) throws Exception {
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
                 request.getDescription(false));
 
@@ -45,7 +48,7 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     }
 
     @ExceptionHandler(NoFilesSelectedException.class)
-    public final ResponseEntity<ErrorDetails> handleNoFilesSelectedExceptions(NoFilesSelectedException ex, WebRequest request) throws Exception {
+    public final ResponseEntity<ErrorDetails> handleNoFilesSelectedException(NoFilesSelectedException ex, WebRequest request) throws Exception {
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
                 request.getDescription(false));
 
@@ -53,7 +56,7 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     }
 
     @ExceptionHandler(FileSetNotFoundException.class)
-    public final ResponseEntity<ErrorDetails> handleFileSetNotFoundExceptions(FileSetNotFoundException ex, WebRequest request) throws Exception{
+    public final ResponseEntity<ErrorDetails> handleFileSetNotFoundException(FileSetNotFoundException ex, WebRequest request) throws Exception{
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
                 request.getDescription(false));
 
@@ -61,7 +64,7 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     }
 
     @ExceptionHandler(ZipArchiveNotFoundException.class)
-    public final ResponseEntity<ErrorDetails> handleZipArchiveNotFoundExceptions(ZipArchiveNotFoundException ex, WebRequest request) throws Exception{
+    public final ResponseEntity<ErrorDetails> handleZipArchiveNotFoundException(ZipArchiveNotFoundException ex, WebRequest request) throws Exception{
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
                 request.getDescription(false));
 
@@ -69,10 +72,34 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     }
 
     @ExceptionHandler(SentHistoryNotFoundException.class)
-    public final ResponseEntity<ErrorDetails> handleSentHistoryNotFoundExceptions(SentHistoryNotFoundException ex, WebRequest request) throws Exception{
+    public final ResponseEntity<ErrorDetails> handleSentHistoryNotFoundException(SentHistoryNotFoundException ex, WebRequest request) throws Exception{
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
                 request.getDescription(false));
 
         return new ResponseEntity<ErrorDetails>(errorDetails, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public final ResponseEntity<ErrorDetails> handleSAccessDeniedExceptionException(AccessDeniedException ex, WebRequest request) throws Exception{
+        ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
+                request.getDescription(false));
+
+        return new ResponseEntity<ErrorDetails>(errorDetails, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(MessagingException.class)
+    public final ResponseEntity<ErrorDetails> handleSMessagingException(MessagingException ex, WebRequest request) throws Exception{
+        ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
+                request.getDescription(false));
+
+        return new ResponseEntity<ErrorDetails>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(IOException.class)
+    public final ResponseEntity<ErrorDetails> handleSIOException(IOException ex, WebRequest request) throws Exception{
+        ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
+                request.getDescription(false));
+
+        return new ResponseEntity<ErrorDetails>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

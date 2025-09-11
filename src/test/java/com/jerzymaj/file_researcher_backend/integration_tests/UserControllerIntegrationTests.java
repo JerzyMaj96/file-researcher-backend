@@ -84,5 +84,25 @@ public class UserControllerIntegrationTests {
         mockMvc.perform(get("/file-researcher/users/{userId}", userId))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    @WithMockUser(username = "tester", roles = "ADMIN")
+    public void shouldRetrieveCurrentUser() throws Exception {
+
+        mockMvc.perform(get("/file-researcher/users/me")
+                .contentType(APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("tester"))
+                .andExpect(jsonPath("$.email").value("tester@mail.com"));
+    }
+
+    @Test
+    @WithMockUser(username = "nonExistent", roles = "ADMIN")
+    public void shouldThrowUserNotFoundException_IfUserNotExists() throws Exception {
+
+        mockMvc.perform(get("/file-researcher/users/me")
+                .contentType(APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
 }
 

@@ -59,4 +59,6 @@ public class FileExplorerServiceUnitTests {
         assertThatThrownBy(() -> fileExplorerService.scanPath(nonExistingPath))
                 .isInstanceOf(PathNotFoundException.class);
     }
+
+
 }

@@ -36,22 +36,18 @@ public class ZipArchiveController {
     public ResponseEntity<ZipArchiveDTO> retrieveZipArchiveById(@PathVariable Long fileSetId,
                                                                 @PathVariable Long zipArchiveId)
             throws AccessDeniedException {
+
         ZipArchiveDTO zipArchiveDTO = zipArchiveService.getZipArchiveById(fileSetId, zipArchiveId);
         return ResponseEntity.ok(zipArchiveDTO);
     }
 
     @PostMapping("/file-sets/{fileSetId}/zip-archives/send")
     public ResponseEntity<ZipArchiveDTO> sendZipArchive(@PathVariable Long fileSetId,
-                                                        @RequestParam String recipientEmail) {
-        try {
-            ZipArchiveDTO zipArchiveDTO =
-                    zipArchiveService.createAndSendZipArchive(fileSetId, recipientEmail);
-            return ResponseEntity.ok(zipArchiveDTO);
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(403).build();
-        } catch (IOException | MessagingException exception) {
-            return ResponseEntity.status(500).build();
-        }
+                                                        @RequestParam String recipientEmail) throws MessagingException, IOException {
+
+        ZipArchiveDTO zipArchiveDTO = zipArchiveService.createAndSendZipArchive(fileSetId, recipientEmail);
+
+        return ResponseEntity.ok(zipArchiveDTO);
     }
 
     @PutMapping("/file-sets/{fileSetId}/zip-archives/{zipArchiveId}/resend")
