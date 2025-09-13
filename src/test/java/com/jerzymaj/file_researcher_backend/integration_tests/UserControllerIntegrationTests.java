@@ -77,8 +77,7 @@ public class UserControllerIntegrationTests {
 
         Long userId = objectMapper.readTree(response).get("id").asLong();
 
-        mockMvc.perform(delete("/file-researcher/users/{userId}", userId)
-                        .with(csrf()))
+        mockMvc.perform(delete("/file-researcher/users/{userId}", userId))
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(get("/file-researcher/users/{userId}", userId))

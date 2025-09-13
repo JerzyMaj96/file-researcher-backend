@@ -233,6 +233,6 @@ public class ZipArchiveServiceUnitTests {
         List<ZipArchiveDTO> result = zipArchiveService.getLargeZipFiles(50_000L);
 
         assertEquals(1, result.size());
-        assertEquals("test.zip", result.get(0).getArchiveName());
+        assertEquals("test.zip", result.getFirst().getArchiveName());
     }
 }

@@ -151,8 +151,7 @@ public class SentHistoryControllerIntegrationTest {
 
         Long zipArchiveId = objectMapper.readTree(sendZipResponse).get("id").asLong();
 
-        String historyResponse = mockMvc.perform(get("/file-researcher/zip-archives/{zipArchiveId}/history", zipArchiveId)
-                        .with(csrf()))
+        String historyResponse = mockMvc.perform(get("/file-researcher/zip-archives/{zipArchiveId}/history", zipArchiveId))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
 

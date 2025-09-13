@@ -56,7 +56,7 @@ public class SentHistoryController {
     }
 
     @DeleteMapping("/{zipArchiveId}/history/{sentHistoryId}")
-    public  ResponseEntity<Void> deleteSentHistoryById(@PathVariable Long zipArchiveId,
+    public ResponseEntity<Void> deleteSentHistoryById(@PathVariable Long zipArchiveId,
                                                        @PathVariable Long sentHistoryId) throws AccessDeniedException {
 
         sentHistoryService.deleteSentHistoryById(zipArchiveId, sentHistoryId);
