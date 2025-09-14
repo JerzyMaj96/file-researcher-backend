@@ -162,7 +162,7 @@ public class FileSetService {
 
     public FileSetDTO changeFileSetStatus(Long fileSetId, FileSetStatus newFileSetStatus) throws AccessDeniedException {
         FileSet fileSet = fileSetRepository.findById(fileSetId)
-                .orElseThrow(() -> new  FileSetNotFoundException("FileSet not found: " + fileSetId));
+                .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
 
 
         Long currentUserId = getCurrentUserId();
@@ -172,6 +172,22 @@ public class FileSetService {
         }
 
         fileSet.setStatus(newFileSetStatus);
+        fileSetRepository.save(fileSet);
+
+        return convertFileSetToDTO(fileSet);
+    }
+
+    public FileSetDTO updateRecipientEmail(Long fileSetId, String newRecipientEmail) throws AccessDeniedException {
+        FileSet fileSet = fileSetRepository.findById(fileSetId)
+                .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
+
+        Long currentUserId = getCurrentUserId();
+
+        if (!fileSet.getUser().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("You do not have permission to change the recipient email.");
+        }
+
+        fileSet.setRecipientEmail(newRecipientEmail);
         fileSetRepository.save(fileSet);
 
         return convertFileSetToDTO(fileSet);
