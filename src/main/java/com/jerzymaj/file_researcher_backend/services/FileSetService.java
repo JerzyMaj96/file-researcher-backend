@@ -177,7 +177,7 @@ public class FileSetService {
         return convertFileSetToDTO(fileSet);
     }
 
-    public FileSetDTO updateRecipientEmail(Long fileSetId, String newRecipientEmail) throws AccessDeniedException {
+    public FileSetDTO changeRecipientEmail(Long fileSetId, String newEmail) throws AccessDeniedException {
         FileSet fileSet = fileSetRepository.findById(fileSetId)
                 .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
 
@@ -187,7 +187,39 @@ public class FileSetService {
             throw new AccessDeniedException("You do not have permission to change the recipient email.");
         }
 
-        fileSet.setRecipientEmail(newRecipientEmail);
+        fileSet.setRecipientEmail(newEmail);
+        fileSetRepository.save(fileSet);
+
+        return convertFileSetToDTO(fileSet);
+    }
+
+    public FileSetDTO changeFileSetName(Long fileSetId, String newName) throws AccessDeniedException {
+        FileSet fileSet = fileSetRepository.findById(fileSetId)
+                .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
+
+        Long currentUserId = getCurrentUserId();
+
+        if (!fileSet.getUser().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("You do not have permission to change the recipient email.");
+        }
+
+        fileSet.setName(newName);
+        fileSetRepository.save(fileSet);
+
+        return convertFileSetToDTO(fileSet);
+    }
+
+    public FileSetDTO changeFileSetDescription(Long fileSetId, String newDescription) throws AccessDeniedException {
+        FileSet fileSet = fileSetRepository.findById(fileSetId)
+                .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
+
+        Long currentUserId = getCurrentUserId();
+
+        if (!fileSet.getUser().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("You do not have permission to change the recipient email.");
+        }
+
+        fileSet.setDescription(newDescription);
         fileSetRepository.save(fileSet);
 
         return convertFileSetToDTO(fileSet);
