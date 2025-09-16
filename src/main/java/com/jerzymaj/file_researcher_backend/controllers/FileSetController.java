@@ -64,7 +64,7 @@ public class FileSetController {
         return ResponseEntity.ok(updatedFileSetStatus);
     }
 
-    @PatchMapping("/{fileSetId}/recipient-email")
+    @PatchMapping("/{fileSetId}/recipientEmail")
     public ResponseEntity<FileSetDTO> updateRecipientEmail(@PathVariable Long fileSetId,
                                                            @RequestParam String newRecipientEmail) throws AccessDeniedException {
 
