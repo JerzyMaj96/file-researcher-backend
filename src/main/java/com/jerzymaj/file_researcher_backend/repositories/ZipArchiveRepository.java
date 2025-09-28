@@ -18,7 +18,7 @@ public interface ZipArchiveRepository extends JpaRepository<ZipArchive, Long> {
     @Query("SELECT new map(" +
             "SUM(CASE WHEN z.status = 'SUCCESS' THEN 1 ELSE 0 END) as successCount, " +
             "SUM(CASE WHEN z.status = 'FAILED' THEN 1 ELSE 0 END) as failureCount) " +
-            "FROM ZipArchive z WHERE z.fileSet.user.id = :userId")
+            "FROM ZipArchive z WHERE z.user.id = :userId")
     Map<String, Object> countSuccessAndFailuresByUser(@Param("userId") Long userId);
 
     @Query(value = """
