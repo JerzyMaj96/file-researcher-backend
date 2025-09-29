@@ -7,6 +7,8 @@ import com.jerzymaj.file_researcher_backend.exceptions.UserNotFoundException;
 import com.jerzymaj.file_researcher_backend.models.User;
 import com.jerzymaj.file_researcher_backend.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -61,10 +63,18 @@ public class UserService {
         return convertUserToDTO(userRepository.save(user));
     }
 
-    public void deleteUserById(Long userId){
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User " + userId + " not found"));
-        userRepository.delete(user);
+    public void deleteUserById(Long userId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+
+        User currentUser = userRepository.findByName(currentUsername)
+                .orElseThrow(() -> new UserNotFoundException("Current user hasn't been found"));
+
+        if (!currentUser.getId().equals(userId)) {
+            throw new SecurityException("You cannot delete another user!");
+        }
+
+        userRepository.delete(currentUser);
     }
 
 //DTO MAPPER----------------------------------------------------------------------------------------------
