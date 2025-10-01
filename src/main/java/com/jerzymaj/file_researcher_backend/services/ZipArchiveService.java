@@ -58,7 +58,7 @@ public class ZipArchiveService {
 
         ZipFileResult zipFileResult = createZipFromFileSet(fileSetId, sendCounter);
 
-        ZipArchive zipArchive = ZipArchive.builder()
+        ZipArchive zipArchive = zipArchiveRepository.save(ZipArchive.builder()
                 .archiveName(zipFileResult.fileName())
                 .archivePath(zipFileResult.filePath().toAbsolutePath().toString())
                 .size(zipFileResult.size())
@@ -68,9 +68,8 @@ public class ZipArchiveService {
                 .user(fileSet.getUser())
                 .creationDate(LocalDateTime.now())
                 .sendNumber(sendCounter)
-                .build();
-
-        zipArchive = zipArchiveRepository.save(zipArchive);
+                .build()
+        );
 
         try {
             sendZipArchiveByEmail(
