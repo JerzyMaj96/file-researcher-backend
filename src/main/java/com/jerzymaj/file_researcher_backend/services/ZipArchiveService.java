@@ -199,26 +199,26 @@ public class ZipArchiveService {
 
 
 //SUPPLEMENTARY METHODS--------------------------------------------------------------
-private ZipFileResult createZipFromFileSet(Long fileSetId, int sendCounter) throws IOException {
-    FileSet fileSet = fileSetRepository.findById(fileSetId)
-            .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
+    private ZipFileResult createZipFromFileSet(Long fileSetId, int sendCounter) throws IOException {
+        FileSet fileSet = fileSetRepository.findById(fileSetId)
+                .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
 
-    String zipFileName = "fileset-" + fileSetId + "-" + sendCounter + ".zip" ;
-    Path zipFilePath = Path.of(System.getProperty("java.io.tmpdir"), zipFileName);
+        String zipFileName = "fileset-" + fileSetId + "-" + sendCounter + ".zip" ;
+        Path zipFilePath = Path.of(System.getProperty("java.io.tmpdir"), zipFileName);
 
-    try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipFilePath))) {
-        for (FileEntry fileEntry : fileSet.getFiles()) {
-            Path filePath = Path.of(fileEntry.getPath());
-            if (Files.exists(filePath)) {
-                addToZipFile(filePath, zos);
+        try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipFilePath))) {
+            for (FileEntry fileEntry : fileSet.getFiles()) {
+                Path filePath = Path.of(fileEntry.getPath());
+                if (Files.exists(filePath)) {
+                    addToZipFile(filePath, zos);
+                }
             }
         }
+        long size = Files.size(zipFilePath);
+        return new ZipFileResult(zipFilePath, zipFileName, size);
     }
-    long size = Files.size(zipFilePath);
-    return new ZipFileResult(zipFilePath, zipFileName, size);
-}
 
-private record ZipFileResult(Path filePath, String fileName, long size) {}
+    private record ZipFileResult(Path filePath, String fileName, long size) {}
 
     private void addToZipFile(Path filePath, ZipOutputStream zos) throws IOException {
         ZipEntry zipEntry = new ZipEntry(filePath.getFileName().toString());
