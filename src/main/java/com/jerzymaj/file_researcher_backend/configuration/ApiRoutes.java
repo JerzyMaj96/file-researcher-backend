@@ -13,8 +13,4 @@ public final class ApiRoutes {
     public static final String FILE_SETS = BASE_API + "/file-sets";
 
     public static final String ZIP_ARCHIVES = BASE_API + "/zip-archives";
-
-
-
-
 }
