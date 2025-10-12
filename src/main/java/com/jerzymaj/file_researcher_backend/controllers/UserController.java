@@ -37,7 +37,7 @@ public class UserController {
         return ResponseEntity.ok(userDTO);
     }
 
-    @GetMapping("/me")
+    @GetMapping("/authentication")
     public ResponseEntity<UserDTO> retrieveCurrentUser(Authentication authentication) { //todo do czego służy ten endpoint
         String userName = authentication.getName();
         UserDTO userDTO = Translator.convertUserToDTO(userService.findUserByName(userName));
