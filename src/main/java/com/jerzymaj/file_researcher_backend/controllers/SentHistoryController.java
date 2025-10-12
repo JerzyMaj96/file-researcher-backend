@@ -1,6 +1,7 @@
 package com.jerzymaj.file_researcher_backend.controllers;
 
 import com.jerzymaj.file_researcher_backend.DTOs.SentHistoryDTO;
+import com.jerzymaj.file_researcher_backend.configuration.ApiRoutes;
 import com.jerzymaj.file_researcher_backend.services.SentHistoryService;
 import com.jerzymaj.file_researcher_backend.tranlator.Translator;
 import lombok.RequiredArgsConstructor;
@@ -11,12 +12,11 @@ import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/file-researcher/zip-archives")
+@RequestMapping(ApiRoutes.ZIP_ARCHIVES)
 @RequiredArgsConstructor
 public class SentHistoryController {
 
     private final SentHistoryService sentHistoryService;
-
 
     @GetMapping("/history")
     public List<SentHistoryDTO> retrieveAllSentHistoryForUser() {
@@ -32,7 +32,7 @@ public class SentHistoryController {
                 .map(Translator::convertSentHistoryToDTO)
                 .toList();
 
-        if(sentHistoryDTOList.isEmpty()) {
+        if (sentHistoryDTOList.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
 
@@ -63,7 +63,7 @@ public class SentHistoryController {
 
     @DeleteMapping("/{zipArchiveId}/history/{sentHistoryId}")
     public ResponseEntity<Void> deleteSentHistoryById(@PathVariable Long zipArchiveId,
-                                                       @PathVariable Long sentHistoryId) throws AccessDeniedException {
+                                                      @PathVariable Long sentHistoryId) throws AccessDeniedException {
 
         sentHistoryService.deleteSentHistoryById(zipArchiveId, sentHistoryId);
 

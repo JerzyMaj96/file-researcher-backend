@@ -2,6 +2,7 @@ package com.jerzymaj.file_researcher_backend.controllers;
 
 import com.jerzymaj.file_researcher_backend.DTOs.RegisterUserDTO;
 import com.jerzymaj.file_researcher_backend.DTOs.UserDTO;
+import com.jerzymaj.file_researcher_backend.configuration.ApiRoutes;
 import com.jerzymaj.file_researcher_backend.services.UserService;
 import com.jerzymaj.file_researcher_backend.tranlator.Translator;
 import jakarta.validation.Valid;
@@ -16,7 +17,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/file-researcher/users")
+@RequestMapping(ApiRoutes.USERS)
 @RequiredArgsConstructor
 public class UserController {
 
@@ -37,8 +38,8 @@ public class UserController {
         return ResponseEntity.ok(userDTO);
     }
 
-    @GetMapping("/authentication")
-    public ResponseEntity<UserDTO> retrieveCurrentUser(Authentication authentication) { //todo do czego służy ten endpoint
+    @GetMapping("/authentication")  //todo - check if the path name makes sense
+    public ResponseEntity<UserDTO> retrieveCurrentUser(Authentication authentication) {
         String userName = authentication.getName();
         UserDTO userDTO = Translator.convertUserToDTO(userService.findUserByName(userName));
 

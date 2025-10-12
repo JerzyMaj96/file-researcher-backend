@@ -1,6 +1,7 @@
 package com.jerzymaj.file_researcher_backend.controllers;
 
 import com.jerzymaj.file_researcher_backend.DTOs.ZipArchiveDTO;
+import com.jerzymaj.file_researcher_backend.configuration.ApiRoutes;
 import com.jerzymaj.file_researcher_backend.services.ZipArchiveService;
 import com.jerzymaj.file_researcher_backend.tranlator.Translator;
 import jakarta.mail.MessagingException;
@@ -13,7 +14,7 @@ import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/file-researcher")
+@RequestMapping(ApiRoutes.BASE_API)
 @RequiredArgsConstructor
 public class ZipArchiveController {
 
@@ -63,14 +64,16 @@ public class ZipArchiveController {
             throws AccessDeniedException, MessagingException {
 
         zipArchiveService.resendExistingZip(fileSetId, zipArchiveId, recipientEmail);
+
         return ResponseEntity.ok("ZIP archive resent successfully.");
     }
 
     @DeleteMapping("/file-sets/{fileSetId}/zip-archives/{zipArchiveId}")
     public ResponseEntity<Void> deleteZipArchiveById(@PathVariable Long fileSetId,
-                                                     @PathVariable Long zipArchiveId)
-            throws AccessDeniedException {
+                                                     @PathVariable Long zipArchiveId) throws AccessDeniedException {
+
         zipArchiveService.deleteZipArchive(fileSetId, zipArchiveId);
+
         return ResponseEntity.noContent().build();
     }
 }

@@ -3,6 +3,7 @@ package com.jerzymaj.file_researcher_backend.controllers;
 import com.jerzymaj.file_researcher_backend.DTOs.FileTreeNodeDTO;
 import com.jerzymaj.file_researcher_backend.DTOs.ScanFilteredRequest;
 import com.jerzymaj.file_researcher_backend.DTOs.ScanRequest;
+import com.jerzymaj.file_researcher_backend.configuration.ApiRoutes;
 import com.jerzymaj.file_researcher_backend.services.FileExplorerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -14,14 +15,12 @@ import java.nio.file.Path;
 
 @Slf4j
 @RestController
-@RequestMapping("/file-researcher/explorer")
+@RequestMapping(ApiRoutes.FILE_EXPLORER)
 @RequiredArgsConstructor
 public class FileExplorerController {
-//CONTROLLER PROPERTIES------------------------------------------------------------------------
 
     private final FileExplorerService fileExplorerService;
 
-//METHODS---------------------------------------------------------------------------
     @PostMapping("/scan")
     public ResponseEntity<FileTreeNodeDTO> scanPath(@Valid @RequestBody ScanRequest request) { //todo
 

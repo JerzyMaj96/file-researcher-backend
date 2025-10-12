@@ -2,6 +2,7 @@ package com.jerzymaj.file_researcher_backend.controllers;
 
 import com.jerzymaj.file_researcher_backend.DTOs.CreateFileSetDTO;
 import com.jerzymaj.file_researcher_backend.DTOs.FileSetDTO;
+import com.jerzymaj.file_researcher_backend.configuration.ApiRoutes;
 import com.jerzymaj.file_researcher_backend.models.FileSet;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
 import com.jerzymaj.file_researcher_backend.services.FileSetService;
@@ -17,12 +18,11 @@ import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/file-researcher/file-sets")
+@RequestMapping(ApiRoutes.FILE_SETS)
 @RequiredArgsConstructor
 public class FileSetController {
 
     private final FileSetService fileSetService;
-
 
     @PostMapping
     public ResponseEntity<FileSetDTO> createNewFileSet(@Valid @RequestBody CreateFileSetDTO createFileSetDTO)

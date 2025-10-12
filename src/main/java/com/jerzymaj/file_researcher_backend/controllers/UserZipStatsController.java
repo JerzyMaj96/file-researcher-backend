@@ -1,6 +1,7 @@
 package com.jerzymaj.file_researcher_backend.controllers;
 
 import com.jerzymaj.file_researcher_backend.DTOs.ZipArchiveDTO;
+import com.jerzymaj.file_researcher_backend.configuration.ApiRoutes;
 import com.jerzymaj.file_researcher_backend.services.ZipArchiveService;
 import com.jerzymaj.file_researcher_backend.tranlator.Translator;
 import lombok.RequiredArgsConstructor;
@@ -13,12 +14,11 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/file-researcher/zip-archives")
+@RequestMapping(ApiRoutes.ZIP_ARCHIVES)
 @RequiredArgsConstructor
 public class UserZipStatsController {
 
     private final ZipArchiveService zipArchiveService;
-
 
     @GetMapping("/stats")
     public Map<String, Object> retrieveSentStatistics() {
