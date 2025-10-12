@@ -18,16 +18,14 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class SentHistoryService {
-//PROPERTIES--------------------------------------------------------------------
 
     private final FileSetService fileSetService;
     private final ZipArchiveRepository zipArchiveRepository;
     private final SentHistoryRepository sentHistoryRepository;
 
-//METHODS-----------------------------------------------------------------------
 
     public SentHistory saveSentHistory(ZipArchive zipArchive, String sentToEmail,
-                                          boolean success, String errorMessage) {
+                                       boolean success, String errorMessage) {
 
         SentHistory sentHistory = new SentHistory();
         sentHistory.setZipArchive(zipArchive);
@@ -39,18 +37,16 @@ public class SentHistoryService {
         return sentHistoryRepository.save(sentHistory);
     }
 
-    public List<SentHistoryDTO> getAllSentHistory() {
+    public List<SentHistory> getAllSentHistory() {
 
         Long currentUserId = fileSetService.getCurrentUserId();
 
-        return sentHistoryRepository.findAllByUserIdSorted(currentUserId).stream()
-                .map(this::convertToSentHistoryDTO)
-                .toList();
+        return sentHistoryRepository.findAllByUserIdSorted(currentUserId);
     }
 
-    public List<SentHistoryDTO> getAllSentHistoryForZipArchive(Long zipArchiveId) throws AccessDeniedException {
+    public List<SentHistory> getAllSentHistoryForZipArchive(Long zipArchiveId) throws AccessDeniedException {
         ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId)
-                .orElseThrow(() -> new  ZipArchiveNotFoundException("Zip archive not found: " + zipArchiveId));
+                .orElseThrow(() -> new ZipArchiveNotFoundException("Zip archive not found: " + zipArchiveId));
 
         Long currentUserId = fileSetService.getCurrentUserId();
 
@@ -58,29 +54,25 @@ public class SentHistoryService {
             throw new AccessDeniedException("You do not have permission to access this history.");
         }
 
-       return sentHistoryRepository.findAllByZipArchiveIdSorted(zipArchiveId).stream()
-               .map(this::convertToSentHistoryDTO)
-               .toList();
+        return sentHistoryRepository.findAllByZipArchiveIdSorted(zipArchiveId);
     }
 
-    public SentHistoryDTO getSentHistoryById(Long zipArchiveId, Long sentHistoryId) throws AccessDeniedException {
+    public SentHistory getSentHistoryById(Long zipArchiveId, Long sentHistoryId) throws AccessDeniedException {
         ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId)
-                .orElseThrow(() -> new  ZipArchiveNotFoundException("Zip archive not found: " + zipArchiveId));
+                .orElseThrow(() -> new ZipArchiveNotFoundException("Zip archive not found: " + zipArchiveId));
 
         Long currentUserId = fileSetService.getCurrentUserId();
 
         if (!zipArchive.getUser().getId().equals(currentUserId))
             throw new AccessDeniedException("You do not have permission to access this history.");
 
-        SentHistory sentHistory = sentHistoryRepository.findById(sentHistoryId)
+        return sentHistoryRepository.findById(sentHistoryId)
                 .orElseThrow(() -> new SentHistoryNotFoundException("Sent history not found: " + sentHistoryId));
-
-        return convertToSentHistoryDTO(sentHistory);
     }
 
     public void deleteSentHistoryById(Long zipArchiveId, Long sentHistoryId) throws AccessDeniedException {
         ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId)
-                .orElseThrow(() -> new  ZipArchiveNotFoundException("Zip archive not found: " + zipArchiveId));
+                .orElseThrow(() -> new ZipArchiveNotFoundException("Zip archive not found: " + zipArchiveId));
 
         Long currentUserId = fileSetService.getCurrentUserId();
 
@@ -104,23 +96,10 @@ public class SentHistoryService {
 
         Long currentUserId = fileSetService.getCurrentUserId();
 
-        if(!zipArchive.getUser().getId().equals(currentUserId)) {
+        if (!zipArchive.getUser().getId().equals(currentUserId)) {
             throw new AccessDeniedException("You do not have permission to access this history.");
         }
 
         return sentHistoryRepository.findLastRecipient(zipArchiveId);
-    }
-//MAPPER--------------------------------------------------------------------------
-
-    public SentHistoryDTO convertToSentHistoryDTO(SentHistory sentHistory) {
-
-        return SentHistoryDTO.builder()
-                .id(sentHistory.getId())
-                .zipArchiveId(sentHistory.getZipArchive().getId())
-                .sentAttemptDate(sentHistory.getSendAttemptDate())
-                .status(sentHistory.getStatus())
-                .errorMessage(sentHistory.getErrorMessage())
-                .sentToEmail(sentHistory.getSentToEmail())
-                .build();
     }
 }

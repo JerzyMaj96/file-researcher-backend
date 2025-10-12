@@ -161,8 +161,8 @@ public class SentHistoryControllerIntegrationTest {
                 .asLong();
 
         mockMvc.perform(delete("/file-researcher/zip-archives/{zipArchiveId}/history/{sentHistoryId}",
-                zipArchiveId,
-                sentHistoryId))
+                        zipArchiveId,
+                        sentHistoryId))
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(get("/file-researcher/zip-archives/{zipArchiveId}/history/{sentHistoryId}",

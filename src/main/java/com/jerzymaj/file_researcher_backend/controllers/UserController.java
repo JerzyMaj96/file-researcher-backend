@@ -3,6 +3,7 @@ package com.jerzymaj.file_researcher_backend.controllers;
 import com.jerzymaj.file_researcher_backend.DTOs.RegisterUserDTO;
 import com.jerzymaj.file_researcher_backend.DTOs.UserDTO;
 import com.jerzymaj.file_researcher_backend.services.UserService;
+import com.jerzymaj.file_researcher_backend.tranlator.Translator;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,35 +20,34 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserController {
 
-//CONTROLLER PROPERTIES--------------------------------------------------------
-
     private final UserService userService;
 
-//METHODS----------------------------------------------------------------------
     @GetMapping
-    public List<UserDTO> retrieveAllUsers(){
-        return userService.findAllUsers();
+    public List<UserDTO> retrieveAllUsers() {
+        return userService.findAllUsers().stream()
+                .map(Translator::convertUserToDTO)
+                .toList();
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<UserDTO> retrieveUserById(@PathVariable Long userId){
+    public ResponseEntity<UserDTO> retrieveUserById(@PathVariable Long userId) {
 
-        UserDTO userDTO = userService.findUserById(userId);
+        UserDTO userDTO = Translator.convertUserToDTO(userService.findUserById(userId));
 
         return ResponseEntity.ok(userDTO);
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserDTO> retrieveCurrentUser(Authentication authentication) {
+    public ResponseEntity<UserDTO> retrieveCurrentUser(Authentication authentication) { //todo do czego służy ten endpoint
         String userName = authentication.getName();
-        UserDTO userDTO = userService.findUserByName(userName);
+        UserDTO userDTO = Translator.convertUserToDTO(userService.findUserByName(userName));
 
         return ResponseEntity.ok(userDTO);
     }
 
     @PostMapping
-    public ResponseEntity<UserDTO> createNewUser(@Valid @RequestBody RegisterUserDTO registerUserDTO){
-        UserDTO createdUserDTO = userService.registerUser(registerUserDTO);
+    public ResponseEntity<UserDTO> createNewUser(@Valid @RequestBody RegisterUserDTO registerUserDTO) {
+        UserDTO createdUserDTO = Translator.convertUserToDTO(userService.registerUser(registerUserDTO));
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
@@ -60,7 +60,7 @@ public class UserController {
 
     @DeleteMapping("/{userId}")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Void> deleteUserById(@PathVariable Long userId){
+    public ResponseEntity<Void> deleteUserById(@PathVariable Long userId) {
         userService.deleteUserById(userId);
         return ResponseEntity.noContent().build();
     }

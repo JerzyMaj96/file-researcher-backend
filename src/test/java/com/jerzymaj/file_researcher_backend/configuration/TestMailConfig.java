@@ -24,7 +24,8 @@ public class TestMailConfig {
                 try {
                     return new MimeMessage(null, contentStream);
                 } catch (MessagingException e) {
-                    throw new MailException("Failed to create MimeMessage") {};
+                    throw new MailException("Failed to create MimeMessage") {
+                    };
                 }
             }
 

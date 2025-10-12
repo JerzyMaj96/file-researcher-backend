@@ -2,6 +2,7 @@ package com.jerzymaj.file_researcher_backend.controllers;
 
 import com.jerzymaj.file_researcher_backend.DTOs.SentHistoryDTO;
 import com.jerzymaj.file_researcher_backend.services.SentHistoryService;
+import com.jerzymaj.file_researcher_backend.tranlator.Translator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,21 +14,23 @@ import java.util.List;
 @RequestMapping("/file-researcher/zip-archives")
 @RequiredArgsConstructor
 public class SentHistoryController {
-//CONTROLLER PROPERTIES------------------------------------------------------------------------------------------------------------
 
     private final SentHistoryService sentHistoryService;
 
-//METHODS---------------------------------------------------------------------------------------------------------------
 
     @GetMapping("/history")
     public List<SentHistoryDTO> retrieveAllSentHistoryForUser() {
-        return sentHistoryService.getAllSentHistory();
+        return sentHistoryService.getAllSentHistory().stream()
+                .map(Translator::convertSentHistoryToDTO)
+                .toList();
     }
 
     @GetMapping("/{zipArchiveId}/history")
     public ResponseEntity<List<SentHistoryDTO>> retrieveAllSentHistoryForZipArchive(@PathVariable Long zipArchiveId) throws AccessDeniedException {
 
-        List<SentHistoryDTO> sentHistoryDTOList = sentHistoryService.getAllSentHistoryForZipArchive(zipArchiveId);
+        List<SentHistoryDTO> sentHistoryDTOList = sentHistoryService.getAllSentHistoryForZipArchive(zipArchiveId).stream()
+                .map(Translator::convertSentHistoryToDTO)
+                .toList();
 
         if(sentHistoryDTOList.isEmpty()) {
             return ResponseEntity.noContent().build();
@@ -52,7 +55,10 @@ public class SentHistoryController {
     public ResponseEntity<SentHistoryDTO> retrieveSentHistoryById(@PathVariable Long zipArchiveId,
                                                                   @PathVariable Long sentHistoryId) throws AccessDeniedException {
 
-        return ResponseEntity.ok(sentHistoryService.getSentHistoryById(zipArchiveId, sentHistoryId));
+        SentHistoryDTO sentHistoryDTO = Translator.convertSentHistoryToDTO(
+                sentHistoryService.getSentHistoryById(zipArchiveId, sentHistoryId));
+
+        return ResponseEntity.ok(sentHistoryDTO);
     }
 
     @DeleteMapping("/{zipArchiveId}/history/{sentHistoryId}")

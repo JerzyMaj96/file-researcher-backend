@@ -1,7 +1,5 @@
 package com.jerzymaj.file_researcher_backend.services;
 
-import com.jerzymaj.file_researcher_backend.DTOs.FileEntryDTO;
-import com.jerzymaj.file_researcher_backend.DTOs.FileSetDTO;
 import com.jerzymaj.file_researcher_backend.exceptions.FileSetNotFoundException;
 import com.jerzymaj.file_researcher_backend.exceptions.NoFilesSelectedException;
 import com.jerzymaj.file_researcher_backend.exceptions.UserNotFoundException;
@@ -28,20 +26,17 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class FileSetService {
-//PROPERTIES-------------------------------------------------------------------------------------------------
 
     private final FileEntryRepository fileEntryRepository;
     private final FileSetRepository fileSetRepository;
     private final UserRepository userRepository;
 
-//MAIN METHODS------------------------------------------------------------------------------------------------------
-
     @Transactional
-    public FileSetDTO createFileSet(String name,
-                                    String description,
-                                    String recipientEmail,
-                                    List<String> selectedPaths
-                                    ) throws IOException {
+    public FileSet createFileSet(String name,
+                                 String description,
+                                 String recipientEmail,
+                                 List<String> selectedPaths
+    ) throws IOException {
 
         if (selectedPaths == null || selectedPaths.isEmpty()) {
             throw new NoFilesSelectedException("At least one file must be selected");
@@ -69,22 +64,18 @@ public class FileSetService {
 
         fileSet.setFiles(entries);
 
-        return convertFileSetToDTO(fileSet);
+        return fileSet;
     }
 
-    public List<FileSetDTO> getAllFileSets(){
+    public List<FileSet> getAllFileSets() {
         Long currentUserId = getCurrentUserId();
 
-        return fileSetRepository.findAllByUserId(currentUserId).stream()
-                .map(this::convertFileSetToDTO)
-                .toList();
+        return fileSetRepository.findAllByUserId(currentUserId);
     }
 
-    public FileSetDTO getFileSetById (Long fileSetId){
-        FileSet fileSet = fileSetRepository.findById(fileSetId)
+    public FileSet getFileSetById(Long fileSetId) {
+        return fileSetRepository.findById(fileSetId)
                 .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
-
-        return convertFileSetToDTO(fileSet);
     }
 
     public void deleteFileSetById(Long fileSetId) throws AccessDeniedException {
@@ -99,8 +90,6 @@ public class FileSetService {
 
         fileSetRepository.deleteById(fileSetId);
     }
-//MAPPERS -----------------------------------------------------------------------------------------------------------
-
 
     private FileEntry convertPathToFileEntry(String path) {
         try {
@@ -113,45 +102,18 @@ public class FileSetService {
                     .size(directory ? null : Files.size(p))
                     .extension(directory ? null : getExtension(p))
                     .build();
-        } catch (IOException exception){
+        } catch (IOException exception) {
             throw new UncheckedIOException("Unable to read file info: " + path, exception);
         }
     }
 
-    private FileSetDTO convertFileSetToDTO(FileSet fileSet){
-        return FileSetDTO.builder()
-                .id(fileSet.getId())
-                .name(fileSet.getName())
-                .description(fileSet.getDescription())
-                .recipientEmail(fileSet.getRecipientEmail())
-                .status(fileSet.getStatus())
-                .creationDate(fileSet.getCreationDate())
-                .userId(fileSet.getUser().getId())
-                .files(fileSet.getFiles().stream()
-                        .map(this::convertFileEntryToDTO)
-                        .toList())
-                .build();
-    }
-
-    private FileEntryDTO convertFileEntryToDTO(FileEntry fileEntry){
-        return FileEntryDTO.builder()
-                .id(fileEntry.getId())
-                .name(fileEntry.getName())
-                .path(fileEntry.getPath())
-                .size(fileEntry.getSize())
-                .extension(fileEntry.getExtension())
-                .build();
-    }
-
-// SUPPLEMENTARY METHODS------------------------------------------------------------------------------------------
-
-    protected static String getExtension(Path path){
+    protected static String getExtension(Path path) {
         String fileName = path.getFileName().toString();
         int index = fileName.lastIndexOf('.');
         return (index > 0) ? fileName.substring(index + 1) : "";
     }
 
-    public Long getCurrentUserId(){
+    public Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userName = authentication.getName();
 
@@ -160,7 +122,7 @@ public class FileSetService {
                 .getId();
     }
 
-    public FileSetDTO changeFileSetStatus(Long fileSetId, FileSetStatus newFileSetStatus) throws AccessDeniedException {
+    public FileSet changeFileSetStatus(Long fileSetId, FileSetStatus newFileSetStatus) throws AccessDeniedException {
         FileSet fileSet = fileSetRepository.findById(fileSetId)
                 .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
 
@@ -174,10 +136,10 @@ public class FileSetService {
         fileSet.setStatus(newFileSetStatus);
         fileSetRepository.save(fileSet);
 
-        return convertFileSetToDTO(fileSet);
+        return fileSet;
     }
 
-    public FileSetDTO changeRecipientEmail(Long fileSetId, String newEmail) throws AccessDeniedException {
+    public FileSet changeRecipientEmail(Long fileSetId, String newEmail) throws AccessDeniedException {
         FileSet fileSet = fileSetRepository.findById(fileSetId)
                 .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
 
@@ -190,10 +152,10 @@ public class FileSetService {
         fileSet.setRecipientEmail(newEmail);
         fileSetRepository.save(fileSet);
 
-        return convertFileSetToDTO(fileSet);
+        return fileSet;
     }
 
-    public FileSetDTO changeFileSetName(Long fileSetId, String newName) throws AccessDeniedException {
+    public FileSet changeFileSetName(Long fileSetId, String newName) throws AccessDeniedException {
         FileSet fileSet = fileSetRepository.findById(fileSetId)
                 .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
 
@@ -206,10 +168,10 @@ public class FileSetService {
         fileSet.setName(newName);
         fileSetRepository.save(fileSet);
 
-        return convertFileSetToDTO(fileSet);
+        return fileSet;
     }
 
-    public FileSetDTO changeFileSetDescription(Long fileSetId, String newDescription) throws AccessDeniedException {
+    public FileSet changeFileSetDescription(Long fileSetId, String newDescription) throws AccessDeniedException {
         FileSet fileSet = fileSetRepository.findById(fileSetId)
                 .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
 
@@ -222,6 +184,6 @@ public class FileSetService {
         fileSet.setDescription(newDescription);
         fileSetRepository.save(fileSet);
 
-        return convertFileSetToDTO(fileSet);
+        return fileSet;
     }
 }

@@ -15,9 +15,8 @@ import java.util.Objects;
 @Service
 public class FileExplorerService {
 
-//MAIN METHODS------------------------------------------------------------------------------------
 
-    public FileTreeNodeDTO scanPath(Path path){
+    public FileTreeNodeDTO scanPath(Path path) {
         File file = validateFile(path);
 
         log.debug("SCANNED PATH: {} | isDirectory={} | isFile={}",
@@ -30,12 +29,12 @@ public class FileExplorerService {
         }
     }
 
-    public FileTreeNodeDTO scanFilteredPath(Path path, String extension){
+    public FileTreeNodeDTO scanFilteredPath(Path path, String extension) {
         File file = validateFile(path);
 
         if (file.isFile()) {
             if (extension.equalsIgnoreCase(FileSetService.getExtension(path))) {
-            return buildNode(file, null);
+                return buildNode(file, null);
             } else {
                 return null;
             }
@@ -45,7 +44,6 @@ public class FileExplorerService {
         }
     }
 
-//SUPPLEMENTARY METHODS ---------------------------------------------------------------------------------------------
 
     private File validateFile(Path path) {
         File file = path.toFile();

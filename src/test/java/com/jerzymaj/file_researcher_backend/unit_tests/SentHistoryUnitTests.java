@@ -1,6 +1,5 @@
 package com.jerzymaj.file_researcher_backend.unit_tests;
 
-import com.jerzymaj.file_researcher_backend.DTOs.SentHistoryDTO;
 import com.jerzymaj.file_researcher_backend.models.SentHistory;
 import com.jerzymaj.file_researcher_backend.models.User;
 import com.jerzymaj.file_researcher_backend.models.ZipArchive;
@@ -96,13 +95,11 @@ public class SentHistoryUnitTests {
         when(fileSetService.getCurrentUserId()).thenReturn(user.getId());
         when(sentHistoryRepository.findAllByZipArchiveIdSorted(zipArchive.getId())).thenReturn(List.of(sentHistory));
 
-        List<SentHistoryDTO> actualResult = sentHistoryService.getAllSentHistoryForZipArchive(zipArchive.getId());
-
-        SentHistoryDTO expectedDTO = sentHistoryService.convertToSentHistoryDTO(sentHistory);
+        List<SentHistory> actualResult = sentHistoryService.getAllSentHistoryForZipArchive(zipArchive.getId());
 
         assertNotNull(actualResult);
         assertEquals(1, actualResult.size());
-        assertEquals(expectedDTO, actualResult.getFirst());
+        assertEquals(sentHistory, actualResult.getFirst());
     }
 
     @Test

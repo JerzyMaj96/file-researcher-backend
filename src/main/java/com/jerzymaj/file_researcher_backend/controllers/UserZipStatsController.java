@@ -2,6 +2,7 @@ package com.jerzymaj.file_researcher_backend.controllers;
 
 import com.jerzymaj.file_researcher_backend.DTOs.ZipArchiveDTO;
 import com.jerzymaj.file_researcher_backend.services.ZipArchiveService;
+import com.jerzymaj.file_researcher_backend.tranlator.Translator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,11 +16,9 @@ import java.util.Map;
 @RequestMapping("/file-researcher/zip-archives")
 @RequiredArgsConstructor
 public class UserZipStatsController {
-//CONTROLLER PROPERTIES------------------------------------------------------------------------------------------------
 
     private final ZipArchiveService zipArchiveService;
 
-//METHODS--------------------------------------------------------------------------------------------------------------
 
     @GetMapping("/stats")
     public Map<String, Object> retrieveSentStatistics() {
@@ -27,7 +26,9 @@ public class UserZipStatsController {
     }
 
     @GetMapping("/large")
-    public List<ZipArchiveDTO> retrieveLargeZipArchives(@RequestParam(defaultValue = "10000000") Long minSize) { // check which default size to set
-        return zipArchiveService.getLargeZipFiles(minSize);
+    public List<ZipArchiveDTO> retrieveLargeZipArchives(@RequestParam(defaultValue = "10000000") Long minSize) { //todo check which default size to set
+        return zipArchiveService.getLargeZipFiles(minSize).stream()
+                .map(Translator::convertZipArchiveToDTO)
+                .toList();
     }
 }

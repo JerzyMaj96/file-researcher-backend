@@ -23,7 +23,7 @@ public class FileExplorerController {
 
 //METHODS---------------------------------------------------------------------------
     @PostMapping("/scan")
-    public ResponseEntity<FileTreeNodeDTO> scanPath(@Valid @RequestBody ScanRequest request) {
+    public ResponseEntity<FileTreeNodeDTO> scanPath(@Valid @RequestBody ScanRequest request) { //todo
 
         Path path = Path.of(request.path());
         log.info("Scanning path: {}", path);

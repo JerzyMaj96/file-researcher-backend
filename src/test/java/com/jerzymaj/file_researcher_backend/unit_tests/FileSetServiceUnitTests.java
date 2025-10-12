@@ -106,7 +106,7 @@ public class FileSetServiceUnitTests {
 
     @Test
     public void shouldCreateFileSet_IfSuccess() throws IOException {
-        FileSetDTO actualResult = fileSetService
+        FileSet actualResult = fileSetService
                 .createFileSet(name, description, recipientEmail, selectedPaths);
 
         assertThat(actualResult).isNotNull();

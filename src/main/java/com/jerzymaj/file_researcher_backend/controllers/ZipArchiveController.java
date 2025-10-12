@@ -2,6 +2,7 @@ package com.jerzymaj.file_researcher_backend.controllers;
 
 import com.jerzymaj.file_researcher_backend.DTOs.ZipArchiveDTO;
 import com.jerzymaj.file_researcher_backend.services.ZipArchiveService;
+import com.jerzymaj.file_researcher_backend.tranlator.Translator;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,21 +16,23 @@ import java.util.List;
 @RequestMapping("/file-researcher")
 @RequiredArgsConstructor
 public class ZipArchiveController {
-//CONTROLLER PROPERTIES---------------------------------------------------------------------------------------------
 
     private final ZipArchiveService zipArchiveService;
 
-//METHODS-------------------------------------------------------------------------------------------------------------
 
     @GetMapping("/zip-archives")
     public List<ZipArchiveDTO> retrieveAllZipArchivesForUser() {
-        return zipArchiveService.getAllZipArchives();
+        return zipArchiveService.getAllZipArchives().stream()
+                .map(Translator::convertZipArchiveToDTO)
+                .toList();
     }
 
     @GetMapping("/file-sets/{fileSetId}/zip-archives")
     public List<ZipArchiveDTO> retrieveAllZipArchivesForFileSet(@PathVariable Long fileSetId)
             throws AccessDeniedException {
-        return zipArchiveService.getAllZipArchivesForFileSet(fileSetId);
+        return zipArchiveService.getAllZipArchivesForFileSet(fileSetId).stream()
+                .map(Translator::convertZipArchiveToDTO)
+                .toList();
     }
 
     @GetMapping("/file-sets/{fileSetId}/zip-archives/{zipArchiveId}")
@@ -37,7 +40,9 @@ public class ZipArchiveController {
                                                                 @PathVariable Long zipArchiveId)
             throws AccessDeniedException {
 
-        ZipArchiveDTO zipArchiveDTO = zipArchiveService.getZipArchiveById(fileSetId, zipArchiveId);
+        ZipArchiveDTO zipArchiveDTO = Translator.convertZipArchiveToDTO(
+                zipArchiveService.getZipArchiveById(fileSetId, zipArchiveId));
+
         return ResponseEntity.ok(zipArchiveDTO);
     }
 
@@ -45,7 +50,8 @@ public class ZipArchiveController {
     public ResponseEntity<ZipArchiveDTO> sendZipArchive(@PathVariable Long fileSetId,
                                                         @RequestParam String recipientEmail) throws MessagingException, IOException {
 
-        ZipArchiveDTO zipArchiveDTO = zipArchiveService.createAndSendZipArchive(fileSetId, recipientEmail);
+        ZipArchiveDTO zipArchiveDTO = Translator.convertZipArchiveToDTO(
+                zipArchiveService.createAndSendZipArchive(fileSetId, recipientEmail));
 
         return ResponseEntity.ok(zipArchiveDTO);
     }

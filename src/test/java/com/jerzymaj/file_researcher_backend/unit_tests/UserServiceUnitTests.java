@@ -32,8 +32,8 @@ public class UserServiceUnitTests {
     UserService userService;
 
     @Test
-    public void shouldRegisterUser_IfSuccess(){
-        RegisterUserDTO registerUserDTO = new RegisterUserDTO("jerzy","jerzy@mail.com","secret123");
+    public void shouldRegisterUser_IfSuccess() {
+        RegisterUserDTO registerUserDTO = new RegisterUserDTO("jerzy", "jerzy@mail.com", "secret123");
 
         when(userRepository.existsByName("jerzy")).thenReturn(false);
         when(userRepository.existsByEmail("jerzy@mail.com")).thenReturn(false);
@@ -44,7 +44,7 @@ public class UserServiceUnitTests {
             return user;
         });
 
-        UserDTO actualResult = userService.registerUser(registerUserDTO);
+        User actualResult = userService.registerUser(registerUserDTO);
 
         assertThat(actualResult.getId()).isEqualTo(1L);
         assertThat(actualResult.getEmail()).isEqualTo("jerzy@mail.com");
@@ -52,7 +52,7 @@ public class UserServiceUnitTests {
     }
 
     @Test
-    public void shouldThrowExistingUserException_IfUserExists(){
+    public void shouldThrowExistingUserException_IfUserExists() {
         when(userRepository.existsByName("jerzy")).thenReturn(true);
 
         RegisterUserDTO registerUserDTO = new RegisterUserDTO("jerzy", "x@y.com", "password");

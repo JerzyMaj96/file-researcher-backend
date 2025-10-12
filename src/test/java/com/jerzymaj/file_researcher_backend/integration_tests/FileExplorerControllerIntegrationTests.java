@@ -58,7 +58,7 @@ public class FileExplorerControllerIntegrationTests {
         Files.createFile(tempSubDir.resolve("test2.pdf"));
         Files.createFile(tempSubDir.resolve("test3.txt"));
 
-        ScanFilteredRequest request = new ScanFilteredRequest(tempSubDir.toString(),"txt");
+        ScanFilteredRequest request = new ScanFilteredRequest(tempSubDir.toString(), "txt");
         String jsonRequest = objectMapper.writeValueAsString(request);
 
         mockMvc.perform(post("/file-researcher/explorer/scan/filtered")
@@ -70,6 +70,6 @@ public class FileExplorerControllerIntegrationTests {
                 .andExpect(jsonPath("$.directory").value(true))
                 .andExpect(jsonPath("$.children").isArray())
                 .andExpect(jsonPath("$.children.length()").value(2))
-                .andExpect(jsonPath("$.children[*].name").value(containsInAnyOrder("test1.txt","test3.txt")));
+                .andExpect(jsonPath("$.children[*].name").value(containsInAnyOrder("test1.txt", "test3.txt")));
     }
 }

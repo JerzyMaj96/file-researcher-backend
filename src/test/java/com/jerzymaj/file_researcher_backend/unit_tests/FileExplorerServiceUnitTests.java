@@ -19,7 +19,7 @@ public class FileExplorerServiceUnitTests {
     FileExplorerService fileExplorerService;
 
     @BeforeEach
-    public void setUp(){
+    public void setUp() {
         fileExplorerService = new FileExplorerService();
     }
 

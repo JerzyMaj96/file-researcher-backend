@@ -52,7 +52,7 @@ public class UserControllerIntegrationTests {
 
     @Test
     public void shouldRegisterUser() throws Exception {
-        RegisterUserDTO registerUserDTO = new RegisterUserDTO("jerzy","jerzy@mail.com","secret123");
+        RegisterUserDTO registerUserDTO = new RegisterUserDTO("jerzy", "jerzy@mail.com", "secret123");
 
         mockMvc.perform(post("/file-researcher/users")
                         .contentType(APPLICATION_JSON)
@@ -67,7 +67,7 @@ public class UserControllerIntegrationTests {
         String uniqueName = "jerzy_" + System.currentTimeMillis();
         String uniqueEmail = "jerzy_" + System.currentTimeMillis() + "@mail.com";
 
-        RegisterUserDTO registerUserDTO = new RegisterUserDTO(uniqueName,uniqueEmail,"secret123");
+        RegisterUserDTO registerUserDTO = new RegisterUserDTO(uniqueName, uniqueEmail, "secret123");
 
         String response = mockMvc.perform(post("/file-researcher/users")
                         .contentType(APPLICATION_JSON)
@@ -89,7 +89,7 @@ public class UserControllerIntegrationTests {
     public void shouldRetrieveCurrentUser() throws Exception {
 
         mockMvc.perform(get("/file-researcher/users/me")
-                .contentType(APPLICATION_JSON))
+                        .contentType(APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("tester"))
                 .andExpect(jsonPath("$.email").value("tester@mail.com"));
@@ -100,7 +100,7 @@ public class UserControllerIntegrationTests {
     public void shouldThrowUserNotFoundException_IfUserNotExists() throws Exception {
 
         mockMvc.perform(get("/file-researcher/users/me")
-                .contentType(APPLICATION_JSON))
+                        .contentType(APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }
 }

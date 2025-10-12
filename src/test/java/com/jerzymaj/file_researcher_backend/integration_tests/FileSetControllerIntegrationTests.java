@@ -56,22 +56,22 @@ public class FileSetControllerIntegrationTests {
         Path tempFile2 = Files.createFile(tempDir.resolve("test2.txt"));
         Path tempFile3 = Files.createFile(tempDir.resolve("test3.csv"));
 
-        CreateFileSetDTO createFileSetDTO = new CreateFileSetDTO("test","This is a test fileset description","jerzy@mail.com",
+        CreateFileSetDTO createFileSetDTO = new CreateFileSetDTO("test", "This is a test fileset description", "jerzy@mail.com",
                 List.of(tempFile1.toString(),
                         tempFile2.toString(),
                         tempFile3.toString())
-                );
+        );
 
         mockMvc.perform(post("/file-researcher/file-sets")
-                .contentType(APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(createFileSetDTO)))
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createFileSetDTO)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("test"))
                 .andExpect(jsonPath("$.description").value("This is a test fileset description"))
                 .andExpect(jsonPath("$.recipientEmail").value("jerzy@mail.com"))
                 .andExpect(jsonPath("$.files", hasSize(3)))
                 .andExpect(jsonPath("$.files[*].name", containsInAnyOrder("test1.txt", "test2.txt", "test3.csv")))
-                .andExpect(jsonPath("$.files[*].extension", containsInAnyOrder("txt","txt","csv")));
+                .andExpect(jsonPath("$.files[*].extension", containsInAnyOrder("txt", "txt", "csv")));
 
     }
 }

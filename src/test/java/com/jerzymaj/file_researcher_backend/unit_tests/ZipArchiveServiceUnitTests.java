@@ -95,7 +95,7 @@ public class ZipArchiveServiceUnitTests {
         lenient().when(fileSetRepository.findById(fileSet.getId())).thenReturn(Optional.of(fileSet));
         lenient().when(fileSetService.getCurrentUserId()).thenReturn(user.getId());
 
-        MimeMessage dummyMessage = new MimeMessage((Session)null);
+        MimeMessage dummyMessage = new MimeMessage((Session) null);
         lenient().when(mailSender.createMimeMessage()).thenReturn(dummyMessage);
 
 
@@ -114,10 +114,10 @@ public class ZipArchiveServiceUnitTests {
     @Test
     public void shouldCreateAndSendZipArchive_IfSuccess() throws MessagingException, IOException {
 
-        ZipArchiveDTO actualResult = zipArchiveService.createAndSendZipArchive(fileSet.getId(), fileSet.getRecipientEmail());
+        ZipArchive actualResult = zipArchiveService.createAndSendZipArchive(fileSet.getId(), fileSet.getRecipientEmail());
 
         assertNotNull(actualResult);
-        assertEquals(fileSet.getId(), actualResult.getFileSetId());
+        assertEquals(fileSet.getId(), actualResult.getFileSet().getId());
         assertNotNull(actualResult.getArchivePath());
         assertFalse(actualResult.getArchivePath().isBlank());
         assertEquals("SUCCESS", actualResult.getStatus().name());
@@ -230,7 +230,7 @@ public class ZipArchiveServiceUnitTests {
         when(zipArchiveRepository.findLargeZipArchives(user.getId(), 50_000L))
                 .thenReturn(List.of(zipArchive));
 
-        List<ZipArchiveDTO> result = zipArchiveService.getLargeZipFiles(50_000L);
+        List<ZipArchive> result = zipArchiveService.getLargeZipFiles(50_000L);
 
         assertEquals(1, result.size());
         assertEquals("test.zip", result.getFirst().getArchiveName());

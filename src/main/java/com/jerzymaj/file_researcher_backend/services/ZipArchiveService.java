@@ -8,6 +8,7 @@ import com.jerzymaj.file_researcher_backend.models.*;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.ZipArchiveStatus;
 import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
 import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
+import com.jerzymaj.file_researcher_backend.tranlator.Translator;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +30,7 @@ import java.util.zip.ZipOutputStream;
 @Service
 @RequiredArgsConstructor
 public class ZipArchiveService {
-//PROPERTIES----------------------------------------------------------------------
+
 
     private final JavaMailSender mailSender;
     private final FileSetRepository fileSetRepository;
@@ -37,10 +38,9 @@ public class ZipArchiveService {
     private final ZipArchiveRepository zipArchiveRepository;
     private final SentHistoryService sentHistoryService;
 
-//MAIN METHODS---------------------------------------------------------------------------
 
-    public ZipArchiveDTO createAndSendZipArchive(Long fileSetId,
-                                                 String recipientEmail) throws IOException, MessagingException {
+    public ZipArchive createAndSendZipArchive(Long fileSetId,
+                                              String recipientEmail) throws IOException, MessagingException {
         Long currentUserId = fileSetService.getCurrentUserId();
 
         FileSet fileSet = fileSetRepository.findById(fileSetId)
@@ -92,18 +92,18 @@ public class ZipArchiveService {
         }
 
         zipArchiveRepository.save(zipArchive);
-        return convertZipArchiveToDTO(zipArchive);
+        return zipArchive;
     }
 
-//    POSSIBLY USELESS
+    //    POSSIBLY USELESS
     public void resendExistingZip(Long fileSetId, Long zipArchiveId, String recipientEmail) throws AccessDeniedException, MessagingException {
         ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId)
                 .orElseThrow(() -> new ZipArchiveNotFoundException("ZipArchive not found: " + zipArchiveId));
 
         Long currentUserId = fileSetService.getCurrentUserId();
 
-        if(!zipArchive.getUser().getId().equals(currentUserId)
-           || !zipArchive.getFileSet().getId().equals(fileSetId)) {
+        if (!zipArchive.getUser().getId().equals(currentUserId)
+                || !zipArchive.getFileSet().getId().equals(fileSetId)) {
             throw new AccessDeniedException("You do not have permission to resend this archive.");
         }
 
@@ -130,15 +130,13 @@ public class ZipArchiveService {
         zipArchiveRepository.save(zipArchive);
     }
 
-    public List<ZipArchiveDTO> getAllZipArchives() {
+    public List<ZipArchive> getAllZipArchives() {
         Long currentUserId = fileSetService.getCurrentUserId();
 
-        return zipArchiveRepository.findAllByUserId(currentUserId).stream()
-                .map(this::convertZipArchiveToDTO)
-                .toList();
+        return zipArchiveRepository.findAllByUserId(currentUserId);
     }
 
-    public List<ZipArchiveDTO> getAllZipArchivesForFileSet(Long fileSetId) throws AccessDeniedException {
+    public List<ZipArchive> getAllZipArchivesForFileSet(Long fileSetId) throws AccessDeniedException {
         Long currentUserId = fileSetService.getCurrentUserId();
 
         FileSet fileSet = fileSetRepository.findById(fileSetId)
@@ -148,23 +146,21 @@ public class ZipArchiveService {
             throw new AccessDeniedException("You do not have permission to access this FileSet.");
         }
 
-        return zipArchiveRepository.findAllByUserId(currentUserId).stream()
-                .map(this::convertZipArchiveToDTO)
-                .toList();
+        return zipArchiveRepository.findAllByUserId(currentUserId);
     }
 
-    public ZipArchiveDTO getZipArchiveById(Long fileSetId, Long zipArchiveId) throws AccessDeniedException {
+    public ZipArchive getZipArchiveById(Long fileSetId, Long zipArchiveId) throws AccessDeniedException {
         Long currentUserId = fileSetService.getCurrentUserId();
 
         ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId)
                 .orElseThrow(() -> new ZipArchiveNotFoundException("ZipArchive not found: " + zipArchiveId));
 
         if (!zipArchive.getUser().getId().equals(currentUserId)
-              || !zipArchive.getFileSet().getId().equals(fileSetId)) {
+                || !zipArchive.getFileSet().getId().equals(fileSetId)) {
             throw new AccessDeniedException("You do not have permission to access this FileSet.");
         }
 
-        return convertZipArchiveToDTO(zipArchive);
+        return zipArchive;
     }
 
     public void deleteZipArchive(Long fileSetId, Long zipArchiveId) throws AccessDeniedException {
@@ -187,22 +183,18 @@ public class ZipArchiveService {
         return zipArchiveRepository.countSuccessAndFailuresByUser(userId);
     }
 
-    public List<ZipArchiveDTO> getLargeZipFiles(Long minSize) {
+    public List<ZipArchive> getLargeZipFiles(Long minSize) {
         Long userId = fileSetService.getCurrentUserId();
 
-        return zipArchiveRepository.findLargeZipArchives(userId, minSize).stream()
-                .map(this::convertZipArchiveToDTO)
-                .toList();
+        return zipArchiveRepository.findLargeZipArchives(userId, minSize);
     }
 
 
-
-//SUPPLEMENTARY METHODS--------------------------------------------------------------
     private ZipFileResult createZipFromFileSet(Long fileSetId, int sendCounter) throws IOException {
         FileSet fileSet = fileSetRepository.findById(fileSetId)
                 .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
 
-        String zipFileName = "fileset-" + fileSetId + "-" + sendCounter + ".zip" ;
+        String zipFileName = "fileset-" + fileSetId + "-" + sendCounter + ".zip";
         Path zipFilePath = Path.of(System.getProperty("java.io.tmpdir"), zipFileName);
 
         try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipFilePath))) {
@@ -217,7 +209,8 @@ public class ZipArchiveService {
         return new ZipFileResult(zipFilePath, zipFileName, size);
     }
 
-    private record ZipFileResult(Path filePath, String fileName, long size) {}
+    private record ZipFileResult(Path filePath, String fileName, long size) {
+    }
 
     private void addToZipFile(Path filePath, ZipOutputStream zos) throws IOException {
         ZipEntry zipEntry = new ZipEntry(filePath.getFileName().toString());
@@ -241,34 +234,5 @@ public class ZipArchiveService {
                 new FileSystemResource(zipFilePath.toFile()));
 
         mailSender.send(message);
-    }
-//MAPPERS
-    private ZipArchiveDTO convertZipArchiveToDTO(ZipArchive zipArchive){
-
-        return ZipArchiveDTO.builder()
-                .id(zipArchive.getId())
-                .archiveName(zipArchive.getArchiveName())
-                .archivePath(zipArchive.getArchivePath())
-                .size(zipArchive.getSize())
-                .creationDate(zipArchive.getCreationDate())
-                .status(zipArchive.getStatus())
-                .recipientEmail(zipArchive.getRecipientEmail())
-                .fileSetId(zipArchive.getFileSet().getId())
-                .userId(zipArchive.getUser().getId())
-                .sentHistoryList(zipArchive.getSentHistoryList().stream()
-                        .map(this::convertSentHistoryToDTO)
-                        .toList())
-                .build();
-    }
-
-    private SentHistoryDTO convertSentHistoryToDTO(SentHistory sentHistory) {
-        return SentHistoryDTO.builder()
-                .id(sentHistory.getId())
-                .zipArchiveId(sentHistory.getZipArchive().getId())
-                .sentAttemptDate(sentHistory.getSendAttemptDate())
-                .status(sentHistory.getStatus())
-                .errorMessage(sentHistory.getErrorMessage())
-                .sentToEmail(sentHistory.getSentToEmail())
-                .build();
     }
 }

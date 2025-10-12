@@ -18,34 +18,24 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserService {
 
-//PROPERTIES--------------------------------------------------------------------
-
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-//METHODS-------------------------------------------------------------------------
-
-    public List<UserDTO> findAllUsers() {
-        return userRepository.findAll()
-                .stream()
-                .map(this::convertUserToDTO)
-                .toList();
+    public List<User> findAllUsers() {
+        return userRepository.findAll();
     }
 
-    public UserDTO findUserById(Long id) {
-        User user = userRepository.findById(id)
+    public User findUserById(Long id) {
+        return userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User " + id + " not found"));
-        return convertUserToDTO(user);
     }
 
-    public UserDTO findUserByName(String userName) {
-        User user = userRepository.findByName(userName)
+    public User findUserByName(String userName) {
+        return userRepository.findByName(userName)
                 .orElseThrow(() -> new UserNotFoundException("User not found with username: " + userName));
-
-        return convertUserToDTO(user);
     }
 
-    public UserDTO registerUser(RegisterUserDTO registerUserDTO) {
+    public User registerUser(RegisterUserDTO registerUserDTO) {
 
         if (userRepository.existsByName(registerUserDTO.getName())) {
             throw new ExistingUserException("Name '" + registerUserDTO.getName() + "' is already taken");
@@ -60,7 +50,7 @@ public class UserService {
                 .password(passwordEncoder.encode(registerUserDTO.getPassword()))
                 .build();
 
-        return convertUserToDTO(userRepository.save(user));
+        return userRepository.save(user);
     }
 
     public void deleteUserById(Long userId) {
@@ -75,16 +65,5 @@ public class UserService {
         }
 
         userRepository.delete(currentUser);
-    }
-
-//DTO MAPPER----------------------------------------------------------------------------------------------
-
-    private UserDTO convertUserToDTO(User user) {
-        return UserDTO.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .creationDate(user.getCreationDate())
-                .build();
     }
 }
