@@ -11,11 +11,11 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FileTreeNodeDTO {
+public class ScanPathResult {
     private String name;
     private String path;
     private boolean directory;
     private Long size;
-    private List<FileTreeNodeDTO> children;
+    private List<ScanPathResult> children;
 }
 

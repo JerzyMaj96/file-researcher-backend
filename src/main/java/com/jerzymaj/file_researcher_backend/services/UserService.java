@@ -53,16 +53,12 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public void deleteUserById(Long userId) {
+    public void deleteCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = authentication.getName();
 
         User currentUser = userRepository.findByName(currentUsername)
                 .orElseThrow(() -> new UserNotFoundException("Current user hasn't been found"));
-
-        if (!currentUser.getId().equals(userId)) {
-            throw new SecurityException("You cannot delete another user!");
-        }
 
         userRepository.delete(currentUser);
     }

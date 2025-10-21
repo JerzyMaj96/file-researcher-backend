@@ -1,19 +1,17 @@
 package com.jerzymaj.file_researcher_backend.integration_tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jerzymaj.file_researcher_backend.DTOs.ScanFilteredRequest;
-import com.jerzymaj.file_researcher_backend.DTOs.ScanRequest;
+import com.jerzymaj.file_researcher_backend.DTOs.ScanPathWithFilterRequest;
+import com.jerzymaj.file_researcher_backend.DTOs.ScanPathRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -38,7 +36,7 @@ public class FileExplorerControllerIntegrationTests {
     public void shouldScanPath() throws Exception {
         Path tempFile = Files.createTempFile("testFile", ".txt");
 
-        ScanRequest request = new ScanRequest(tempFile.toString());
+        ScanPathRequest request = new ScanPathRequest(tempFile.toString());
         String jsonRequest = objectMapper.writeValueAsString(request);
 
         mockMvc.perform(post("/file-researcher/explorer/scan")
@@ -58,7 +56,7 @@ public class FileExplorerControllerIntegrationTests {
         Files.createFile(tempSubDir.resolve("test2.pdf"));
         Files.createFile(tempSubDir.resolve("test3.txt"));
 
-        ScanFilteredRequest request = new ScanFilteredRequest(tempSubDir.toString(), "txt");
+        ScanPathWithFilterRequest request = new ScanPathWithFilterRequest(tempSubDir.toString(), "txt");
         String jsonRequest = objectMapper.writeValueAsString(request);
 
         mockMvc.perform(post("/file-researcher/explorer/scan/filtered")

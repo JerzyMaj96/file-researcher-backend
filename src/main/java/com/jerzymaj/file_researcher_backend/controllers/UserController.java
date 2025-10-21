@@ -38,7 +38,7 @@ public class UserController {
         return ResponseEntity.ok(userDTO);
     }
 
-    @GetMapping("/authentication")  //todo - check if the path name makes sense
+    @GetMapping("/authentication")
     public ResponseEntity<UserDTO> retrieveCurrentUser(Authentication authentication) {
         String userName = authentication.getName();
         UserDTO userDTO = Translator.convertUserToDTO(userService.findUserByName(userName));
@@ -59,10 +59,10 @@ public class UserController {
         return ResponseEntity.created(location).body(createdUserDTO);
     }
 
-    @DeleteMapping("/{userId}")
+    @DeleteMapping("/delete-me")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Void> deleteUserById(@PathVariable Long userId) {
-        userService.deleteUserById(userId);
+    public ResponseEntity<Void> deleteCurrentUser() {
+        userService.deleteCurrentUser();
         return ResponseEntity.noContent().build();
     }
 }
