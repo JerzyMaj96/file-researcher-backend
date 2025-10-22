@@ -1,6 +1,6 @@
 package com.jerzymaj.file_researcher_backend.unit_tests;
 
-import com.jerzymaj.file_researcher_backend.DTOs.ScanPathResultDTO;
+import com.jerzymaj.file_researcher_backend.DTOs.ScanPathResponseDTO;
 import com.jerzymaj.file_researcher_backend.exceptions.PathNotFoundException;
 import com.jerzymaj.file_researcher_backend.services.FileExplorerService;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +29,7 @@ public class FileExplorerServiceUnitTests {
         Path testFile = Files.createFile(tempDir.resolve("test.txt"));
         Files.writeString(testFile, "Hello World");
 
-        ScanPathResultDTO actualResult = fileExplorerService.scanPath(testFile);
+        ScanPathResponseDTO actualResult = fileExplorerService.scanPath(testFile);
 
         assertThat(actualResult.getName()).isEqualTo("test.txt");
         assertThat(actualResult.getPath()).isEqualTo(testFile.toFile().getAbsolutePath());
@@ -45,7 +45,7 @@ public class FileExplorerServiceUnitTests {
         Files.createFile(subDir.resolve("file1.txt"));
         Files.createFile(subDir.resolve("file2.txt"));
 
-        ScanPathResultDTO actualResult = fileExplorerService.scanPath(subDir);
+        ScanPathResponseDTO actualResult = fileExplorerService.scanPath(subDir);
 
         assertThat(actualResult.getName()).isEqualTo("dir");
         assertThat(actualResult.isDirectory()).isTrue();
@@ -65,7 +65,7 @@ public class FileExplorerServiceUnitTests {
 
         Path testFile = Files.createFile(tempDir.resolve("test.txt"));
 
-        ScanPathResultDTO actualResult = fileExplorerService.scanFilteredPath(testFile, "txt");
+        ScanPathResponseDTO actualResult = fileExplorerService.scanFilteredPath(testFile, "txt");
 
         assertThat(actualResult.getName()).isEqualTo("test.txt");
         assertThat(actualResult.getPath()).isEqualTo(testFile.toFile().getAbsolutePath());
@@ -82,12 +82,12 @@ public class FileExplorerServiceUnitTests {
         Files.createFile(subDir.resolve("test2.pdf"));
         Files.createFile(subDir.resolve("test3.txt"));
 
-        ScanPathResultDTO actualResult = fileExplorerService.scanFilteredPath(subDir, "txt");
+        ScanPathResponseDTO actualResult = fileExplorerService.scanFilteredPath(subDir, "txt");
 
         assertThat(actualResult.isDirectory()).isTrue();
         assertThat(actualResult.getChildren()).hasSize(2);
         assertThat(actualResult.getChildren())
-                .extracting(ScanPathResultDTO::getName)
+                .extracting(ScanPathResponseDTO::getName)
                 .containsExactlyInAnyOrder("test1.txt", "test3.txt");
     }
 
@@ -95,7 +95,7 @@ public class FileExplorerServiceUnitTests {
     public void shouldReturnNull_ForFileWithNonMatchingExtension(@TempDir Path tempDir) throws IOException {
         Path testFile = Files.createFile(tempDir.resolve("test.txt"));
 
-        ScanPathResultDTO actualResult = fileExplorerService.scanFilteredPath(testFile, "pdf");
+        ScanPathResponseDTO actualResult = fileExplorerService.scanFilteredPath(testFile, "pdf");
 
         assertThat(actualResult).isNull();
     }
