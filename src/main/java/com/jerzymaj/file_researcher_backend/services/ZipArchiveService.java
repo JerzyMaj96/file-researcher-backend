@@ -206,7 +206,7 @@ public class ZipArchiveService {
             }
         }
         long size = Files.size(zipFilePath);
-        return new ZipFileResult(zipFilePath, zipFileName, size);
+        return new ZipFileResult(zipFilePath, zipFileName, size); 
     }
 
     private record ZipFileResult(Path filePath, String fileName, long size) {
