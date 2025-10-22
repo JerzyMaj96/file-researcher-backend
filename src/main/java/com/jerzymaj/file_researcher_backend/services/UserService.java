@@ -53,6 +53,12 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    /**
+     * Deletes the currently authenticated user.
+     *
+     * @throws UserNotFoundException if the current user cannot be found in the database
+     */
+
     public void deleteCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = authentication.getName();
