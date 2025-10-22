@@ -15,7 +15,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -62,33 +61,21 @@ public class UserControllerIntegrationTests {
     }
 
     @Test
-    @WithMockUser(username = "tester", roles = "ADMIN")
+    @WithMockUser(username = "tester", roles = "USER")
     public void shouldDeleteUser() throws Exception {
-        String uniqueName = "jerzy_" + System.currentTimeMillis();
-        String uniqueEmail = "jerzy_" + System.currentTimeMillis() + "@mail.com";
 
-        RegisterUserDTO registerUserDTO = new RegisterUserDTO(uniqueName, uniqueEmail, "secret123");
-
-        String response = mockMvc.perform(post("/file-researcher/users")
-                        .contentType(APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(registerUserDTO)))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-
-        Long userId = objectMapper.readTree(response).get("id").asLong();
-
-        mockMvc.perform(delete("/file-researcher/users/{userId}", userId))
+        mockMvc.perform(delete("/file-researcher/users/delete-me"))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(get("/file-researcher/users/{userId}", userId))
+        mockMvc.perform(get("/file-researcher/users/delete-me"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    @WithMockUser(username = "tester", roles = "ADMIN")
+    @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveCurrentUser() throws Exception {
 
-        mockMvc.perform(get("/file-researcher/users/me")
+        mockMvc.perform(get("/file-researcher/users/authentication")
                         .contentType(APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("tester"))
@@ -96,10 +83,10 @@ public class UserControllerIntegrationTests {
     }
 
     @Test
-    @WithMockUser(username = "nonExistent", roles = "ADMIN")
+    @WithMockUser(username = "nonExistent", roles = "USER")
     public void shouldThrowUserNotFoundException_IfUserNotExists() throws Exception {
 
-        mockMvc.perform(get("/file-researcher/users/me")
+        mockMvc.perform(get("/file-researcher/users/authentication")
                         .contentType(APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }

@@ -40,7 +40,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/file-researcher/users/me").authenticated()
+                        .requestMatchers("/file-researcher/users/authenticaion").authenticated()
                         .requestMatchers("/file-researcher/users/**").permitAll()
                         .requestMatchers("/file-researcher/explorer/**").permitAll()
                         .anyRequest().authenticated()

@@ -97,7 +97,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     }
 
     @Test
-    @WithMockUser(username = "tester", roles = "ADMIN")
+    @WithMockUser(username = "tester", roles = "USER")
     public void shouldSendZipArchive() throws Exception {
         mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
@@ -107,7 +107,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     }
 
     @Test
-    @WithMockUser(username = "tester", roles = "ADMIN")
+    @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveAllZipArchives() throws Exception {
         mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
@@ -121,7 +121,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
 
 
     @Test
-    @WithMockUser(username = "tester", roles = "ADMIN")
+    @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveZipArchiveById() throws Exception {
         String response = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
@@ -136,7 +136,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     }
 
     @Test
-    @WithMockUser(username = "tester", roles = "ADMIN")
+    @WithMockUser(username = "tester", roles = "USER")
     public void shouldDeleteZipArchiveById() throws Exception { //REPAIR
         String response = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
@@ -153,7 +153,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     }
 
     @Test
-    @WithMockUser(username = "tester", roles = "ADMIN")
+    @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveSentStatistics() throws Exception {
         mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
@@ -167,7 +167,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     }
 
     @Test
-    @WithMockUser(username = "tester", roles = "ADMIN")
+    @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveLargeZipArchives() throws Exception {
         mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
