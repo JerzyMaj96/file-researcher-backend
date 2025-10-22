@@ -52,6 +52,10 @@ A Spring Boot backend service that allows users to upload sets of files, compres
 ./mvnw clean install
 ./mvnw spring-boot:run
 
+## Development Branch
+This repository also includes an additional branch used for testing and experimenting with new or alternative versions of methods and application features.
+It serves as a sandbox for exploring different implementation ideas before merging stable changes into the main branch.
+
 ## License
 
 This project is licensed under the MIT License.
