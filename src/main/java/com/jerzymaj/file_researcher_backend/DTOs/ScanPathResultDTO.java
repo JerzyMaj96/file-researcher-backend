@@ -11,11 +11,11 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ScanPathResult {
+public class ScanPathResultDTO {
     private String name;
     private String path;
     private boolean directory;
     private Long size;
-    private List<ScanPathResult> children;
+    private List<ScanPathResultDTO> children;
 }
 

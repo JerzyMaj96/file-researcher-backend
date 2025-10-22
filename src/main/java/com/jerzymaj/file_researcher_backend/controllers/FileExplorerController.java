@@ -1,6 +1,6 @@
 package com.jerzymaj.file_researcher_backend.controllers;
 
-import com.jerzymaj.file_researcher_backend.DTOs.ScanPathResult;
+import com.jerzymaj.file_researcher_backend.DTOs.ScanPathResultDTO;
 import com.jerzymaj.file_researcher_backend.DTOs.ScanPathWithFilterRequest;
 import com.jerzymaj.file_researcher_backend.DTOs.ScanPathRequest;
 import com.jerzymaj.file_researcher_backend.configuration.ApiRoutes;
@@ -22,7 +22,7 @@ public class FileExplorerController {
     private final FileExplorerService fileExplorerService;
 
     @PostMapping("/scan")
-    public ResponseEntity<ScanPathResult> scanPath(@Valid @RequestBody ScanPathRequest request) {
+    public ResponseEntity<ScanPathResultDTO> scanPath(@Valid @RequestBody ScanPathRequest request) {
 
         Path path = Path.of(request.path());
         log.info("Scanning path: {}", path);
@@ -31,7 +31,7 @@ public class FileExplorerController {
     }
 
     @PostMapping("/scan/filtered")
-    public ResponseEntity<ScanPathResult> scanFilteredPath(@Valid @RequestBody ScanPathWithFilterRequest request) {
+    public ResponseEntity<ScanPathResultDTO> scanFilteredPath(@Valid @RequestBody ScanPathWithFilterRequest request) {
 
         Path path = Path.of(request.path());
         log.info("Scanning filtered path: {} with extension: {}", path, request.extension());

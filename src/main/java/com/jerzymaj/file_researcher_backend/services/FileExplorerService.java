@@ -1,6 +1,6 @@
 package com.jerzymaj.file_researcher_backend.services;
 
-import com.jerzymaj.file_researcher_backend.DTOs.ScanPathResult;
+import com.jerzymaj.file_researcher_backend.DTOs.ScanPathResultDTO;
 import com.jerzymaj.file_researcher_backend.exceptions.PathNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,7 +16,7 @@ import java.util.Objects;
 public class FileExplorerService {
 
 
-    public ScanPathResult scanPath(Path path) {
+    public ScanPathResultDTO scanPath(Path path) {
         File file = validateFile(path);
 
         log.debug("SCANNED PATH: {} | isDirectory={} | isFile={}",
@@ -29,7 +29,7 @@ public class FileExplorerService {
         }
     }
 
-    public ScanPathResult scanFilteredPath(Path path, String extension) {
+    public ScanPathResultDTO scanFilteredPath(Path path, String extension) {
         File file = validateFile(path);
 
         if (file.isFile()) {
@@ -39,7 +39,7 @@ public class FileExplorerService {
                 return null;
             }
         } else {
-            List<ScanPathResult> children = getChildrenIfFiltered(file, extension);
+            List<ScanPathResultDTO> children = getChildrenIfFiltered(file, extension);
             return buildNode(file, children);
         }
     }
@@ -63,8 +63,8 @@ public class FileExplorerService {
         return file;
     }
 
-    private ScanPathResult buildNode(File file, List<ScanPathResult> children) {
-        return ScanPathResult.builder()
+    private ScanPathResultDTO buildNode(File file, List<ScanPathResultDTO> children) {
+        return ScanPathResultDTO.builder()
                 .name(file.getName())
                 .path(file.getAbsolutePath())
                 .directory(file.isDirectory())
@@ -73,7 +73,7 @@ public class FileExplorerService {
                 .build();
     }
 
-    private List<ScanPathResult> getChildren(File directory) {
+    private List<ScanPathResultDTO> getChildren(File directory) {
         File[] files = directory.listFiles();
 
         if (files == null) {
@@ -85,7 +85,7 @@ public class FileExplorerService {
                 .toList();
     }
 
-    private List<ScanPathResult> getChildrenIfFiltered(File directory, String extension) {
+    private List<ScanPathResultDTO> getChildrenIfFiltered(File directory, String extension) {
         File[] files = directory.listFiles();
 
         if (files == null) {
