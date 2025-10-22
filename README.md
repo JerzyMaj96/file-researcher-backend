@@ -56,14 +56,15 @@ A Spring Boot backend service that allows users to upload sets of files, compres
 This repository also includes an additional branch used for testing and experimenting with new or alternative versions of methods and application features.
 It serves as a sandbox for exploring different implementation ideas before merging stable changes into the main branch.
 
-## License
-
-This project is licensed under the MIT License.
-
 ## AI Assistance Note
 During the development of this project, I used AI tools (such as ChatGPT) to assist in writing and refining some parts of the code.
 Some methods and implementations were generated with AI support and later reviewed, understood, and integrated by me.
 This project represents my learning process in backend development and demonstrates my ability to effectively use modern tools in software creation.
+
+## License
+
+This project is licensed under the MIT License.
+
 
  Feel free to contribute or open issues  
 --- 
