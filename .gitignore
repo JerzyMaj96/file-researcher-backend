@@ -36,4 +36,4 @@ build/
 application.yml
 
 ### .env ###
-fragile-data.env
+../fragile-data.env
