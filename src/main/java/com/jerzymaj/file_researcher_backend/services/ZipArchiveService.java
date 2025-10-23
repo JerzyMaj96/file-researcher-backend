@@ -367,9 +367,9 @@ public class ZipArchiveService {
      * Sends a ZIP archive as an email attachment to the specified recipient.
      *
      * @param recipientEmail the recipient's email address
-     * @param zipFilePath the path to the ZIP file to be sent
-     * @param subject the subject of the email
-     * @param text the body text of the email
+     * @param zipFilePath    the path to the ZIP file to be sent
+     * @param subject        the subject of the email
+     * @param text           the body text of the email
      * @throws MessagingException if an error occurs while sending the email
      */
 

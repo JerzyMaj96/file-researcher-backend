@@ -31,6 +31,23 @@ public class FileSetService {
     private final FileSetRepository fileSetRepository;
     private final UserRepository userRepository;
 
+    /**
+     * Creates a new {@link FileSet} for the currently authenticated user.
+     * <p>
+     * This method validates the list of selected file paths, ensures that at least one file is selected,
+     * converts each path into a {@link FileEntry} (creating new entries if they do not already exist),
+     * and associates them with the newly created FileSet. The FileSet is initialized with status {@link FileSetStatus#ACTIVE}.
+     *
+     * @param name           the name of the new FileSet
+     * @param description    optional description for the FileSet
+     * @param recipientEmail the email of the recipient who can access the FileSet
+     * @param selectedPaths  list of absolute or relative file paths to include in the FileSet
+     * @return the newly created {@link FileSet} with all associated {@link FileEntry} objects
+     * @throws IOException              if an error occurs while reading file attributes
+     * @throws NoFilesSelectedException if {@code selectedPaths} is null or empty
+     * @throws UserNotFoundException    if the currently authenticated user cannot be found in the database
+     */
+
     @Transactional
     public FileSet createFileSet(String name,
                                  String description,
@@ -91,6 +108,17 @@ public class FileSetService {
         fileSetRepository.deleteById(fileSetId);
     }
 
+    /**
+     * Converts a given file system path into a {@link FileEntry} object.
+     * <p>
+     * Checks whether the path represents a directory or a regular file,
+     * calculates file size if applicable, and extracts the file extension.
+     *
+     * @param path absolute or relative path to a file or directory
+     * @return a {@link FileEntry} object representing the file or directory
+     * @throws UncheckedIOException if reading file attributes fails
+     */
+
     private FileEntry convertPathToFileEntry(String path) {
         try {
             Path p = Path.of(path);
@@ -107,11 +135,27 @@ public class FileSetService {
         }
     }
 
+    /**
+     * Extracts the file extension from a {@link Path}.
+     * <p>
+     * If the file name does not contain a dot, an empty string is returned.
+     *
+     * @param path path of the file
+     * @return file extension (without the dot) or empty string if none
+     */
+
     protected static String getExtension(Path path) {
         String fileName = path.getFileName().toString();
         int index = fileName.lastIndexOf('.');
         return (index > 0) ? fileName.substring(index + 1) : "";
     }
+
+    /**
+     * Returns the ID of the currently authenticated user.
+     *
+     * @return the current user ID
+     * @throws UserNotFoundException if the user cannot be found
+     */
 
     public Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -121,6 +165,16 @@ public class FileSetService {
                 .orElseThrow(() -> new UserNotFoundException("User not found: " + userName))
                 .getId();
     }
+
+    /**
+     * Changes the status of a {@link FileSet} if the current user has permissions.
+     *
+     * @param fileSetId      ID of the FileSet
+     * @param newFileSetStatus new status to set
+     * @return the updated {@link FileSet}
+     * @throws AccessDeniedException   if the user cannot change the status
+     * @throws FileSetNotFoundException if the FileSet cannot be found
+     */
 
     public FileSet changeFileSetStatus(Long fileSetId, FileSetStatus newFileSetStatus) throws AccessDeniedException {
         FileSet fileSet = fileSetRepository.findById(fileSetId)
@@ -139,6 +193,16 @@ public class FileSetService {
         return fileSet;
     }
 
+    /**
+     * Updates the recipient email of a {@link FileSet} if the current user has permissions.
+     *
+     * @param fileSetId ID of the FileSet
+     * @param newEmail  new recipient email
+     * @return the updated {@link FileSet}
+     * @throws AccessDeniedException   if the user cannot change the email
+     * @throws FileSetNotFoundException if the FileSet cannot be found
+     */
+
     public FileSet changeRecipientEmail(Long fileSetId, String newEmail) throws AccessDeniedException {
         FileSet fileSet = fileSetRepository.findById(fileSetId)
                 .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
@@ -155,6 +219,16 @@ public class FileSetService {
         return fileSet;
     }
 
+    /**
+     * Updates the name of a {@link FileSet} if the current user has permissions.
+     *
+     * @param fileSetId ID of the FileSet
+     * @param newName   new name to set
+     * @return the updated {@link FileSet}
+     * @throws AccessDeniedException   if the user cannot change the name
+     * @throws FileSetNotFoundException if the FileSet cannot be found
+     */
+
     public FileSet changeFileSetName(Long fileSetId, String newName) throws AccessDeniedException {
         FileSet fileSet = fileSetRepository.findById(fileSetId)
                 .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
@@ -162,7 +236,7 @@ public class FileSetService {
         Long currentUserId = getCurrentUserId();
 
         if (!fileSet.getUser().getId().equals(currentUserId)) {
-            throw new AccessDeniedException("You do not have permission to change the recipient email.");
+            throw new AccessDeniedException("You do not have permission to change the name.");
         }
 
         fileSet.setName(newName);
@@ -171,6 +245,16 @@ public class FileSetService {
         return fileSet;
     }
 
+    /**
+     * Updates the description of a {@link FileSet} if the current user has permissions.
+     *
+     * @param fileSetId      ID of the FileSet
+     * @param newDescription new description
+     * @return the updated {@link FileSet}
+     * @throws AccessDeniedException   if the user cannot change the description
+     * @throws FileSetNotFoundException if the FileSet cannot be found
+     */
+
     public FileSet changeFileSetDescription(Long fileSetId, String newDescription) throws AccessDeniedException {
         FileSet fileSet = fileSetRepository.findById(fileSetId)
                 .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
@@ -178,7 +262,7 @@ public class FileSetService {
         Long currentUserId = getCurrentUserId();
 
         if (!fileSet.getUser().getId().equals(currentUserId)) {
-            throw new AccessDeniedException("You do not have permission to change the recipient email.");
+            throw new AccessDeniedException("You do not have permission to change the description.");
         }
 
         fileSet.setDescription(newDescription);
