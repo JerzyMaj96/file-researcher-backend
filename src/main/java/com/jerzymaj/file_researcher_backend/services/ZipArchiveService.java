@@ -76,7 +76,7 @@ public class ZipArchiveService {
 
         int sendCounter = zipArchiveRepository.findMaxSendNumberByFileSetId(fileSetId) + 1;
 
-        ZipFileResult zipFileResult = createZipFromFileSet(fileSetId, sendCounter);
+        ZipFileResult zipFileResult = createZipFromFileSetParallel(fileSetId, sendCounter);
 
         ZipArchive zipArchive = zipArchiveRepository.save(ZipArchive.builder()
                 .archiveName(zipFileResult.fileName())

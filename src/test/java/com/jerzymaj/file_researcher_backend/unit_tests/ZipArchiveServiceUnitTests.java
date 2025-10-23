@@ -1,6 +1,5 @@
 package com.jerzymaj.file_researcher_backend.unit_tests;
 
-import com.jerzymaj.file_researcher_backend.DTOs.ZipArchiveDTO;
 import com.jerzymaj.file_researcher_backend.exceptions.FileSetNotFoundException;
 import com.jerzymaj.file_researcher_backend.exceptions.ZipArchiveNotFoundException;
 import com.jerzymaj.file_researcher_backend.models.*;
