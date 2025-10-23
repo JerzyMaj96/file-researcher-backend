@@ -16,7 +16,10 @@ import java.util.Objects;
 public class FileExplorerService {
 
     /**
+     * Recursively scans a validated path and builds a tree of {@link ScanPathResponseDTO} nodes.
      *
+     * @param path the validated path to scan
+     * @return a {@link ScanPathResponseDTO} containing information about the file or directory and its children
      */
 
     public ScanPathResponseDTO scanPath(Path path) {
@@ -33,7 +36,13 @@ public class FileExplorerService {
     }
 
     /**
+     * Recursively scans a validated path and builds a tree of {@link ScanPathResponseDTO} nodes,
+     * filtering files by the specified extension.
      *
+     * @param path the validated path to scan
+     * @param extension the file extension used for filtering (case-insensitive)
+     * @return a {@link ScanPathResponseDTO} containing information about the file or directory
+     *         and its filtered children, or {@code null} if no files match the extension
      */
 
     public ScanPathResponseDTO scanFilteredPath(Path path, String extension) {
@@ -52,7 +61,12 @@ public class FileExplorerService {
     }
 
     /**
+     * Validates if the specified path exists and is readable.
      *
+     * @param path the path to validate
+     * @return a {@link File} object corresponding to the path
+     * @throws PathNotFoundException if the path does not exist
+     * @throws IllegalArgumentException if the path is not readable
      */
 
     private File validateFile(Path path) {
@@ -74,7 +88,11 @@ public class FileExplorerService {
     }
 
     /**
+     * Builds a {@link ScanPathResponseDTO} node for the given file.
      *
+     * @param file the file or directory to convert
+     * @param children a list of child nodes (for directories), or {@code null} for files
+     * @return a {@link ScanPathResponseDTO} representing the file or directory
      */
 
     private ScanPathResponseDTO buildNode(File file, List<ScanPathResponseDTO> children) {
@@ -88,7 +106,11 @@ public class FileExplorerService {
     }
 
     /**
+     * Recursively scans the contents of the given directory.
      *
+     * @param directory the directory to scan
+     * @return a list of {@link ScanPathResponseDTO} representing the filtered children
+     * @throws IllegalArgumentException if the directory cannot be read
      */
 
     private List<ScanPathResponseDTO> getChildren(File directory) {
@@ -104,7 +126,12 @@ public class FileExplorerService {
     }
 
     /**
+     * Recursively scans the contents of the given directory, applying a file extension filter.
      *
+     * @param directory the directory to scan
+     * @param extension the file extension used for filtering
+     * @return a list of {@link ScanPathResponseDTO} representing the filtered children
+     * @throws IllegalArgumentException if the directory cannot be read
      */
 
     private List<ScanPathResponseDTO> getChildrenIfFiltered(File directory, String extension) {
