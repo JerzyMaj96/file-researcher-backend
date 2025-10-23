@@ -15,6 +15,9 @@ import java.util.Objects;
 @Service
 public class FileExplorerService {
 
+    /**
+     *
+     */
 
     public ScanPathResponseDTO scanPath(Path path) {
         File file = validateFile(path);
@@ -28,6 +31,10 @@ public class FileExplorerService {
             return buildNode(file, getChildren(file));
         }
     }
+
+    /**
+     *
+     */
 
     public ScanPathResponseDTO scanFilteredPath(Path path, String extension) {
         File file = validateFile(path);
@@ -44,6 +51,9 @@ public class FileExplorerService {
         }
     }
 
+    /**
+     *
+     */
 
     private File validateFile(Path path) {
         File file = path.toFile();
@@ -63,6 +73,10 @@ public class FileExplorerService {
         return file;
     }
 
+    /**
+     *
+     */
+
     private ScanPathResponseDTO buildNode(File file, List<ScanPathResponseDTO> children) {
         return ScanPathResponseDTO.builder()
                 .name(file.getName())
@@ -72,6 +86,10 @@ public class FileExplorerService {
                 .children(file.isDirectory() ? (children != null ? children : List.of()) : null)
                 .build();
     }
+
+    /**
+     *
+     */
 
     private List<ScanPathResponseDTO> getChildren(File directory) {
         File[] files = directory.listFiles();
@@ -84,6 +102,10 @@ public class FileExplorerService {
                 .map(file -> scanPath(file.toPath()))
                 .toList();
     }
+
+    /**
+     *
+     */
 
     private List<ScanPathResponseDTO> getChildrenIfFiltered(File directory, String extension) {
         File[] files = directory.listFiles();
