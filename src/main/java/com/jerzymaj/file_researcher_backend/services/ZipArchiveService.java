@@ -197,11 +197,34 @@ public class ZipArchiveService {
         zipArchiveRepository.deleteById(zipArchiveId);
     }
 
+    /**
+     * Retrieves statistics about ZIP archive sending results for the currently authenticated user.
+     * <p>
+     * The statistics include the total number of successfully sent archives and the number of failed send attempts.
+     * This information can be used to display user performance metrics or diagnostic data in the application dashboard.
+     * </p>
+     *
+     * @return a {@link Map} containing key-value pairs with statistical data,
+     * typically including counts of successful and failed ZIP sends
+     */
+
     public Map<String, Object> getZipStatsForCurrentUser() {
         Long userId = fileSetService.getCurrentUserId();
 
         return zipArchiveRepository.countSuccessAndFailuresByUser(userId);
     }
+
+    /**
+     * Retrieves all ZIP archives created by the current user that exceed a specified size threshold.
+     * <p>
+     * This method can be used to identify unusually large ZIP files for monitoring storage usage
+     * or performing cleanup operations.
+     * </p>
+     *
+     * @param minSize the minimum file size (in bytes) used as a filter;
+     *                only ZIP files larger than this value will be returned
+     * @return a {@link List} of {@link ZipArchive} objects that meet the size criteria
+     */
 
     public List<ZipArchive> getLargeZipFiles(Long minSize) {
         Long userId = fileSetService.getCurrentUserId();
