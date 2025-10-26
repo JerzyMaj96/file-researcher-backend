@@ -89,6 +89,15 @@ public class SentHistoryService {
         sentHistoryRepository.deleteById(sentHistoryId);
     }
 
+    /**
+     * Retrieves the email address of the last recipient of a given {@link ZipArchive}.
+     *
+     * @param zipArchiveId the ID of the ZIP archive
+     * @return the email address of the most recent recipient
+     * @throws AccessDeniedException       if the current user does not own the archive
+     * @throws ZipArchiveNotFoundException if the ZIP archive does not exist
+     */
+
     public String getLastRecipient(Long zipArchiveId) throws AccessDeniedException {
         ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId)
                 .orElseThrow(() -> new ZipArchiveNotFoundException("Zip archive not found: " + zipArchiveId));
