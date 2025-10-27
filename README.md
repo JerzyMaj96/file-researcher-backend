@@ -37,6 +37,7 @@ A Spring Boot backend service that allows users to upload sets of files, compres
 ├── models/                # JPA entity models
 ├── repositories/          # Spring Data JPA Repos
 ├── services/              # Business logic
+├── translator/            # DTO mappers
 └── FileResearcherApplication.java
 ```
 
