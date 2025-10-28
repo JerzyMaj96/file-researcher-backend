@@ -56,7 +56,7 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     }
 
     @ExceptionHandler(FileSetNotFoundException.class)
-    public final ResponseEntity<ErrorDetails> handleFileSetNotFoundException(FileSetNotFoundException ex, WebRequest request) throws Exception{
+    public final ResponseEntity<ErrorDetails> handleFileSetNotFoundException(FileSetNotFoundException ex, WebRequest request) throws Exception {
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
                 request.getDescription(false));
 
@@ -64,7 +64,7 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     }
 
     @ExceptionHandler(ZipArchiveNotFoundException.class)
-    public final ResponseEntity<ErrorDetails> handleZipArchiveNotFoundException(ZipArchiveNotFoundException ex, WebRequest request) throws Exception{
+    public final ResponseEntity<ErrorDetails> handleZipArchiveNotFoundException(ZipArchiveNotFoundException ex, WebRequest request) throws Exception {
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
                 request.getDescription(false));
 
@@ -72,7 +72,7 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     }
 
     @ExceptionHandler(SentHistoryNotFoundException.class)
-    public final ResponseEntity<ErrorDetails> handleSentHistoryNotFoundException(SentHistoryNotFoundException ex, WebRequest request) throws Exception{
+    public final ResponseEntity<ErrorDetails> handleSentHistoryNotFoundException(SentHistoryNotFoundException ex, WebRequest request) throws Exception {
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
                 request.getDescription(false));
 
@@ -80,7 +80,7 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public final ResponseEntity<ErrorDetails> handleSAccessDeniedExceptionException(AccessDeniedException ex, WebRequest request) throws Exception{
+    public final ResponseEntity<ErrorDetails> handleAccessDeniedExceptionException(AccessDeniedException ex, WebRequest request) throws Exception {
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
                 request.getDescription(false));
 
@@ -88,7 +88,7 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     }
 
     @ExceptionHandler(MessagingException.class)
-    public final ResponseEntity<ErrorDetails> handleSMessagingException(MessagingException ex, WebRequest request) throws Exception{
+    public final ResponseEntity<ErrorDetails> handleMessagingException(MessagingException ex, WebRequest request) throws Exception {
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
                 request.getDescription(false));
 
@@ -96,7 +96,7 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     }
 
     @ExceptionHandler(IOException.class)
-    public final ResponseEntity<ErrorDetails> handleSIOException(IOException ex, WebRequest request) throws Exception{
+    public final ResponseEntity<ErrorDetails> handleIOException(IOException ex, WebRequest request) throws Exception {
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
                 request.getDescription(false));
 
