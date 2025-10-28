@@ -24,7 +24,7 @@ public class FileEntryDTO {
     private Long size;
 
     @NotBlank
-    @Size(max = 10)
+    @Size(max = 20)
     private String extension;
 
 }
