@@ -11,6 +11,7 @@ import com.jerzymaj.file_researcher_backend.repositories.FileEntryRepository;
 import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
 import com.jerzymaj.file_researcher_backend.repositories.UserRepository;
 import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
+import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -102,7 +107,8 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.fileSetId").value(fileSet.getId()))
-                .andExpect(jsonPath("$.archivePath").isNotEmpty());
+                .andExpect(jsonPath("$.archivePath").isNotEmpty())
+                .andExpect(jsonPath("$.status").value("SUCCESS"));
     }
 
     @Test
@@ -148,6 +154,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
                 .andExpect(status().isNoContent());
 
         Optional<ZipArchive> deleteZip = zipArchiveRepository.findById(zipArchiveId);
+
         assertTrue(deleteZip.isEmpty(), "ZipArchive should be deleted from repository");
     }
 

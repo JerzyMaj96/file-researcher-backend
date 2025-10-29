@@ -9,12 +9,13 @@ import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
 import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
@@ -48,7 +49,7 @@ public class ZipArchiveService {
      *     <li>Verifies that the current user has access to the specified FileSet.</li>
      *     <li>Generates a ZIP file containing all files from the FileSet.</li>
      *     <li>Sends the ZIP file as an email attachment to the provided recipient.</li>
-     *     <li>Updates the {@link ZipArchive} status in the database and records the sending history.</li>
+     *     <li>Updates the {@link ZipArchive} status and {@link FileSet} status in the database and records the sending history.</li>
      * </ol>
      * </p>
      *
@@ -102,18 +103,19 @@ public class ZipArchiveService {
             );
 
             zipArchive.setStatus(ZipArchiveStatus.SUCCESS);
+            fileSet.setStatus(FileSetStatus.SENT);
             sentHistoryService.saveSentHistory(zipArchive, recipientEmail, true, null);
 
         } catch (MessagingException exception) {
             zipArchive.setStatus(ZipArchiveStatus.FAILED);
-            zipArchiveRepository.save(zipArchive);
+//            zipArchiveRepository.save(zipArchive);
             sentHistoryService.saveSentHistory(zipArchive, recipientEmail, false, exception.getMessage());
             throw exception;
         } finally {
             Files.deleteIfExists(zipFileResult.filePath());
         }
 
-        zipArchiveRepository.save(zipArchive);
+//        zipArchiveRepository.save(zipArchive);
 
         return zipArchive;
     }
@@ -236,6 +238,12 @@ public class ZipArchiveService {
     }
 
     private record ZipFileResult(Path filePath, String fileName, long size) {
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void markFileSetAsSent(FileSet fileSet) {
+
+        fileSetRepository.save(fileSet);
     }
 
     /**
