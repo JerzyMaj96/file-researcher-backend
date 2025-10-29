@@ -108,7 +108,6 @@ public class ZipArchiveService {
 
         } catch (MessagingException exception) {
             zipArchive.setStatus(ZipArchiveStatus.FAILED);
-//            zipArchiveRepository.save(zipArchive);
             sentHistoryService.saveSentHistory(zipArchive, recipientEmail, false, exception.getMessage());
             throw exception;
         } finally {

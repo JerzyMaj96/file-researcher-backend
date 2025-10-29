@@ -2,15 +2,10 @@ package com.jerzymaj.file_researcher_backend.integration_tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jerzymaj.file_researcher_backend.configuration.TestMailConfig;
-import com.jerzymaj.file_researcher_backend.models.FileEntry;
-import com.jerzymaj.file_researcher_backend.models.FileSet;
-import com.jerzymaj.file_researcher_backend.models.User;
-import com.jerzymaj.file_researcher_backend.models.ZipArchive;
+import com.jerzymaj.file_researcher_backend.models.*;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
-import com.jerzymaj.file_researcher_backend.repositories.FileEntryRepository;
-import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
-import com.jerzymaj.file_researcher_backend.repositories.UserRepository;
-import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
+import com.jerzymaj.file_researcher_backend.models.enum_classes.ZipArchiveStatus;
+import com.jerzymaj.file_researcher_backend.repositories.*;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,8 +25,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -62,6 +56,9 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
 
     @Autowired
     private ZipArchiveRepository zipArchiveRepository;
+
+    @Autowired
+    private SentHistoryRepository sentHistoryRepository;
 
     @Autowired
     private JavaMailSender mailSender;
@@ -103,12 +100,23 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     @Test
     @WithMockUser(username = "tester", roles = "USER")
     public void shouldSendZipArchive() throws Exception {
-        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
+        String response = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.fileSetId").value(fileSet.getId()))
                 .andExpect(jsonPath("$.archivePath").isNotEmpty())
-                .andExpect(jsonPath("$.status").value("SUCCESS"));
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Long zipArchiveId = objectMapper.readTree(response).get("id").asLong();
+
+        ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId).orElseThrow();
+        FileSet updatedFileSet = fileSetRepository.findById(fileSet.getId()).orElseThrow();
+
+        assertEquals(ZipArchiveStatus.SUCCESS, zipArchive.getStatus());
+        assertEquals(FileSetStatus.SENT, updatedFileSet.getStatus());
     }
 
     @Test
@@ -169,7 +177,6 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.successCount").exists())
                 .andExpect(jsonPath("$.failureCount").exists());
-
     }
 
     @Test
