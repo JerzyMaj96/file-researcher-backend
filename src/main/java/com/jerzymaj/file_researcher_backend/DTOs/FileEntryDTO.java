@@ -23,8 +23,8 @@ public class FileEntryDTO {
     @Min(0)
     private Long size;
 
-    @NotBlank
-    @Size(max = 20)
+//    @NotBlank
+//    @Size(max = 20) todo check if it's necessary
     private String extension;
 
 }

@@ -44,7 +44,7 @@ public class FileSetControllerIntegrationTests {
     ObjectMapper objectMapper;
 
     @Test
-    @WithMockUser(username = "tester", roles = "ADMIN")
+    @WithMockUser(username = "tester", roles = "USER")
     public void shouldCreateNewFileSet(@TempDir Path tempDir) throws Exception {
         User testUser = new User();
         testUser.setName("tester");

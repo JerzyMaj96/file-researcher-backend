@@ -81,7 +81,7 @@ public class SentHistoryControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "tester", roles = "ADMIN")
+    @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveAllSentHistoryForZipArchive() throws Exception {
 
         String response = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
@@ -98,7 +98,7 @@ public class SentHistoryControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "tester", roles = "ADMIN")
+    @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveLastRecipient() throws Exception {
 
         String response = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
@@ -114,7 +114,7 @@ public class SentHistoryControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "tester", roles = "ADMIN")
+    @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveSentHistoryById() throws Exception {
 
         String sendZipResponse = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
@@ -141,7 +141,7 @@ public class SentHistoryControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "tester", roles = "ADMIN")
+    @WithMockUser(username = "tester", roles = "USER")
     public void shouldDeleteSentHistoryById() throws Exception {
 
         String sendZipResponse = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())

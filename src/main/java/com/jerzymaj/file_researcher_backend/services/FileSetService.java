@@ -59,9 +59,9 @@ public class FileSetService {
             throw new NoFilesSelectedException("At least one file must be selected");
         }
 
-        Long currentUserId = getCurrentUserId();
+        Long currentUserId = getCurrentUserId();// todo to check if I need to use AccesDeniedException
 
-        User owner = userRepository.findById(currentUserId)
+        User currentUser = userRepository.findById(currentUserId)
                 .orElseThrow(() -> new UserNotFoundException("User " + currentUserId + " not found"));
 
         FileSet fileSet = fileSetRepository.save(
@@ -70,7 +70,7 @@ public class FileSetService {
                         .description(description)
                         .recipientEmail(recipientEmail)
                         .status(FileSetStatus.ACTIVE)
-                        .user(owner)
+                        .user(currentUser)
                         .build()
         );
 
