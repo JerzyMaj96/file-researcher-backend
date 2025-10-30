@@ -22,11 +22,10 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -119,7 +118,7 @@ public class ZipArchiveService {
         return zipArchive;
     }
 
-    //    POSSIBLY USELESS
+    //    POSSIBLY USELESS - NOT BEING UPDATED
     public void resendExistingZip(Long fileSetId, Long zipArchiveId, String recipientEmail) throws AccessDeniedException, MessagingException {
         ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId)
                 .orElseThrow(() -> new ZipArchiveNotFoundException("ZipArchive not found: " + zipArchiveId));
@@ -236,14 +235,7 @@ public class ZipArchiveService {
         return zipArchiveRepository.findLargeZipArchives(userId, minSize);
     }
 
-    private record ZipFileResult(Path filePath, String fileName, long size) {
-    }
-
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void markFileSetAsSent(FileSet fileSet) {
-
-        fileSetRepository.save(fileSet);
-    }
+    private record ZipFileResult(Path filePath, String fileName, long size) {}
 
     /**
      * Creates a ZIP archive containing all files from the specified {@link FileSet}.
@@ -302,27 +294,39 @@ public class ZipArchiveService {
         Path zipFilePath = Path.of(System.getProperty("java.io.tmpdir"), zipFileName);
         Path tempDir = Files.createTempDirectory("zip_parallel");
 
-        ExecutorService executor = Executors.newFixedThreadPool(4);
+        int threads = Math.min(fileSet.getFiles().size(), Runtime.getRuntime().availableProcessors() * 2);
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+
+        List<Future<?>> futures = new ArrayList<>();
 
         for (FileEntry fileEntry : fileSet.getFiles()) {
             Path source = Path.of(fileEntry.getPath());
             Path destination = tempDir.resolve(source.getFileName());
 
-            executor.submit(() -> {
+            futures.add(executor.submit(() -> {
                 try {
                     Files.copy(source, destination);
                 } catch (IOException exception) {
-                    exception.printStackTrace();
+                    System.err.println("Failed to copy file: " + source + " -> " + exception.getMessage());
                 }
-            });
+            }));
         }
 
         executor.shutdown();
-
+//        try {
+//            executor.awaitTermination(2, TimeUnit.MINUTES);
+//        } catch (InterruptedException exception) {
+//            exception.printStackTrace();
+//        }
         try {
-            executor.awaitTermination(2, TimeUnit.MINUTES);
+            for (Future<?> future : futures) {
+                future.get();
+            }
         } catch (InterruptedException exception) {
-            exception.printStackTrace();
+            Thread.currentThread().interrupt();
+            throw new IOException("Thread interrupted while copying files", exception);
+        } catch (ExecutionException exception) {
+            throw new IOException("Error occurred during file copy", exception.getCause());
         }
 
         createZipFromDirectory(tempDir, zipFilePath);

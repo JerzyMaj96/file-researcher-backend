@@ -20,7 +20,7 @@ public class SentHistory {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "zip_archive_id", nullable = false)
+    @JoinColumn(name = "zip_archive_id", nullable = false, updatable = false)
     private ZipArchive zipArchive;
 
     @CreationTimestamp
