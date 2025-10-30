@@ -113,8 +113,6 @@ public class ZipArchiveService {
             Files.deleteIfExists(zipFileResult.filePath());
         }
 
-//        zipArchiveRepository.save(zipArchive);
-
         return zipArchive;
     }
 
@@ -313,11 +311,7 @@ public class ZipArchiveService {
         }
 
         executor.shutdown();
-//        try {
-//            executor.awaitTermination(2, TimeUnit.MINUTES);
-//        } catch (InterruptedException exception) {
-//            exception.printStackTrace();
-//        }
+
         try {
             for (Future<?> future : futures) {
                 future.get();
