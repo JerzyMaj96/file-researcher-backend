@@ -6,6 +6,7 @@ import com.jerzymaj.file_researcher_backend.services.ZipArchiveService;
 import com.jerzymaj.file_researcher_backend.tranlator.Translator;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,6 +14,7 @@ import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping(ApiRoutes.BASE_API)
 @RequiredArgsConstructor
@@ -51,8 +53,12 @@ public class ZipArchiveController {
     public ResponseEntity<ZipArchiveDTO> sendZipArchive(@PathVariable Long fileSetId,
                                                         @RequestParam String recipientEmail) throws MessagingException, IOException {
 
+        log.info("Sending ZIP archive for fileSetId={} to recipient={}", fileSetId, recipientEmail);
+
         ZipArchiveDTO zipArchiveDTO = Translator.convertZipArchiveToDTO(
                 zipArchiveService.createAndSendZipArchive(fileSetId, recipientEmail));
+
+        log.info("ZIP archive for fileSetId={} successfully sent to {}", fileSetId, recipientEmail);
 
         return ResponseEntity.ok(zipArchiveDTO);
     }
