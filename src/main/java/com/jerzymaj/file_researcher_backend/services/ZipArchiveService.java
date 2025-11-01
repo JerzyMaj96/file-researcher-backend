@@ -315,11 +315,6 @@ public class ZipArchiveService {
         executor.shutdown();
 
         try {
-            if (!executor.awaitTermination(5, TimeUnit.MINUTES)) {
-                executor.shutdownNow();
-                throw new IOException("Timeout: file copy threads did not finish in time.");
-            }
-
             for (Future<?> future : futures) {
                 future.get();
             }

@@ -64,7 +64,7 @@ public class ZipArchiveController {
     }
 
     @PutMapping("/file-sets/{fileSetId}/zip-archives/{zipArchiveId}/resend")
-    public ResponseEntity<?> resendZipArchive(@PathVariable Long fileSetId,
+    public ResponseEntity<String> resendZipArchive(@PathVariable Long fileSetId,
                                               @PathVariable Long zipArchiveId,
                                               @RequestParam String recipientEmail)
             throws AccessDeniedException, MessagingException {
