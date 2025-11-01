@@ -9,6 +9,7 @@ import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
 import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
@@ -29,6 +30,7 @@ import java.util.concurrent.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ZipArchiveService {
@@ -305,7 +307,7 @@ public class ZipArchiveService {
                 try {
                     Files.copy(source, destination);
                 } catch (IOException exception) {
-                    System.err.println("Failed to copy file: " + source + " -> " + exception.getMessage());
+                    log.warn("Failed to copy file: {} -> {}", source, exception.getMessage(), exception);
                 }
             }));
         }
@@ -313,9 +315,15 @@ public class ZipArchiveService {
         executor.shutdown();
 
         try {
+            if (!executor.awaitTermination(5, TimeUnit.MINUTES)) {
+                executor.shutdownNow();
+                throw new IOException("Timeout: file copy threads did not finish in time.");
+            }
+
             for (Future<?> future : futures) {
                 future.get();
             }
+
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw new IOException("Thread interrupted while copying files", exception);
