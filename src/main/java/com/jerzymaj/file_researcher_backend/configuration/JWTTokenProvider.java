@@ -16,7 +16,7 @@ import java.util.Date;
 
 @Slf4j
 @Component
-public class JWTokenProvider {
+public class JWTTokenProvider {
 
     @Value("${app.jwt.secret}")
     private String jwtSecret;

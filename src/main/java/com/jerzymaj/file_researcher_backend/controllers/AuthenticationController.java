@@ -1,7 +1,7 @@
 package com.jerzymaj.file_researcher_backend.controllers;
 
 import com.jerzymaj.file_researcher_backend.DTOs.LoginRequest;
-import com.jerzymaj.file_researcher_backend.configuration.JWTokenProvider;
+import com.jerzymaj.file_researcher_backend.configuration.JWTTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthenticationController {
 
     private final AuthenticationManager authenticationManager;
-    private final JWTokenProvider jwTokenProvider;
+    private final JWTTokenProvider jwTokenProvider;
 
     @PostMapping("login")
     public String authenticateUser(@RequestBody LoginRequest loginRequest) {
