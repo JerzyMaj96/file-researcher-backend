@@ -8,6 +8,8 @@ public final class ApiRoutes {
 
     public static final String USERS = BASE_API + "/users";
 
+    public static final String AUTHENTICATION = BASE_API + "/auth";
+
     public static final String FILE_EXPLORER = BASE_API + "/explorer";
 
     public static final String FILE_SETS = BASE_API + "/file-sets";
