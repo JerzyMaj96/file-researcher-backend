@@ -9,6 +9,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
@@ -33,13 +34,13 @@ public class JWTTokenProvider {
     }
 
     public String generateToken(Authentication authentication) {
-        User userPrincipal = (User) authentication.getPrincipal();
+        UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
 
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
 
         return Jwts.builder()
-                .setSubject(userPrincipal.getName())
+                .setSubject(userPrincipal.getUsername())
                 .setIssuedAt(new Date())
                 .setExpiration(expiryDate)
                 .signWith(key, SignatureAlgorithm.HS512)
