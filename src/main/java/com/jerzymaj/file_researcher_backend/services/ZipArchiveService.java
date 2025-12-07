@@ -1,5 +1,6 @@
 package com.jerzymaj.file_researcher_backend.services;
 
+import com.jerzymaj.file_researcher_backend.DTOs.ProgressUpdate;
 import com.jerzymaj.file_researcher_backend.exceptions.FileSetNotFoundException;
 import com.jerzymaj.file_researcher_backend.exceptions.ZipArchiveNotFoundException;
 import com.jerzymaj.file_researcher_backend.models.*;
@@ -10,6 +11,8 @@ import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
@@ -41,6 +44,7 @@ public class ZipArchiveService {
     private final FileSetService fileSetService;
     private final ZipArchiveRepository zipArchiveRepository;
     private final SentHistoryService sentHistoryService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     /**
      * Creates a ZIP archive from the files in the specified {@link FileSet} and sends it to the given email address.
@@ -116,6 +120,111 @@ public class ZipArchiveService {
         }
 
         return zipArchive;
+    }
+
+    /**
+     *
+     */
+
+    //ALTERNATIVE METHOD - with WebSocket
+    @Async
+    public void createAndSendZipFromFileSetWithProgress(Long fileSetId, String recipientEmail, String taskId) {
+        Path zipFilePath = null;
+
+        try {
+            FileSet fileSet = fileSetRepository.findById(fileSetId)
+                    .orElseThrow(() -> new FileSetNotFoundException("FileSet not found"));
+
+            int sendCounter = zipArchiveRepository.findMaxSendNumberByFileSetId(fileSetId) + 1;
+            String zipFileName = "fileset-" + fileSetId + "-" + sendCounter + ".zip";
+            zipFilePath = Path.of(System.getProperty("java.io.tmpdir"), zipFileName);
+
+            List<FileEntry> files = fileSet.getFiles();
+            int totalFiles = files.size();
+
+            try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipFilePath))) {
+
+                for (int i = 0; i < totalFiles; i++) {
+                    FileEntry fileEntry = files.get(i);
+                    Path sourcePath = Path.of(fileEntry.getPath());
+
+                    if (Files.exists(sourcePath)) {
+                        ZipEntry zipEntry = new ZipEntry(sourcePath.getFileName().toString());
+                        zos.putNextEntry(zipEntry);
+
+                        Files.copy(sourcePath, zos);
+
+                        zos.closeEntry();
+                    }
+
+                    int percent = (int) (((double) (i + 1) / totalFiles) * 100);
+
+                    messagingTemplate.convertAndSend(
+                            "/topic/progress" + taskId,
+                            new ProgressUpdate(percent, "Processing: " + fileEntry.getName())
+                    );
+                }
+            }
+
+            long size = Files.size(zipFilePath);
+
+            ZipArchive zipArchive = zipArchiveRepository.save(ZipArchive.builder()
+                    .archiveName(zipFileName)
+                    .archivePath(zipFilePath.toAbsolutePath().toString())
+                    .size(size)
+                    .status(ZipArchiveStatus.PENDING)
+                    .recipientEmail(recipientEmail)
+                    .fileSet(fileSet)
+                    .user(fileSet.getUser())
+                    .creationDate(LocalDateTime.now())
+                    .sendNumber(sendCounter)
+                    .build()
+            );
+
+            try {
+                messagingTemplate.convertAndSend(
+                        "/topic/progress/" + taskId,
+                        new ProgressUpdate(100, "Sending email...")
+                );
+
+                sendZipArchiveByEmail(
+                        recipientEmail,
+                        zipFilePath,
+                        "Files",
+                        "Please find attached the ZIP archive of requested files."
+                );
+
+                zipArchive.setStatus(ZipArchiveStatus.SUCCESS);
+                fileSet.setStatus(FileSetStatus.SENT);
+                zipArchiveRepository.save(zipArchive);
+                sentHistoryService.saveSentHistory(zipArchive, recipientEmail, true, null);
+
+                messagingTemplate.convertAndSend(
+                        "/topic/progress/" + taskId,
+                        new ProgressUpdate(100, "Completed!")
+                );
+
+            } catch (MessagingException me) {
+                zipArchive.setStatus(ZipArchiveStatus.FAILED);
+                zipArchiveRepository.save(zipArchive);
+                sentHistoryService.saveSentHistory(zipArchive, recipientEmail, false, me.getMessage());
+            }
+
+
+        } catch (Exception ex) {
+            log.error("Error", ex);
+            messagingTemplate.convertAndSend("/topic/progress/" + taskId,
+                    new ProgressUpdate(-1, "Error: " + ex.getMessage())
+            );
+        } finally {
+            try {
+                if (zipFilePath != null) {
+                    Files.deleteIfExists(zipFilePath);
+                }
+            } catch (IOException ex) {
+                log.warn("Could not delete temp file", ex);
+            }
+        }
     }
 
     //    POSSIBLY USELESS - NOT BEING UPDATED
@@ -235,7 +344,8 @@ public class ZipArchiveService {
         return zipArchiveRepository.findLargeZipArchives(userId, minSize);
     }
 
-    private record ZipFileResult(Path filePath, String fileName, long size) {}
+    private record ZipFileResult(Path filePath, String fileName, long size) {
+    }
 
     /**
      * Creates a ZIP archive containing all files from the specified {@link FileSet}.
@@ -251,6 +361,7 @@ public class ZipArchiveService {
      * @throws IOException if an I/O error occurs during file copying or ZIP creation
      */
 
+    //ALTERNATIVE METHOD
     private ZipFileResult createZipFromFileSet(Long fileSetId, int sendCounter) throws IOException {
         FileSet fileSet = fileSetRepository.findById(fileSetId)
                 .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));

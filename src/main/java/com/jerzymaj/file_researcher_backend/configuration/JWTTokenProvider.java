@@ -1,6 +1,5 @@
 package com.jerzymaj.file_researcher_backend.configuration;
 
-import com.jerzymaj.file_researcher_backend.models.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
