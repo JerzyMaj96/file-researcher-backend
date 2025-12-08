@@ -160,7 +160,7 @@ public class ZipArchiveService {
                     int percent = (int) (((double) (i + 1) / totalFiles) * 100);
 
                     messagingTemplate.convertAndSend(
-                            "/topic/progress" + taskId,
+                            "/topic/progress/" + taskId,
                             new ProgressUpdate(percent, "Processing: " + fileEntry.getName())
                     );
                 }

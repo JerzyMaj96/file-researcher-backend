@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -63,10 +64,21 @@ public class ZipArchiveController {
         return ResponseEntity.ok(zipArchiveDTO);
     }
 
+    @PostMapping("/file-sets/{fileSetId}/zip-archives/send-progress")
+    public ResponseEntity<String> sendZipArchiveAndShowProgress(@PathVariable Long fileSetId,
+                                                                @RequestParam String recipientEmail) {
+
+        String taskId = UUID.randomUUID().toString();
+
+        zipArchiveService.createAndSendZipFromFileSetWithProgress(fileSetId, recipientEmail, taskId);
+
+        return ResponseEntity.ok(taskId);
+    }
+
     @PutMapping("/file-sets/{fileSetId}/zip-archives/{zipArchiveId}/resend")
     public ResponseEntity<String> resendZipArchive(@PathVariable Long fileSetId,
-                                              @PathVariable Long zipArchiveId,
-                                              @RequestParam String recipientEmail)
+                                                   @PathVariable Long zipArchiveId,
+                                                   @RequestParam String recipientEmail)
             throws AccessDeniedException, MessagingException {
 
         zipArchiveService.resendExistingZip(fileSetId, zipArchiveId, recipientEmail);
