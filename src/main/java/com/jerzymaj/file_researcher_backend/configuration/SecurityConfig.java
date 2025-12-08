@@ -45,6 +45,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/file-researcher/users/authentication").authenticated()
                         .requestMatchers("/file-researcher/users/delete-me").authenticated()
                         .requestMatchers("/file-researcher/users").permitAll()

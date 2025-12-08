@@ -128,10 +128,13 @@ public class ZipArchiveService {
 
     //ALTERNATIVE METHOD - with WebSocket
     @Async
+    @Transactional
     public void createAndSendZipFromFileSetWithProgress(Long fileSetId, String recipientEmail, String taskId) {
         Path zipFilePath = null;
 
         try {
+            Thread.sleep(1000);
+
             FileSet fileSet = fileSetRepository.findById(fileSetId)
                     .orElseThrow(() -> new FileSetNotFoundException("FileSet not found"));
 
@@ -163,6 +166,12 @@ public class ZipArchiveService {
                             "/topic/progress/" + taskId,
                             new ProgressUpdate(percent, "Processing: " + fileEntry.getName())
                     );
+
+                    try {
+                        Thread.sleep(2000); // for visual presentation of small files
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
                 }
             }
 
