@@ -128,7 +128,7 @@ public class ZipArchiveService {
 
     //ALTERNATIVE METHOD - with WebSocket
     @Async
-    @Transactional
+    @Transactional // todo maybe create a unit test and integration test using this method
     public void createAndSendZipFromFileSetWithProgress(Long fileSetId, String recipientEmail, String taskId) {
         Path zipFilePath = null;
 
