@@ -2,7 +2,7 @@ package com.jerzymaj.file_researcher_backend.controllers;
 
 import com.jerzymaj.file_researcher_backend.DTOs.LoginRequest;
 import com.jerzymaj.file_researcher_backend.configuration.ApiRoutes;
-import com.jerzymaj.file_researcher_backend.configuration.JWTTokenProvider;
+import com.jerzymaj.file_researcher_backend.configuration.JWTProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthenticationController {
 
     private final AuthenticationManager authenticationManager;
-    private final JWTTokenProvider jwTokenProvider;
+    private final JWTProvider jwTokenProvider;
 
     @PostMapping("login")
     public String authenticateUser(@RequestBody LoginRequest loginRequest) {

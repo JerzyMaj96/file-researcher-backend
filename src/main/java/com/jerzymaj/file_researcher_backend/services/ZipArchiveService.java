@@ -123,7 +123,29 @@ public class ZipArchiveService {
     }
 
     /**
+     * Asynchronously creates a ZIP archive from the specified {@link FileSet}, sends it via email,
+     * and broadcasts real-time progress updates via WebSocket.
+     * <p>
+     * This method is executed in a separate thread (due to the {@link Async} annotation) and performs the following steps:
+     * <ol>
+     *      <li>Retrieves the FileSet and initializes a temporary ZIP file.</li>
+     *      <li>Iterates through files, adding them to the archive while calculating percentage progress.</li>
+     *      <li>Sends {@link ProgressUpdate} messages to the WebSocket topic: <code>/topic/progress/{taskId}</code>.</li>
+     *      <li>Persists a {@link ZipArchive} entity with {@link ZipArchiveStatus#PENDING}.</li>
+     *      <li>Sends the generated ZIP file as an email attachment to the recipient.</li>
+     *      <li>Updates the archive status to {@link ZipArchiveStatus#SUCCESS} and records the sending history.</li>
+     *      <li>Ensures the temporary ZIP file is deleted in the <code>finally</code> block.</li>
+     * </ol>
+     * </p>
      *
+     * <p>
+     * <b>Note:</b> This method includes intentional delays (<code>Thread.sleep</code>) within the file processing loop
+     * to allow for visual demonstration of the progress bar on the client side, even for small files.
+     * </p>
+     *
+     * @param fileSetId      the ID of the FileSet to be archived; must exist in the database
+     * @param recipientEmail the email address where the ZIP archive will be sent
+     * @param taskId         a unique identifier for the current task/session, used to target specific WebSocket clients for progress updates
      */
 
     //ALTERNATIVE METHOD - with WebSocket
