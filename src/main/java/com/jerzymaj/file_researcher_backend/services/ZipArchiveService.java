@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -149,8 +150,7 @@ public class ZipArchiveService {
      */
 
     //ALTERNATIVE METHOD - with WebSocket
-    @Async
-    @Transactional // todo maybe create a unit test and integration test using this method
+    @Async// todo maybe create a unit test and integration test using this method
     public void createAndSendZipFromFileSetWithProgress(Long fileSetId, String recipientEmail, String taskId) {
         Path zipFilePath = null;
 
@@ -165,32 +165,50 @@ public class ZipArchiveService {
             zipFilePath = Path.of(System.getProperty("java.io.tmpdir"), zipFileName);
 
             List<FileEntry> files = fileSet.getFiles();
-            int totalFiles = files.size();
+
+            long totalFileSizeBytes = files.stream()
+                    .mapToLong(FileEntry::getSize)
+                    .sum();
+
+            if (totalFileSizeBytes == 0) {
+                totalFileSizeBytes = 1;
+            }
+
+            long totalBytesProcessed = 0;
+            int lastPercent = 0;
 
             try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipFilePath))) {
 
-                for (int i = 0; i < totalFiles; i++) {
-                    FileEntry fileEntry = files.get(i);
+                for (FileEntry fileEntry : files) {
                     Path sourcePath = Path.of(fileEntry.getPath());
 
                     if (Files.exists(sourcePath)) {
                         ZipEntry zipEntry = new ZipEntry(sourcePath.getFileName().toString());
                         zos.putNextEntry(zipEntry);
 
-                        Files.copy(sourcePath, zos);
+                        try (InputStream inputStream = Files.newInputStream(sourcePath)) {
+                            byte[] buffer = new byte[8192];
+                            int length;
+
+                            while ((length = inputStream.read(buffer)) != -1) {
+                                zos.write(buffer, 0, length);
+                                totalBytesProcessed += length;
+                                int currPercent = (int) ((totalBytesProcessed * 100) / totalFileSizeBytes);
+
+                                if (currPercent > lastPercent) {
+                                    messagingTemplate.convertAndSend(
+                                            "/topic/progress/" + taskId,
+                                            new ProgressUpdate(currPercent, "Processing: " + fileEntry.getName())
+                                    );
+                                    lastPercent = currPercent;
+                                }
+                            }
+                        }
 
                         zos.closeEntry();
                     }
-
-                    int percent = (int) (((double) (i + 1) / totalFiles) * 100); // todo try to update the percentage every portion of MB not file
-
-                    messagingTemplate.convertAndSend(
-                            "/topic/progress/" + taskId,
-                            new ProgressUpdate(percent, "Processing: " + fileEntry.getName())
-                    );
-
                     try {
-                        Thread.sleep(2000); // for visual presentation of small files
+                        Thread.sleep(100); // for visual presentation of small files
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
@@ -227,7 +245,7 @@ public class ZipArchiveService {
 
                 zipArchive.setStatus(ZipArchiveStatus.SUCCESS);
                 fileSet.setStatus(FileSetStatus.SENT);
-                zipArchiveRepository.save(zipArchive); // todo ? is saving in database method necessary hear ? 
+                zipArchiveRepository.save(zipArchive);
                 sentHistoryService.saveSentHistory(zipArchive, recipientEmail, true, null);
 
                 messagingTemplate.convertAndSend(
