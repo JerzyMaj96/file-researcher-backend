@@ -182,7 +182,7 @@ public class ZipArchiveService {
                         zos.closeEntry();
                     }
 
-                    int percent = (int) (((double) (i + 1) / totalFiles) * 100);
+                    int percent = (int) (((double) (i + 1) / totalFiles) * 100); // todo try to update the percentage every portion of MB not file
 
                     messagingTemplate.convertAndSend(
                             "/topic/progress/" + taskId,
@@ -227,7 +227,7 @@ public class ZipArchiveService {
 
                 zipArchive.setStatus(ZipArchiveStatus.SUCCESS);
                 fileSet.setStatus(FileSetStatus.SENT);
-                zipArchiveRepository.save(zipArchive);
+                zipArchiveRepository.save(zipArchive); // todo ? is saving in database method necessary hear ? 
                 sentHistoryService.saveSentHistory(zipArchive, recipientEmail, true, null);
 
                 messagingTemplate.convertAndSend(
