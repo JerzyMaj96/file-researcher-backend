@@ -208,13 +208,19 @@ public class ZipArchiveService {
                                     }
                                 }
                                 try {
-                                    Thread.sleep(5); // for visual presentation of small files
+                                    Thread.sleep(10); // for visual presentation of small files
                                 } catch (InterruptedException e) {
                                     Thread.currentThread().interrupt();
                                 }
                             }
                         }
                         zos.closeEntry();
+
+                        try {
+                            Thread.sleep(300); // for visual presentation of small files
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
                     }
 
                 }
@@ -251,6 +257,7 @@ public class ZipArchiveService {
                 zipArchive.setStatus(ZipArchiveStatus.SUCCESS);
                 fileSet.setStatus(FileSetStatus.SENT);
                 zipArchiveRepository.save(zipArchive);
+                fileSetRepository.save(fileSet);
                 sentHistoryService.saveSentHistory(zipArchive, recipientEmail, true, null);
 
                 messagingTemplate.convertAndSend(
