@@ -155,9 +155,7 @@ public class ZipArchiveService {
         Path zipFilePath = null;
 
         try {
-            Thread.sleep(1000);
-
-            FileSet fileSet = fileSetRepository.findById(fileSetId)
+            FileSet fileSet = fileSetRepository.findByIdWithFiles(fileSetId)
                     .orElseThrow(() -> new FileSetNotFoundException("FileSet not found"));
 
             int sendCounter = zipArchiveRepository.findMaxSendNumberByFileSetId(fileSetId) + 1;
@@ -189,29 +187,36 @@ public class ZipArchiveService {
                         try (InputStream inputStream = Files.newInputStream(sourcePath)) {
                             byte[] buffer = new byte[8192];
                             int length;
+                            long lastMessageTime = 0;
 
                             while ((length = inputStream.read(buffer)) != -1) {
                                 zos.write(buffer, 0, length);
                                 totalBytesProcessed += length;
-                                int currPercent = (int) ((totalBytesProcessed * 100) / totalFileSizeBytes);
+                                int rawPercent = (int) ((totalBytesProcessed * 100) / totalFileSizeBytes);
+                                int currPercent = (int) (rawPercent * 0.9);
 
-                                if (currPercent > lastPercent) {
-                                    messagingTemplate.convertAndSend(
-                                            "/topic/progress/" + taskId,
-                                            new ProgressUpdate(currPercent, "Processing: " + fileEntry.getName())
-                                    );
-                                    lastPercent = currPercent;
+                                long currentTime = System.currentTimeMillis();
+
+                                if (currentTime - lastMessageTime > 150 || currPercent == 90) {
+                                    if (currPercent > lastPercent) {
+                                        messagingTemplate.convertAndSend(
+                                                "/topic/progress/" + taskId,
+                                                new ProgressUpdate(currPercent, "Processing: " + fileEntry.getName())
+                                        );
+                                        lastPercent = currPercent;
+                                        lastMessageTime = currentTime;
+                                    }
+                                }
+                                try {
+                                    Thread.sleep(5); // for visual presentation of small files
+                                } catch (InterruptedException e) {
+                                    Thread.currentThread().interrupt();
                                 }
                             }
                         }
-
                         zos.closeEntry();
                     }
-                    try {
-                        Thread.sleep(100); // for visual presentation of small files
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
+
                 }
             }
 
@@ -233,7 +238,7 @@ public class ZipArchiveService {
             try {
                 messagingTemplate.convertAndSend(
                         "/topic/progress/" + taskId,
-                        new ProgressUpdate(100, "Sending email...")
+                        new ProgressUpdate(95, "Sending email...")
                 );
 
                 sendZipArchiveByEmail(
