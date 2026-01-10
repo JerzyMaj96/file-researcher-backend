@@ -12,14 +12,16 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry messageBrokerRegistry) {
-        messageBrokerRegistry.enableSimpleBroker("/topic");
-        messageBrokerRegistry.setApplicationDestinationPrefixes("/app");
+        messageBrokerRegistry.enableSimpleBroker("/topic"); // wyjście (lub wewnętrzna skrzynka odbiorcza klienta).
+        messageBrokerRegistry.setApplicationDestinationPrefixes("/app"); // wejście do aplikacji
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry stompEndpointRegistry) {
         stompEndpointRegistry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")
-                .withSockJS();
+                .setAllowedOriginPatterns("*") // todo ustawić zmienną w pliku konfiguracyjnym aplikacji
+                .withSockJS(); // włącza ona bibliotekę SockJS
+//        Jeśli użytkownik łączy się z sieci korporacyjnej, która blokuje WebSockety, albo używa przedpotopowej przeglądarki,
+//                SockJS automatycznie przełączy się na inną metodę (np. HTTP Long Polling), udając, że to WebSocket.
     }
 }

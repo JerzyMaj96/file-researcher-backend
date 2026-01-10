@@ -150,7 +150,7 @@ public class ZipArchiveService {
      */
 
     //ALTERNATIVE METHOD - with WebSocket
-    @Async// todo maybe create a unit test and integration test using this method
+    @Async// todo create a tests and, isolate helper methods
     public void createAndSendZipFromFileSetWithProgress(Long fileSetId, String recipientEmail, String taskId) {
         Path zipFilePath = null;
 
@@ -193,11 +193,11 @@ public class ZipArchiveService {
                                 zos.write(buffer, 0, length);
                                 totalBytesProcessed += length;
                                 int rawPercent = (int) ((totalBytesProcessed * 100) / totalFileSizeBytes);
-                                int currPercent = (int) (rawPercent * 0.9);
+                                int currPercent = (int) (rawPercent * 0.9); // skalowanie do 90%
 
                                 long currentTime = System.currentTimeMillis();
 
-                                if (currentTime - lastMessageTime > 150 || currPercent == 90) {
+                                if (currentTime - lastMessageTime > 150 || currPercent == 90) { // okno czasowe, żeby nie przeciążyć brokera
                                     if (currPercent > lastPercent) {
                                         messagingTemplate.convertAndSend(
                                                 "/topic/progress/" + taskId,
