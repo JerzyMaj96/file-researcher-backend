@@ -14,6 +14,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureMessageBroker(MessageBrokerRegistry messageBrokerRegistry) {
         messageBrokerRegistry.enableSimpleBroker("/topic"); // wyjście (lub wewnętrzna skrzynka odbiorcza klienta).
         messageBrokerRegistry.setApplicationDestinationPrefixes("/app"); // wejście do aplikacji (nie używane, standardowa konfiguracja)
+                                                                         // nieużywane, bo frontend nie wysyła nic do backendu
     }
 
     @Override
