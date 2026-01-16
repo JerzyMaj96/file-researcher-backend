@@ -150,7 +150,7 @@ public class ZipArchiveService {
      */
 
     //ALTERNATIVE METHOD - with WebSocket
-    @Async// todo create a tests and, isolate helper methods
+    @Async// todo create tests and isolate helper methods
     public void createAndSendZipFromFileSetWithProgress(Long fileSetId, String recipientEmail, String taskId) {
         Path zipFilePath = null;
 
