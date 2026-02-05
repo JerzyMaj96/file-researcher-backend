@@ -50,20 +50,6 @@ public class ZipArchiveController {
         return ResponseEntity.ok(zipArchiveDTO);
     }
 
-    @PostMapping("/file-sets/{fileSetId}/zip-archives/send")
-    public ResponseEntity<ZipArchiveDTO> sendZipArchive(@PathVariable Long fileSetId,
-                                                        @RequestParam String recipientEmail) throws MessagingException, IOException {
-
-        log.info("Sending ZIP archive for fileSetId={} to recipient={}", fileSetId, recipientEmail);
-
-        ZipArchiveDTO zipArchiveDTO = Translator.convertZipArchiveToDTO(
-                zipArchiveService.createAndSendZipArchive(fileSetId, recipientEmail));
-
-        log.info("ZIP archive for fileSetId={} successfully sent to {}", fileSetId, recipientEmail);
-
-        return ResponseEntity.ok(zipArchiveDTO);
-    }
-
     @PostMapping("/file-sets/{fileSetId}/zip-archives/send-progress")
     public ResponseEntity<String> sendZipArchiveAndShowProgress(@PathVariable Long fileSetId,
                                                                 @RequestParam String recipientEmail) {
@@ -73,17 +59,6 @@ public class ZipArchiveController {
         zipArchiveService.createAndSendZipFromFileSetWithProgress(fileSetId, recipientEmail, taskId);
 
         return ResponseEntity.ok(taskId);
-    }
-
-    @PutMapping("/file-sets/{fileSetId}/zip-archives/{zipArchiveId}/resend")
-    public ResponseEntity<String> resendZipArchive(@PathVariable Long fileSetId,
-                                                   @PathVariable Long zipArchiveId,
-                                                   @RequestParam String recipientEmail)
-            throws AccessDeniedException, MessagingException {
-
-        zipArchiveService.resendExistingZip(fileSetId, zipArchiveId, recipientEmail);
-
-        return ResponseEntity.ok("ZIP archive resent successfully.");
     }
 
     @DeleteMapping("/file-sets/{fileSetId}/zip-archives/{zipArchiveId}")
