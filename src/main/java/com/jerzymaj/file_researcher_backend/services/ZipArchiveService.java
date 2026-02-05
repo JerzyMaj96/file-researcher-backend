@@ -314,12 +314,12 @@ public class ZipArchiveService {
 
             notifyProgress(taskId, 100, "Completed!");
 
-        } catch (MessagingException me) {
-            log.error("Failed to send email for task: {}", taskId, me);
+        } catch (Exception ex) {
+            log.error("Failed to send email for task: {}", taskId, ex);
 
             zipArchive.setStatus(ZipArchiveStatus.FAILED);
             zipArchiveRepository.save(zipArchive);
-            sentHistoryService.saveSentHistory(zipArchive, zipArchive.getRecipientEmail(), false, me.getMessage());
+            sentHistoryService.saveSentHistory(zipArchive, zipArchive.getRecipientEmail(), false, ex.getMessage());
         }
     }
 
