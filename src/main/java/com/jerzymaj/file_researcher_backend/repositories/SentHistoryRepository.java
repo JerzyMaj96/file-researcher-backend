@@ -9,6 +9,8 @@ import java.util.List;
 
 public interface SentHistoryRepository extends JpaRepository<SentHistory, Long> {
 
+    List<SentHistory> findAllByZipArchiveId(Long zipArchiveId);
+
     @Query("""
             SELECT sh
                 FROM SentHistory sh

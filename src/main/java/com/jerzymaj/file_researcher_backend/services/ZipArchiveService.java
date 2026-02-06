@@ -164,6 +164,7 @@ public class ZipArchiveService {
     /**
      * Retrieves the FileSet entity from the database, including its associated files.
      * * @param fileSetId The unique identifier of the FileSet.
+     *
      * @return The found FileSet entity.
      * @throws FileSetNotFoundException if no FileSet exists for the given ID.
      */
@@ -177,6 +178,7 @@ public class ZipArchiveService {
      * The filename is constructed using the FileSet ID and a calculated send counter
      * to ensure uniqueness within the system's temporary directory.
      * * @param fileSetId The ID of the FileSet being processed.
+     *
      * @return A Path pointing to the target temporary ZIP file.
      */
     private Path prepareTempZipPath(Long fileSetId) {
@@ -193,10 +195,11 @@ public class ZipArchiveService {
      * Performs the actual file compression into a ZIP archive.
      * This method reads source files from the disk, writes them to the ZipOutputStream,
      * and calculates processing progress based on byte-size comparison.
-     * * @param files             List of file entries to be compressed.
-     * @param zipPath           The destination path for the ZIP archive.
-     * @param progressCallback  A functional interface used to report progress percentage (0-90%).
-     * @throws IOException      If any file access or write operation fails.
+     *
+     * @param files            List of file entries to be compressed.
+     * @param zipPath          The destination path for the ZIP archive.
+     * @param progressCallback A functional interface used to report progress percentage (0-90%).
+     * @throws IOException If any file access or write operation fails.
      */
     private void createZipArchive(List<FileEntry> files, Path zipPath, ProgressCallback progressCallback) throws IOException {
 
@@ -252,8 +255,9 @@ public class ZipArchiveService {
     /**
      * Sends a STOMP message to a specific task topic via the WebSocket message broker.
      * * @param taskId   The unique ID of the task used as the destination variable.
-     * @param percent  The current progress percentage.
-     * @param message  A descriptive status message for the user.
+     *
+     * @param percent The current progress percentage.
+     * @param message A descriptive status message for the user.
      */
     private void notifyProgress(String taskId, int percent, String message) {
         messagingTemplate.convertAndSend("/topic/progress/" + taskId, new ProgressUpdate(percent, message));
@@ -263,10 +267,11 @@ public class ZipArchiveService {
      * Persists the initial record of the ZIP archive in the database.
      * The archive is saved with a PENDING status before the email attempt begins.
      * * @param fileSet        The source FileSet.
+     *
      * @param zipPath        Path where the archive was created.
      * @param recipientEmail The target recipient's address.
      * @return The saved ZipArchive entity.
-     * @throws IOException   If file size metadata cannot be read from the disk.
+     * @throws IOException If file size metadata cannot be read from the disk.
      */
     private ZipArchive registerZipArchive(FileSet fileSet, Path zipPath, String recipientEmail) throws IOException {
         int sendCounter = zipArchiveRepository.findMaxSendNumberByFileSetId(fileSet.getId()) + 1;
@@ -290,9 +295,10 @@ public class ZipArchiveService {
      * If the email is sent successfully, it updates the archive and fileset statuses to SUCCESS/SENT.
      * In case of failure, it logs the error and records a failure entry in the sent history.
      * * @param zipArchive The registered archive entity.
-     * @param fileSet    The source file set.
-     * @param zipPath    The physical path to the ZIP file.
-     * @param taskId     The task ID for progress updates.
+     *
+     * @param fileSet The source file set.
+     * @param zipPath The physical path to the ZIP file.
+     * @param taskId  The task ID for progress updates.
      */
     private void sendAndFinalize(ZipArchive zipArchive, FileSet fileSet, Path zipPath, String taskId) {
 
@@ -328,7 +334,8 @@ public class ZipArchiveService {
      * Logs the exception and sends a terminal progress update (-1 status)
      * to notify the frontend of the failure.
      * * @param taskId The task ID associated with the failure.
-     * @param ex     The exception that triggered the handler.
+     *
+     * @param ex The exception that triggered the handler.
      */
     private void handleError(String taskId, Exception ex) {
         log.error("Error", ex);

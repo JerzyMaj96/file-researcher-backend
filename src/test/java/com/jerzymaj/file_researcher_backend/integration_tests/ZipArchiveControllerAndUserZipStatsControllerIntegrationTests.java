@@ -129,12 +129,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk());
 
-        Awaitility.await()
-                .untilAsserted(() -> {
-                    List<ZipArchive> archives = zipArchiveRepository.findAllByFileSetId(fileSet.getId());
-                    assertFalse(archives.isEmpty());
-                    assertEquals(ZipArchiveStatus.SUCCESS, archives.getFirst().getStatus());
-                });
+        waitTillArchivesFinished();
 
         mockMvc.perform(get("/file-researcher/file-sets/{fileSetId}/zip-archives", fileSet.getId()))
                 .andExpect(status().isOk())
@@ -189,12 +184,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk());
 
-        Awaitility.await()
-                .untilAsserted(() -> {
-                    List<ZipArchive> archives = zipArchiveRepository.findAllByFileSetId(fileSet.getId());
-                    assertFalse(archives.isEmpty());
-                    assertEquals(ZipArchiveStatus.SUCCESS, archives.getFirst().getStatus());
-                });
+        waitTillArchivesFinished();
 
         mockMvc.perform(get("/file-researcher/zip-archives/stats"))
                 .andExpect(status().isOk())
@@ -209,12 +199,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk());
 
-        Awaitility.await()
-                .untilAsserted(() -> {
-                    List<ZipArchive> archives = zipArchiveRepository.findAllByFileSetId(fileSet.getId());
-                    assertFalse(archives.isEmpty());
-                    assertEquals(ZipArchiveStatus.SUCCESS, archives.getFirst().getStatus());
-                });
+        waitTillArchivesFinished();
 
         mockMvc.perform(get("/file-researcher/zip-archives/large")
                         .param("minSize", "50"))
@@ -222,5 +207,14 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].fileSetId").value(fileSet.getId()));
+    }
+
+    private void waitTillArchivesFinished() {
+        Awaitility.await()
+                .untilAsserted(() -> {
+                    List<ZipArchive> archives = zipArchiveRepository.findAllByFileSetId(fileSet.getId());
+                    assertFalse(archives.isEmpty());
+                    assertEquals(ZipArchiveStatus.SUCCESS, archives.getFirst().getStatus());
+                });
     }
 }

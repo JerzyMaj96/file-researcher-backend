@@ -1,14 +1,12 @@
 package com.jerzymaj.file_researcher_backend.integration_tests;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jerzymaj.file_researcher_backend.models.FileEntry;
-import com.jerzymaj.file_researcher_backend.models.FileSet;
-import com.jerzymaj.file_researcher_backend.models.User;
+import com.jerzymaj.file_researcher_backend.models.*;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
-import com.jerzymaj.file_researcher_backend.repositories.FileEntryRepository;
-import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
-import com.jerzymaj.file_researcher_backend.repositories.UserRepository;
-import jakarta.transaction.Transactional;
+import com.jerzymaj.file_researcher_backend.repositories.*;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,10 +18,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -33,7 +32,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = {
         "springdoc.api-docs.enabled=false",
         "springdoc.swagger-ui.enabled=false"})
-@Transactional
 public class SentHistoryControllerIntegrationTest {
 
     @Autowired
@@ -51,6 +49,12 @@ public class SentHistoryControllerIntegrationTest {
     @Autowired
     private FileEntryRepository fileEntryRepository;
 
+    @Autowired
+    private ZipArchiveRepository zipArchiveRepository;
+
+    @Autowired
+    private SentHistoryRepository sentHistoryRepository;
+
     private FileSet fileSet;
 
     @BeforeEach
@@ -59,14 +63,14 @@ public class SentHistoryControllerIntegrationTest {
         user.setName("tester");
         user.setEmail("tester@mail.com");
         user.setPassword("secret123");
-        userRepository.save(user);
+        user = userRepository.save(user);
 
         FileEntry fileEntry = new FileEntry();
         fileEntry.setName("test1.txt");
         fileEntry.setPath(Files.createTempFile("test1", ".txt").toString());
         fileEntry.setExtension("txt");
         fileEntry.setSize(123L);
-        fileEntryRepository.save(fileEntry);
+        fileEntry = fileEntryRepository.save(fileEntry);
 
         fileSet = new FileSet();
         fileSet.setName("test set");
@@ -75,21 +79,30 @@ public class SentHistoryControllerIntegrationTest {
         fileSet.setRecipientEmail("tester@mail.com");
         fileSet.setCreationDate(LocalDateTime.now());
         fileSet.setUser(user);
-        fileSet.setFiles(List.of(fileEntry));
-        fileSetRepository.save(fileSet);
 
+        fileSet = fileSetRepository.save(fileSet);
+        fileSet.getFiles().add(fileEntry);
+        fileSet = fileSetRepository.save(fileSet);
+    }
+
+    @AfterEach
+    public void tearDown() {
+        sentHistoryRepository.deleteAll();
+        zipArchiveRepository.deleteAll();
+        fileSetRepository.deleteAll();
+        fileEntryRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test
     @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveAllSentHistoryForZipArchive() throws Exception {
 
-        String response = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
+        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send-progress", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
+                .andExpect(status().isOk());
 
-        Long zipArchiveId = objectMapper.readTree(response).get("id").asLong();
+        Long zipArchiveId = waitForProcess();
 
         mockMvc.perform(get("/file-researcher/zip-archives/{zipArchiveId}/history", zipArchiveId))
                 .andExpect(status().isOk())
@@ -101,12 +114,12 @@ public class SentHistoryControllerIntegrationTest {
     @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveLastRecipient() throws Exception {
 
-        String response = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
+        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send-progress", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
 
-        Long zipArchiveId = objectMapper.readTree(response).get("id").asLong();
+        Long zipArchiveId = waitForProcess();
 
         mockMvc.perform(get("/file-researcher/zip-archives/{zipArchiveId}/history/last-recipient", zipArchiveId))
                 .andExpect(status().isOk())
@@ -117,21 +130,15 @@ public class SentHistoryControllerIntegrationTest {
     @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveSentHistoryById() throws Exception {
 
-        String sendZipResponse = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
+        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send-progress", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
+                .andExpect(status().isOk());
 
-        Long zipArchiveId = objectMapper.readTree(sendZipResponse).get("id").asLong();
+        Long zipArchiveId = waitForProcess();
 
-        String historyResponse = mockMvc.perform(get("/file-researcher/zip-archives/{zipArchiveId}/history", zipArchiveId))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
+        String historyResponse = getHistoryResponse(zipArchiveId);
 
-        Long sentHistoryId = objectMapper.readTree(historyResponse)
-                .get(0)
-                .get("id")
-                .asLong();
+        Long sentHistoryId = getHistoryId(historyResponse);
 
         mockMvc.perform(get("/file-researcher/zip-archives/{zipArchiveId}/history/{sentHistoryId}",
                         zipArchiveId,
@@ -144,21 +151,16 @@ public class SentHistoryControllerIntegrationTest {
     @WithMockUser(username = "tester", roles = "USER")
     public void shouldDeleteSentHistoryById() throws Exception {
 
-        String sendZipResponse = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
+        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send-progress", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
 
-        Long zipArchiveId = objectMapper.readTree(sendZipResponse).get("id").asLong();
+        Long zipArchiveId = waitForProcess();
 
-        String historyResponse = mockMvc.perform(get("/file-researcher/zip-archives/{zipArchiveId}/history", zipArchiveId))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
+        String historyResponse = getHistoryResponse(zipArchiveId);
 
-        Long sentHistoryId = objectMapper.readTree(historyResponse)
-                .get(0)
-                .get("id")
-                .asLong();
+        Long sentHistoryId = getHistoryId(historyResponse);
 
         mockMvc.perform(delete("/file-researcher/zip-archives/{zipArchiveId}/history/{sentHistoryId}",
                         zipArchiveId,
@@ -169,5 +171,32 @@ public class SentHistoryControllerIntegrationTest {
                         zipArchiveId,
                         sentHistoryId))
                 .andExpect(status().isNotFound());
+    }
+
+    private Long waitForProcess() {
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(5))
+                .untilAsserted(() -> {
+                    List<ZipArchive> archives = zipArchiveRepository.findAllByFileSetId(fileSet.getId());
+                    assertFalse(archives.isEmpty());
+
+                    List<SentHistory> history = sentHistoryRepository.findAllByZipArchiveId(archives.getFirst().getId());
+                    assertFalse(history.isEmpty());
+                });
+
+        return zipArchiveRepository.findAllByFileSetId(fileSet.getId()).getFirst().getId();
+    }
+
+    private String getHistoryResponse(Long zipArchiveId) throws Exception {
+        return  mockMvc.perform(get("/file-researcher/zip-archives/{zipArchiveId}/history", zipArchiveId))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+    }
+
+    private Long getHistoryId (String historyResponse) throws JsonProcessingException {
+        return objectMapper.readTree(historyResponse)
+                .get(0)
+                .get("id")
+                .asLong();
     }
 }
