@@ -1,34 +1,31 @@
 package com.jerzymaj.file_researcher_backend.integration_tests;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jerzymaj.file_researcher_backend.configuration.TestMailConfig;
 import com.jerzymaj.file_researcher_backend.models.*;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.ZipArchiveStatus;
 import com.jerzymaj.file_researcher_backend.repositories.*;
-import jakarta.mail.internet.MimeMessage;
-import jakarta.transaction.Transactional;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -39,7 +36,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = {
         "springdoc.api-docs.enabled=false",
         "springdoc.swagger-ui.enabled=false"})
-@Transactional
 public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
 
     @Autowired
@@ -60,12 +56,6 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     @Autowired
     private SentHistoryRepository sentHistoryRepository;
 
-    @Autowired
-    private JavaMailSender mailSender;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
     private FileSet fileSet;
 
     @BeforeEach
@@ -74,16 +64,15 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
         user.setName("tester");
         user.setEmail("tester@mail.com");
         user.setPassword("secret123");
-        userRepository.save(user);
-        userRepository.flush();
+        user = userRepository.save(user);
 
         FileEntry fileEntry = new FileEntry();
         fileEntry.setName("test1.txt");
         fileEntry.setPath(Files.createTempFile("test1", ".txt").toString());
         fileEntry.setExtension("txt");
         fileEntry.setSize(123L);
-        fileEntryRepository.save(fileEntry);
-        fileEntryRepository.flush();
+        fileEntry = fileEntryRepository.save(fileEntry);
+
 
         fileSet = new FileSet();
         fileSet.setName("test set");
@@ -92,39 +81,60 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
         fileSet.setRecipientEmail("tester@mail.com");
         fileSet.setCreationDate(LocalDateTime.now());
         fileSet.setUser(user);
-        fileSet.setFiles(List.of(fileEntry));
-        fileSetRepository.save(fileSet);
-        fileEntryRepository.flush();
+
+        fileSet = fileSetRepository.save(fileSet);
+
+        fileSet.setFiles(new ArrayList<>(List.of(fileEntry)));
+
+        fileSet = fileSetRepository.save(fileSet);
+    }
+
+    @AfterEach
+    public void tearDown() {
+        sentHistoryRepository.deleteAll();
+        zipArchiveRepository.deleteAll();
+        fileSetRepository.deleteAll();
+        fileEntryRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test
     @WithMockUser(username = "tester", roles = "USER")
     public void shouldSendZipArchive() throws Exception {
-        String response = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
+        String taskId = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send-progress", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.fileSetId").value(fileSet.getId()))
-                .andExpect(jsonPath("$.archivePath").isNotEmpty())
-                .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
-        Long zipArchiveId = objectMapper.readTree(response).get("id").asLong();
+        assertNotNull(taskId);
 
-        ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId).orElseThrow();
-        FileSet updatedFileSet = fileSetRepository.findById(fileSet.getId()).orElseThrow();
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(5))
+                .untilAsserted(() -> {
+                    FileSet updatedFileSet = fileSetRepository.findById(fileSet.getId()).orElseThrow();
+                    assertEquals(FileSetStatus.SENT, updatedFileSet.getStatus());
 
-        assertEquals(ZipArchiveStatus.SUCCESS, zipArchive.getStatus());
-        assertEquals(FileSetStatus.SENT, updatedFileSet.getStatus());
+                    List<ZipArchive> archives = zipArchiveRepository.findAllByFileSetId(fileSet.getId());
+                    assertFalse(archives.isEmpty());
+                    assertEquals(ZipArchiveStatus.SUCCESS, archives.getFirst().getStatus());
+                });
     }
 
     @Test
     @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveAllZipArchives() throws Exception {
-        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
+        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send-progress", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk());
+
+        Awaitility.await()
+                .untilAsserted(() -> {
+                    List<ZipArchive> archives = zipArchiveRepository.findAllByFileSetId(fileSet.getId());
+                    assertFalse(archives.isEmpty());
+                    assertEquals(ZipArchiveStatus.SUCCESS, archives.getFirst().getStatus());
+                });
 
         mockMvc.perform(get("/file-researcher/file-sets/{fileSetId}/zip-archives", fileSet.getId()))
                 .andExpect(status().isOk())
@@ -136,32 +146,38 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     @Test
     @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveZipArchiveById() throws Exception {
-        String response = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
+        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send-progress", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
+                .andExpect(status().isOk());
 
-        Long zipArchiveId = objectMapper.readTree(response).get("id").asLong();
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(5))
+                .until(() -> zipArchiveRepository.findByFileSetId(fileSet.getId()).isPresent());
 
-        mockMvc.perform(get("/file-researcher/file-sets/{fileSetId}/zip-archives/{zipArchiveId}", fileSet.getId(), zipArchiveId))
+        ZipArchive zipArchive = zipArchiveRepository.findByFileSetId(fileSet.getId()).orElseThrow();
+
+        mockMvc.perform(get("/file-researcher/file-sets/{fileSetId}/zip-archives/{zipArchiveId}", fileSet.getId(), zipArchive.getId()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(zipArchiveId));
+                .andExpect(jsonPath("$.id").value(zipArchive.getId()));
     }
 
     @Test
     @WithMockUser(username = "tester", roles = "USER")
     public void shouldDeleteZipArchiveById() throws Exception { //REPAIR
-        String response = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
+        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send-progress", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
+                .andExpect(status().isOk());
 
-        Long zipArchiveId = objectMapper.readTree(response).get("id").asLong();
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(5))
+                .until(() -> zipArchiveRepository.findByFileSetId(fileSet.getId()).isPresent());
 
-        mockMvc.perform(delete("/file-researcher/file-sets/{fileSetId}/zip-archives/{zipArchiveId}", fileSet.getId(), zipArchiveId))
+        ZipArchive zipArchive = zipArchiveRepository.findByFileSetId(fileSet.getId()).orElseThrow();
+
+        mockMvc.perform(delete("/file-researcher/file-sets/{fileSetId}/zip-archives/{zipArchiveId}", fileSet.getId(), zipArchive.getId()))
                 .andExpect(status().isNoContent());
 
-        Optional<ZipArchive> deleteZip = zipArchiveRepository.findById(zipArchiveId);
+        Optional<ZipArchive> deleteZip = zipArchiveRepository.findById(zipArchive.getId());
 
         assertTrue(deleteZip.isEmpty(), "ZipArchive should be deleted from repository");
     }
@@ -169,9 +185,16 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     @Test
     @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveSentStatistics() throws Exception {
-        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
+        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send-progress", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk());
+
+        Awaitility.await()
+                .untilAsserted(() -> {
+                    List<ZipArchive> archives = zipArchiveRepository.findAllByFileSetId(fileSet.getId());
+                    assertFalse(archives.isEmpty());
+                    assertEquals(ZipArchiveStatus.SUCCESS, archives.getFirst().getStatus());
+                });
 
         mockMvc.perform(get("/file-researcher/zip-archives/stats"))
                 .andExpect(status().isOk())
@@ -182,9 +205,16 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     @Test
     @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveLargeZipArchives() throws Exception {
-        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send", fileSet.getId())
+        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send-progress", fileSet.getId())
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk());
+
+        Awaitility.await()
+                .untilAsserted(() -> {
+                    List<ZipArchive> archives = zipArchiveRepository.findAllByFileSetId(fileSet.getId());
+                    assertFalse(archives.isEmpty());
+                    assertEquals(ZipArchiveStatus.SUCCESS, archives.getFirst().getStatus());
+                });
 
         mockMvc.perform(get("/file-researcher/zip-archives/large")
                         .param("minSize", "50"))

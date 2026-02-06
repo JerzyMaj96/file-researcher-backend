@@ -7,10 +7,15 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public interface ZipArchiveRepository extends JpaRepository<ZipArchive, Long> {
 
     List<ZipArchive> findAllByUserId(Long userId);
+
+    List<ZipArchive> findAllByFileSetId(Long fileSetId);
+
+    Optional<ZipArchive> findByFileSetId(Long fileSetId);
 
     @Query("""
         SELECT COALESCE(MAX(z.sendNumber), 0)
