@@ -10,6 +10,7 @@ import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
 import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
@@ -66,15 +67,13 @@ public class ZipArchiveService {
      * @throws FileSetNotFoundException If the provided ID does not match any record.
      */
     @Async
+    @Transactional
     public void createAndSendZipFromFileSetWithProgress(Long fileSetId, String recipientEmail, String taskId) {
         FileSet fileSet = fetchFileSet(fileSetId);
         Path zipPath = prepareTempZipPath(fileSetId);
 
         try {
             createZipArchive(fileSet.getFiles(), zipPath, (percent, msg) -> notifyProgress(taskId, percent, msg));
-
-            long zipSize = Files.size(zipPath);
-            log.info("ZIP created successfully. Path: {}, Size: {} bytes", zipPath, zipSize);
 
             ZipArchive archive = registerZipArchive(fileSet, zipPath, recipientEmail);
 
@@ -302,11 +301,38 @@ public class ZipArchiveService {
         }
     }
 
+    /**
+     * A stateful predicate used to filter a stream based on a unique key extracted from the elements.
+     * <p>
+     * This utility uses an internal {@link ConcurrentHashMap} to maintain the state of encountered keys.
+     * It is safe for use in parallel streams.
+     * </p>
+     *
+     * @param <T>           The type of the stream elements.
+     * @param keyExtractor A function to extract the key used for the uniqueness check.
+     * @return A predicate that returns {@code true} only the first time a specific key is encountered.
+     */
     private static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
         Map<Object, Boolean> seen = new ConcurrentHashMap<>();
         return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
 
+    /**
+     * Copies the content of a single file into the ZIP output stream while updating the progress.
+     * <p>
+     * Progress calculation is scaled by a factor of 0.9 (mapping to a 0-90% range).
+     * To optimize performance, the progress callback is throttled to trigger only if
+     * at least 150ms have passed since the last update or if the percentage value has changed.
+     * </p>
+     *
+     * @param file             The source {@link Path} of the file to be copied.
+     * @param zos              The active {@link ZipOutputStream} being written to.
+     * @param totalSizeFinal   The total size of all files in the batch for percentage calculation.
+     * @param bytesProcessed   A single-element array acting as a mutable reference for the global byte counter.
+     * @param lastPercent      A single-element array acting as a mutable reference for the last reported percentage.
+     * @param progressCallback The callback used to report status updates to the UI or logs.
+     * @throws IOException     If an I/O error occurs during the read/write process.
+     */
     private void copyContentWithProgress(Path file, ZipOutputStream zos, long totalSizeFinal, long[] bytesProcessed,
                                          int[] lastPercent, ProgressCallback progressCallback) throws IOException {
         try (InputStream inputStream = Files.newInputStream(file)) {
@@ -396,8 +422,8 @@ public class ZipArchiveService {
 
             zipArchive.setStatus(ZipArchiveStatus.SUCCESS);
             fileSet.setStatus(FileSetStatus.SENT);
-            zipArchiveRepository.save(zipArchive);
-            fileSetRepository.save(fileSet);
+            zipArchiveRepository.saveAndFlush(zipArchive);
+            fileSetRepository.saveAndFlush(fileSet);
             sentHistoryService.saveSentHistory(zipArchive, zipArchive.getRecipientEmail(), true, null);
 
             notifyProgress(taskId, 100, "Completed!");
@@ -406,7 +432,7 @@ public class ZipArchiveService {
             log.error("Failed to send email for task: {}", taskId, ex);
 
             zipArchive.setStatus(ZipArchiveStatus.FAILED);
-            zipArchiveRepository.save(zipArchive);
+            zipArchiveRepository.saveAndFlush(zipArchive);
             sentHistoryService.saveSentHistory(zipArchive, zipArchive.getRecipientEmail(), false, ex.getMessage());
         }
     }

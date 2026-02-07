@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -33,6 +34,7 @@ public class FileExplorerControllerIntegrationTests {
     ObjectMapper objectMapper;
 
     @Test
+    @WithMockUser
     public void shouldScanPath() throws Exception {
         Path tempFile = Files.createTempFile("testFile", ".txt");
 
@@ -50,6 +52,7 @@ public class FileExplorerControllerIntegrationTests {
     }
 
     @Test
+    @WithMockUser
     public void shouldScanFilteredPath() throws Exception {
         Path tempSubDir = Files.createTempDirectory("dir");
         Files.createFile(tempSubDir.resolve("test1.txt"));
