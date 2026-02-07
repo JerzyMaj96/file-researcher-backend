@@ -2,23 +2,66 @@
 
 A Spring Boot backend service that allows users to upload sets of files, compress them into ZIP archives, send them via email, and track the sending history with full security and ownership control.
 
-## Features
+## Key Features
 
-- User-based access control for all file and archive operations
-- File set grouping and ZIP compression
-- Email delivery of ZIP archives using `JavaMailSender`
-- Full history tracking of send attempts (success and failure)
-- Archive resend functionality
-- Archive statistics and filtering
-- Access restriction: only archive/file owners can manage or view their data
-- SQL-enhanced queries via JPA for performance and sorting
+### 1. Asynchronous File Processing & ZIP Compression
+
+The application handles file set grouping and the packing of large directory structures (including recursive folder scanning) without blocking the main server thread.
+
+Non-blocking I/O: Utilizes the @Async annotation to execute resource-intensive tasks in the background.
+
+Smart Compression: Intelligent file filtering (e.g., skipping duplicates, handling node_modules) and efficient ZIP generation.
+
+### 2. Real-Time Progress Tracking (WebSockets)
+
+Integrated WebSocket (STOMP) support provides immediate feedback to the frontend.
+
+Live Updates: Users see an exact percentage progress bar (0-100%) for file processing and upload.
+
+Status Broadcasting: Detailed status messages (e.g., "Processing: file.txt", "Sending email...") are pushed to a dedicated subscription channel.
+
+### 3. Robust Email Delivery System
+
+A complete solution for delivering archives, built on JavaMailSender and secure SMTP.
+
+Secure Transport: Supports SMTP with authentication (e.g., Gmail App Password) and TLS.
+
+Resiliency: Configurable timeouts prevent thread hanging on slow network connections.
+
+Retry & Resend: Built-in functionality to resend previously generated archives without re-processing files.
+
+### 4. Comprehensive History & Analytics
+
+Full tracking of every operation within the system.
+
+Audit Log: detailed history tracking of all send attempts, recording both successes and failures.
+
+Statistics: Dashboard-ready data for archive statistics and filtering based on size, date, or status.
+
+### 5. Security & Access Control
+
+Strict data isolation policies ensure privacy and security.
+
+User-Based Access: All file operations, archives, and history logs are strictly scoped to the authenticated user.
+
+Ownership Validation: Users cannot view, manage, or delete data belonging to others.
+
+### 6. Data Integrity & Performance
+
+Advanced database management ensures consistency in a multi-threaded environment.
+
+Transaction Management: Uses @Transactional and saveAndFlush to guarantee immediate and accurate status updates (SENT/FAILED) across asynchronous threads.
+
+Data Consistency: Cascading deletion (CascadeType.ALL, orphanRemoval) ensures that deleting a File Set automatically cleans up all related archives and logs.
+
+Optimized Queries: SQL-enhanced JPA queries for efficient data retrieval, sorting, and filtering.
 
 ---
 
 ## Tech Stack
 
 - **Java 17+**
-- **Spring Boot 3**
+- **Spring Boot 3(Web, Data JPA, Mail, WebSocket)**
 - **Spring Security**
 - **Spring Data JPA**
 - **Java Mail Sender**
