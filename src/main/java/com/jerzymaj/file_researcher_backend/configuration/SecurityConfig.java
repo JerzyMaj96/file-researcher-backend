@@ -4,7 +4,6 @@ import com.jerzymaj.file_researcher_backend.services.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.*;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -47,11 +46,12 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/ws/**").permitAll()
-                        .requestMatchers("/file-researcher/users/authentication").authenticated()
-                        .requestMatchers("/file-researcher/users/delete-me").authenticated()
-                        .requestMatchers("/file-researcher/users").permitAll()
-                        .requestMatchers("/file-researcher/auth/**").permitAll()
-                        .requestMatchers("/file-researcher/explorer/**").permitAll()
+                        .requestMatchers(ApiRoutes.AUTHENTICATION + "/**").permitAll()
+                        .requestMatchers(ApiRoutes.USERS).permitAll()
+                        .requestMatchers(ApiRoutes.FILE_SETS + "/**").authenticated()
+                        .requestMatchers(ApiRoutes.ZIP_ARCHIVES + "/**").authenticated()
+                        .requestMatchers(ApiRoutes.FILE_EXPLORER + "/**").authenticated()
+                        .requestMatchers(ApiRoutes.USERS + "/authentication").authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

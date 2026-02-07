@@ -25,9 +25,13 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -68,6 +72,9 @@ public class ZipArchiveService {
 
         try {
             createZipArchive(fileSet.getFiles(), zipPath, (percent, msg) -> notifyProgress(taskId, percent, msg));
+
+            long zipSize = Files.size(zipPath);
+            log.info("ZIP created successfully. Path: {}, Size: {} bytes", zipPath, zipSize);
 
             ZipArchive archive = registerZipArchive(fileSet, zipPath, recipientEmail);
 
@@ -203,53 +210,128 @@ public class ZipArchiveService {
      */
     private void createZipArchive(List<FileEntry> files, Path zipPath, ProgressCallback progressCallback) throws IOException {
 
-        long totalFileSizeBytes = files.stream()
-                .mapToLong(FileEntry::getSize)
-                .sum();
+        List<FileEntry> uniqueFiles = files.stream()
+                .filter(distinctByKey(FileEntry::getPath))
+                .toList();
+
+        long totalFileSizeBytes = 0;
+
+        for (FileEntry fileEntry : uniqueFiles) {
+            Path path = Path.of(fileEntry.getPath());
+            if (!Files.exists(path)) {
+                if (Files.isDirectory(path)) {
+                    try (var stream = Files.walk(path)) {
+                        totalFileSizeBytes += stream
+                                .filter(Files::isRegularFile)
+                                .mapToLong(p -> {
+                                    try {
+                                        return Files.size(p);
+                                    } catch (IOException ex) {
+                                        return 0L;
+                                    }
+                                })
+                                .sum();
+                    }
+                } else {
+                    totalFileSizeBytes += Files.size(path);
+                }
+            }
+        }
 
         if (totalFileSizeBytes == 0) {
             totalFileSizeBytes = 1;
         }
 
-        long totalBytesProcessed = 0;
-        int lastPercent = 0;
+        final long[] totalBytesProcessed = {0};
+        final int[] lastPercent = {0};
+        final long totalSizeFinal = totalFileSizeBytes;
+
+        Set<String> addedEntries = new HashSet<>();
 
         try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipPath))) {
 
-            for (FileEntry fileEntry : files) {
+            for (FileEntry fileEntry : uniqueFiles) {
                 Path sourcePath = Path.of(fileEntry.getPath());
 
-                if (Files.exists(sourcePath)) {
+                if (!Files.exists(sourcePath)) {
+                    continue;
+                }
+
+                if (Files.isDirectory(sourcePath)) {
+                    Path folderRoot = sourcePath.getParent();
+
+                    try (var stream = Files.walk(folderRoot)) {
+                        stream.filter(Files::isRegularFile)
+                                .forEach(path -> {
+                                    try {
+                                        String relativePath = folderRoot.relativize(path).toString();
+                                        if (addedEntries.contains(relativePath)) {
+                                            return;
+                                        }
+                                        ZipEntry zipEntry = new ZipEntry(relativePath);
+                                        zos.putNextEntry(zipEntry);
+
+                                        addedEntries.add(relativePath);
+
+                                        copyContentWithProgress(path, zos, totalSizeFinal, totalBytesProcessed, lastPercent, progressCallback);
+
+                                        zos.closeEntry();
+                                    } catch (IOException ex) {
+                                        log.error("Failed to zip file inside directory: {}", path, ex);
+                                    }
+                                });
+                    }
+                } else {
+
+                    String fileName = sourcePath.getFileName().toString();
+
+                    if (addedEntries.contains(fileName)) {
+                        continue;
+                    }
+
                     ZipEntry zipEntry = new ZipEntry(sourcePath.getFileName().toString());
                     zos.putNextEntry(zipEntry);
 
-                    try (InputStream inputStream = Files.newInputStream(sourcePath)) {
-                        byte[] buffer = new byte[8192];
-                        int length;
-                        long lastMessageTime = 0;
+                    addedEntries.add(fileName);
 
-                        while ((length = inputStream.read(buffer)) != -1) {
-                            zos.write(buffer, 0, length);
-                            totalBytesProcessed += length;
-                            int rawPercent = (int) ((totalBytesProcessed * 100) / totalFileSizeBytes);
-                            int currPercent = (int) (rawPercent * 0.9);
+                    copyContentWithProgress(sourcePath, zos, totalSizeFinal, totalBytesProcessed, lastPercent, progressCallback);
 
-                            long currentTime = System.currentTimeMillis();
-
-                            if (currentTime - lastMessageTime > 150 || currPercent == 90) {
-                                if (currPercent > lastPercent) {
-                                    progressCallback.onUpdate(currPercent, "Processing: " + fileEntry.getName());
-                                    lastPercent = currPercent;
-                                    lastMessageTime = currentTime;
-                                }
-                            }
-                        }
-                    }
                     zos.closeEntry();
                 }
             }
         }
+    }
 
+    private static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
+        Map<Object, Boolean> seen = new ConcurrentHashMap<>();
+        return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
+    }
+
+    private void copyContentWithProgress(Path file, ZipOutputStream zos, long totalSizeFinal, long[] bytesProcessed,
+                                         int[] lastPercent, ProgressCallback progressCallback) throws IOException {
+        try (InputStream inputStream = Files.newInputStream(file)) {
+            byte[] buffer = new byte[8192];
+            int length;
+            long lastMessageTime = 0;
+
+            while ((length = inputStream.read(buffer)) != -1) {
+                zos.write(buffer, 0, length);
+                bytesProcessed[0] += length;
+
+                int rawPercent = (int) ((bytesProcessed[0] * 100) / totalSizeFinal);
+                int currPercent = (int) (rawPercent * 0.9);
+
+                long currTime = System.currentTimeMillis();
+
+                if (currTime - lastMessageTime > 150 || currPercent > lastPercent[0]) {
+                    if (currPercent > lastPercent[0]) {
+                        progressCallback.onUpdate(currPercent, "Processing " + file.getFileName());
+                        lastPercent[0] = currPercent;
+                        lastMessageTime = currTime;
+                    }
+                }
+            }
+        }
     }
 
     /**

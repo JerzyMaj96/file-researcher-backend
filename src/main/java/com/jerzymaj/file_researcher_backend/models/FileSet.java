@@ -59,4 +59,8 @@ public class FileSet {
     )
     @Builder.Default
     private List<FileEntry> files = new ArrayList<>();
+
+    @OneToMany(mappedBy = "fileSet", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ZipArchive> zipArchives = new ArrayList<>();
 }
