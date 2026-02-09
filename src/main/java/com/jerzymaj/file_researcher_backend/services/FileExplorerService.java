@@ -39,10 +39,10 @@ public class FileExplorerService {
      * Recursively scans a validated path and builds a tree of {@link ScanPathResponseDTO} nodes,
      * filtering files by the specified extension.
      *
-     * @param path the validated path to scan
+     * @param path      the validated path to scan
      * @param extension the file extension used for filtering (case-insensitive)
      * @return a {@link ScanPathResponseDTO} containing information about the file or directory
-     *         and its filtered children, or {@code null} if no files match the extension
+     * and its filtered children, or {@code null} if no files match the extension
      */
 
     public ScanPathResponseDTO scanFilteredPath(Path path, String extension) {
@@ -56,6 +56,9 @@ public class FileExplorerService {
             }
         } else {
             List<ScanPathResponseDTO> children = getChildrenIfFiltered(file, extension);
+            if (children.isEmpty()) {
+                return null;
+            }
             return buildNode(file, children);
         }
     }
@@ -65,7 +68,7 @@ public class FileExplorerService {
      *
      * @param path the path to validate
      * @return a {@link File} object corresponding to the path
-     * @throws PathNotFoundException if the path does not exist
+     * @throws PathNotFoundException    if the path does not exist
      * @throws IllegalArgumentException if the path is not readable
      */
 
@@ -90,7 +93,7 @@ public class FileExplorerService {
     /**
      * Builds a {@link ScanPathResponseDTO} node for the given file.
      *
-     * @param file the file or directory to convert
+     * @param file     the file or directory to convert
      * @param children a list of child nodes (for directories), or {@code null} for files
      * @return a {@link ScanPathResponseDTO} representing the file or directory
      */
