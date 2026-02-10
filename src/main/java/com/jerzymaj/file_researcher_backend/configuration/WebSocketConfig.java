@@ -11,7 +11,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    @Value("${app.ws.allowed-origins}")
+    @Value("${app.http/ws.allowed-origins}")
     private String allowedOrigins;
 
     @Override
