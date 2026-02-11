@@ -46,8 +46,11 @@ public class FileExplorerService {
 
         ScanPathResponseDTO currNode = root;
 
+        String currPath = "";
+
         for (int i = 0; i < pathParts.length - 1; i++) {
             String directoryName = pathParts[i];
+            currPath = currPath.isEmpty() ? directoryName : currPath + "/" + directoryName;
 
             ScanPathResponseDTO nextNode = currNode.getChildren()
                     .stream()
@@ -58,6 +61,7 @@ public class FileExplorerService {
             if (nextNode == null) {
                 nextNode = ScanPathResponseDTO.builder()
                         .name(directoryName)
+                        .path(currPath)
                         .directory(true)
                         .children(new ArrayList<>())
                         .build();
@@ -70,6 +74,7 @@ public class FileExplorerService {
 
         ScanPathResponseDTO fileNode = ScanPathResponseDTO.builder()
                 .name(pathParts[pathParts.length - 1])
+                .path(fullPath)
                 .size(file.getSize())
                 .directory(false)
                 .build();
