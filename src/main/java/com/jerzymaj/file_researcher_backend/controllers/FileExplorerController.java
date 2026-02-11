@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Path;
 
@@ -20,6 +21,14 @@ import java.nio.file.Path;
 public class FileExplorerController {
 
     private final FileExplorerService fileExplorerService;
+
+    @PostMapping("/scan")
+    public ResponseEntity<ScanPathResponseDTO> scanPath(@RequestParam("files")MultipartFile[] files) {
+
+        log.info("Received {} files for scanning", files.length);
+
+        return ResponseEntity.ok(fileExplorerService.scanUploadedFiles(files));
+    }
 
     @PostMapping("/scan")
     public ResponseEntity<ScanPathResponseDTO> scanPath(@Valid @RequestBody ScanPathRequest request) {
