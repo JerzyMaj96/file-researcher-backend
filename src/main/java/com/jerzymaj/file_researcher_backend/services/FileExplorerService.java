@@ -21,7 +21,18 @@ import java.util.Objects;
 @Service
 public class FileExplorerService {
 
-    public ScanPathResponseDTO scanUploadedFiles(MultipartFile[] files) {
+    // CLOUD / WEB
+
+    /**
+     * Processes an array of uploaded files and builds a virtual directory tree
+     * based on their original file paths. Optionally filters files by extension.
+     *
+     * @param files     the array of multipart files uploaded from the client
+     * @param extension the file extension to filter by (e.g., ".txt").
+     * If null, all files are included.
+     * @return a {@link ScanPathResponseDTO} representing the root of the virtual file tree
+     */
+    public ScanPathResponseDTO scanUploadedFiles(MultipartFile[] files, String extension) {
         ScanPathResponseDTO root = ScanPathResponseDTO.builder()
                 .name("Root")
                 .directory(true)
@@ -29,15 +40,29 @@ public class FileExplorerService {
                 .build();
 
         for (MultipartFile file : files) {
-            addFileToTree(root, file);
+            String fullPath = file.getOriginalFilename();
+            if (Objects.isNull(fullPath)) {
+                continue;
+            }
+
+            if (extension == null || fullPath.endsWith(extension)) {
+                addFileToTree(root, file, fullPath);
+            }
         }
 
         return root;
     }
 
-    private void addFileToTree(ScanPathResponseDTO root, MultipartFile file) {
-        String fullPath = file.getOriginalFilename();
-
+    /**
+     * A helper method that inserts a file into the tree structure.
+     * It splits the full path into segments, creates missing directory nodes,
+     * and attaches the file node to the appropriate parent.
+     *
+     * @param root     the root node of the tree where the file will be added
+     * @param file     the multipart file object containing file metadata
+     * @param fullPath the original full path of the file used to replicate the folder structure
+     */
+    private void addFileToTree(ScanPathResponseDTO root, MultipartFile file, String fullPath) {
         if (fullPath == null) {
             return;
         }
@@ -82,139 +107,141 @@ public class FileExplorerService {
         currNode.getChildren().add(fileNode);
     }
 
-        /**
-         * Recursively scans a validated path and builds a tree of {@link ScanPathResponseDTO} nodes.
-         *
-         * @param path the validated path to scan
-         * @return a {@link ScanPathResponseDTO} containing information about the file or directory and its children
-         */
+    // LOCAL
 
-        public ScanPathResponseDTO scanPath (Path path){
-            File file = validateFile(path);
+    /**
+     * Recursively scans a validated path and builds a tree of {@link ScanPathResponseDTO} nodes.
+     *
+     * @param path the validated path to scan
+     * @return a {@link ScanPathResponseDTO} containing information about the file or directory and its children
+     */
 
-            log.debug("SCANNED PATH: {} | isDirectory={} | isFile={}",
-                    file.getAbsolutePath(), file.isDirectory(), file.isFile());
+    public ScanPathResponseDTO scanPath(Path path) {
+        File file = validateFile(path);
 
-            if (file.isFile()) {
+        log.debug("SCANNED PATH: {} | isDirectory={} | isFile={}",
+                file.getAbsolutePath(), file.isDirectory(), file.isFile());
+
+        if (file.isFile()) {
+            return buildNode(file, null);
+        } else {
+            return buildNode(file, getChildren(file));
+        }
+    }
+
+    /**
+     * Recursively scans a validated path and builds a tree of {@link ScanPathResponseDTO} nodes,
+     * filtering files by the specified extension.
+     *
+     * @param path      the validated path to scan
+     * @param extension the file extension used for filtering (case-insensitive)
+     * @return a {@link ScanPathResponseDTO} containing information about the file or directory
+     * and its filtered children, or {@code null} if no files match the extension
+     */
+
+    public ScanPathResponseDTO scanFilteredPath(Path path, String extension) {
+        File file = validateFile(path);
+
+        if (file.isFile()) {
+            if (extension.equalsIgnoreCase(FileSetService.getExtension(path))) {
                 return buildNode(file, null);
             } else {
-                return buildNode(file, getChildren(file));
+                return null;
             }
-        }
-
-        /**
-         * Recursively scans a validated path and builds a tree of {@link ScanPathResponseDTO} nodes,
-         * filtering files by the specified extension.
-         *
-         * @param path      the validated path to scan
-         * @param extension the file extension used for filtering (case-insensitive)
-         * @return a {@link ScanPathResponseDTO} containing information about the file or directory
-         * and its filtered children, or {@code null} if no files match the extension
-         */
-
-        public ScanPathResponseDTO scanFilteredPath (Path path, String extension){
-            File file = validateFile(path);
-
-            if (file.isFile()) {
-                if (extension.equalsIgnoreCase(FileSetService.getExtension(path))) {
-                    return buildNode(file, null);
-                } else {
-                    return null;
-                }
-            } else {
-                List<ScanPathResponseDTO> children = getChildrenIfFiltered(file, extension);
-                if (children.isEmpty()) {
-                    return null;
-                }
-                return buildNode(file, children);
+        } else {
+            List<ScanPathResponseDTO> children = getChildrenIfFiltered(file, extension);
+            if (children.isEmpty()) {
+                return null;
             }
+            return buildNode(file, children);
         }
+    }
 
-        /**
-         * Validates if the specified path exists and is readable.
-         *
-         * @param path the path to validate
-         * @return a {@link File} object corresponding to the path
-         * @throws PathNotFoundException    if the path does not exist
-         * @throws IllegalArgumentException if the path is not readable
-         */
+    /**
+     * Validates if the specified path exists and is readable.
+     *
+     * @param path the path to validate
+     * @return a {@link File} object corresponding to the path
+     * @throws PathNotFoundException    if the path does not exist
+     * @throws IllegalArgumentException if the path is not readable
+     */
 
-        private File validateFile (Path path){
-            File file = path.toFile();
+    private File validateFile(Path path) {
+        File file = path.toFile();
 
 //        System.out.println("SCANNED PATH: " + file.getAbsolutePath() +
 //                " | isDirectory=" + file.isDirectory() +
 //                " | isFile=" + file.isFile());
 
-            if (!file.exists()) {
-                throw new PathNotFoundException("Path " + path + " doesn't exist");
-            }
-
-            if (!file.canRead()) {
-                throw new IllegalArgumentException("Path " + path + " is not readable");
-            }
-
-            return file;
+        if (!file.exists()) {
+            throw new PathNotFoundException("Path " + path + " doesn't exist");
         }
 
-        /**
-         * Builds a {@link ScanPathResponseDTO} node for the given file.
-         *
-         * @param file     the file or directory to convert
-         * @param children a list of child nodes (for directories), or {@code null} for files
-         * @return a {@link ScanPathResponseDTO} representing the file or directory
-         */
-
-        private ScanPathResponseDTO buildNode (File file, List < ScanPathResponseDTO > children){
-            return ScanPathResponseDTO.builder()
-                    .name(file.getName())
-                    .path(file.getAbsolutePath())
-                    .directory(file.isDirectory())
-                    .size(file.isFile() ? file.length() : null)
-                    .children(file.isDirectory() ? (children != null ? children : List.of()) : null)
-                    .build();
+        if (!file.canRead()) {
+            throw new IllegalArgumentException("Path " + path + " is not readable");
         }
 
-        /**
-         * Recursively scans the contents of the given directory.
-         *
-         * @param directory the directory to scan
-         * @return a list of {@link ScanPathResponseDTO} representing the filtered children
-         * @throws IllegalArgumentException if the directory cannot be read
-         */
+        return file;
+    }
 
-        private List<ScanPathResponseDTO> getChildren (File directory){
-            File[] files = directory.listFiles();
+    /**
+     * Builds a {@link ScanPathResponseDTO} node for the given file.
+     *
+     * @param file     the file or directory to convert
+     * @param children a list of child nodes (for directories), or {@code null} for files
+     * @return a {@link ScanPathResponseDTO} representing the file or directory
+     */
 
-            if (files == null) {
-                throw new IllegalArgumentException("Unable to list files in directory: " + directory.getAbsolutePath());
-            }
+    private ScanPathResponseDTO buildNode(File file, List<ScanPathResponseDTO> children) {
+        return ScanPathResponseDTO.builder()
+                .name(file.getName())
+                .path(file.getAbsolutePath())
+                .directory(file.isDirectory())
+                .size(file.isFile() ? file.length() : null)
+                .children(file.isDirectory() ? (children != null ? children : List.of()) : null)
+                .build();
+    }
 
-            return Arrays.stream(files)
-                    .map(file -> scanPath(file.toPath()))
-                    .toList();
+    /**
+     * Recursively scans the contents of the given directory.
+     *
+     * @param directory the directory to scan
+     * @return a list of {@link ScanPathResponseDTO} representing the filtered children
+     * @throws IllegalArgumentException if the directory cannot be read
+     */
+
+    private List<ScanPathResponseDTO> getChildren(File directory) {
+        File[] files = directory.listFiles();
+
+        if (files == null) {
+            throw new IllegalArgumentException("Unable to list files in directory: " + directory.getAbsolutePath());
         }
 
-        /**
-         * Recursively scans the contents of the given directory, applying a file extension filter.
-         *
-         * @param directory the directory to scan
-         * @param extension the file extension used for filtering
-         * @return a list of {@link ScanPathResponseDTO} representing the filtered children
-         * @throws IllegalArgumentException if the directory cannot be read
-         */
+        return Arrays.stream(files)
+                .map(file -> scanPath(file.toPath()))
+                .toList();
+    }
 
-        private List<ScanPathResponseDTO> getChildrenIfFiltered (File directory, String extension){
-            File[] files = directory.listFiles();
+    /**
+     * Recursively scans the contents of the given directory, applying a file extension filter.
+     *
+     * @param directory the directory to scan
+     * @param extension the file extension used for filtering
+     * @return a list of {@link ScanPathResponseDTO} representing the filtered children
+     * @throws IllegalArgumentException if the directory cannot be read
+     */
 
-            if (files == null) {
-                throw new IllegalArgumentException("Unable to list files in directory: " + directory.getAbsolutePath());
-            }
+    private List<ScanPathResponseDTO> getChildrenIfFiltered(File directory, String extension) {
+        File[] files = directory.listFiles();
 
-            return Arrays.stream(files)
-                    .map(f -> scanFilteredPath(f.toPath(), extension))
-                    .filter(Objects::nonNull)
-                    .toList();
+        if (files == null) {
+            throw new IllegalArgumentException("Unable to list files in directory: " + directory.getAbsolutePath());
         }
+
+        return Arrays.stream(files)
+                .map(f -> scanFilteredPath(f.toPath(), extension))
+                .filter(Objects::nonNull)
+                .toList();
+    }
 
 }

@@ -22,29 +22,34 @@ public class FileExplorerController {
 
     private final FileExplorerService fileExplorerService;
 
-    @PostMapping("/scan")
-    public ResponseEntity<ScanPathResponseDTO> scanPath(@RequestParam("files")MultipartFile[] files) {
+    // CLOUD / WEB
+
+    @PostMapping("/upload")
+    public ResponseEntity<ScanPathResponseDTO> scanUploadedFiles(@RequestParam("files")MultipartFile[] files,
+                                                        @RequestParam(required = false) String extension) {
 
         log.info("Received {} files for scanning", files.length);
 
-        return ResponseEntity.ok(fileExplorerService.scanUploadedFiles(files));
+        return ResponseEntity.ok(fileExplorerService.scanUploadedFiles(files, extension));
     }
 
-//    @PostMapping("/scan")
-//    public ResponseEntity<ScanPathResponseDTO> scanPath(@Valid @RequestBody ScanPathRequest request) {
-//
-//        Path path = Path.of(request.path());
-//        log.info("Scanning path: {}", path);
-//
-//        return ResponseEntity.ok(fileExplorerService.scanPath(path));
-//    }
+    // LOCAL
 
-//    @PostMapping("/scan/filtered")
-//    public ResponseEntity<ScanPathResponseDTO> scanFilteredPath(@Valid @RequestBody ScanPathWithFilterRequest request) {
-//
-//        Path path = Path.of(request.path());
-//        log.info("Scanning filtered path: {} with extension: {}", path, request.extension());
-//
-//        return ResponseEntity.ok(fileExplorerService.scanFilteredPath(path, request.extension()));
-//    }
+    @PostMapping("/scan")
+    public ResponseEntity<ScanPathResponseDTO> scanPath(@Valid @RequestBody ScanPathRequest request) {
+
+        Path path = Path.of(request.path());
+        log.info("Scanning path: {}", path);
+
+        return ResponseEntity.ok(fileExplorerService.scanPath(path));
+    }
+
+    @PostMapping("/scan/filtered")
+    public ResponseEntity<ScanPathResponseDTO> scanFilteredPath(@Valid @RequestBody ScanPathWithFilterRequest request) {
+
+        Path path = Path.of(request.path());
+        log.info("Scanning filtered path: {} with extension: {}", path, request.extension());
+
+        return ResponseEntity.ok(fileExplorerService.scanFilteredPath(path, request.extension()));
+    }
 }
