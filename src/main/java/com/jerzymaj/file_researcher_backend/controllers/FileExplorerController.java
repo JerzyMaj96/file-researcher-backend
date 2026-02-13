@@ -30,21 +30,21 @@ public class FileExplorerController {
         return ResponseEntity.ok(fileExplorerService.scanUploadedFiles(files));
     }
 
-    @PostMapping("/scan")
-    public ResponseEntity<ScanPathResponseDTO> scanPath(@Valid @RequestBody ScanPathRequest request) {
+//    @PostMapping("/scan")
+//    public ResponseEntity<ScanPathResponseDTO> scanPath(@Valid @RequestBody ScanPathRequest request) {
+//
+//        Path path = Path.of(request.path());
+//        log.info("Scanning path: {}", path);
+//
+//        return ResponseEntity.ok(fileExplorerService.scanPath(path));
+//    }
 
-        Path path = Path.of(request.path());
-        log.info("Scanning path: {}", path);
-
-        return ResponseEntity.ok(fileExplorerService.scanPath(path));
-    }
-
-    @PostMapping("/scan/filtered")
-    public ResponseEntity<ScanPathResponseDTO> scanFilteredPath(@Valid @RequestBody ScanPathWithFilterRequest request) {
-
-        Path path = Path.of(request.path());
-        log.info("Scanning filtered path: {} with extension: {}", path, request.extension());
-
-        return ResponseEntity.ok(fileExplorerService.scanFilteredPath(path, request.extension()));
-    }
+//    @PostMapping("/scan/filtered")
+//    public ResponseEntity<ScanPathResponseDTO> scanFilteredPath(@Valid @RequestBody ScanPathWithFilterRequest request) {
+//
+//        Path path = Path.of(request.path());
+//        log.info("Scanning filtered path: {} with extension: {}", path, request.extension());
+//
+//        return ResponseEntity.ok(fileExplorerService.scanFilteredPath(path, request.extension()));
+//    }
 }
