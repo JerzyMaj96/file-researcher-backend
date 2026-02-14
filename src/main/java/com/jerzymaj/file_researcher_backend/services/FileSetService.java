@@ -15,12 +15,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -30,6 +32,56 @@ public class FileSetService {
     private final FileEntryRepository fileEntryRepository;
     private final FileSetRepository fileSetRepository;
     private final UserRepository userRepository;
+
+    @Transactional
+    public FileSet createFileSetFromUploadedFiles(String name,
+                                                  String description,
+                                                  String recipientEmail,
+                                                  MultipartFile[] files) {
+        if (files == null || files.length == 0) {
+            throw new NoFilesSelectedException("Files haven't been uploaded");
+        }
+
+        Long currentUserId = getCurrentUserId();
+
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new UserNotFoundException("User " + currentUserId + " not found"));
+
+
+        List<FileEntry> fileEntries = new ArrayList<>();
+
+        for (MultipartFile file : files) {
+            String originalPathString = file.getOriginalFilename();
+
+            FileEntry fileEntry = fileEntryRepository.findByPath(file.getOriginalFilename())
+                    .orElseGet(() -> {
+                        Path originalPath = Path.of(originalPathString);
+                        String extension = getExtension(originalPath);
+
+                        return fileEntryRepository.save(FileEntry.builder()
+                                .name(originalPath.getFileName().toString())
+                                .path(originalPathString)
+                                .size(file.getSize())
+                                .extension(extension)
+                                .build()
+                        );
+                    });
+            fileEntries.add(fileEntry);
+        }
+
+        FileSet fileSet = fileSetRepository.save(
+                FileSet.builder()
+                        .name(name)
+                        .description(description)
+                        .recipientEmail(recipientEmail)
+                        .status(FileSetStatus.ACTIVE)
+                        .user(currentUser)
+                        .files(fileEntries)
+                        .build()
+        );
+
+        return fileSetRepository.save(fileSet);
+    }
 
     /**
      * Creates a new {@link FileSet} for the currently authenticated user.
@@ -43,9 +95,6 @@ public class FileSetService {
      * @param recipientEmail the email of the recipient who can access the FileSet
      * @param selectedPaths  list of absolute or relative file paths to include in the FileSet
      * @return the newly created {@link FileSet} with all associated {@link FileEntry} objects
-     * @throws IOException              if an error occurs while reading file attributes
-     * @throws NoFilesSelectedException if {@code selectedPaths} is null or empty
-     * @throws UserNotFoundException    if the currently authenticated user cannot be found in the database
      */
 
     @Transactional
@@ -53,7 +102,7 @@ public class FileSetService {
                                  String description,
                                  String recipientEmail,
                                  List<String> selectedPaths
-    ) throws IOException {
+    ) {
 
         if (selectedPaths == null || selectedPaths.isEmpty()) {
             throw new NoFilesSelectedException("At least one file must be selected");
@@ -169,10 +218,10 @@ public class FileSetService {
     /**
      * Changes the status of a {@link FileSet} if the current user has permissions.
      *
-     * @param fileSetId      ID of the FileSet
+     * @param fileSetId        ID of the FileSet
      * @param newFileSetStatus new status to set
      * @return the updated {@link FileSet}
-     * @throws AccessDeniedException   if the user cannot change the status
+     * @throws AccessDeniedException    if the user cannot change the status
      * @throws FileSetNotFoundException if the FileSet cannot be found
      */
 
@@ -199,7 +248,7 @@ public class FileSetService {
      * @param fileSetId ID of the FileSet
      * @param newEmail  new recipient email
      * @return the updated {@link FileSet}
-     * @throws AccessDeniedException   if the user cannot change the email
+     * @throws AccessDeniedException    if the user cannot change the email
      * @throws FileSetNotFoundException if the FileSet cannot be found
      */
 
@@ -225,7 +274,7 @@ public class FileSetService {
      * @param fileSetId ID of the FileSet
      * @param newName   new name to set
      * @return the updated {@link FileSet}
-     * @throws AccessDeniedException   if the user cannot change the name
+     * @throws AccessDeniedException    if the user cannot change the name
      * @throws FileSetNotFoundException if the FileSet cannot be found
      */
 
@@ -251,7 +300,7 @@ public class FileSetService {
      * @param fileSetId      ID of the FileSet
      * @param newDescription new description
      * @return the updated {@link FileSet}
-     * @throws AccessDeniedException   if the user cannot change the description
+     * @throws AccessDeniedException    if the user cannot change the description
      * @throws FileSetNotFoundException if the FileSet cannot be found
      */
 

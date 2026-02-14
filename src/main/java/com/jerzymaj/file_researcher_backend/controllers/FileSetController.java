@@ -9,8 +9,10 @@ import com.jerzymaj.file_researcher_backend.services.FileSetService;
 import com.jerzymaj.file_researcher_backend.tranlator.Translator;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.net.URI;
@@ -23,6 +25,22 @@ import java.util.List;
 public class FileSetController {
 
     private final FileSetService fileSetService;
+
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<FileSetDTO> createNewFileSetFromUploaded(@RequestParam("name") String name,
+                                                       @RequestParam("description") String description,
+                                                       @RequestParam("recipientEmail") String recipientEmail,
+                                                       @RequestParam("files") MultipartFile[] files) {
+
+        FileSet createdFileSet = fileSetService.createFileSetFromUploadedFiles(
+                name,
+                description,
+                recipientEmail,
+                files);
+
+        return ResponseEntity.created(URI.create("/file-researcher/file-sets/" + createdFileSet.getId()))
+                .body(Translator.convertFileSetToDTO(createdFileSet));
+    }
 
     @PostMapping
     public ResponseEntity<FileSetDTO> createNewFileSet(@Valid @RequestBody CreateFileSetDTO createFileSetDTO)

@@ -7,11 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +25,7 @@ public class FileExplorerService {
      *
      * @param files     the array of multipart files uploaded from the client
      * @param extension the file extension to filter by (e.g., ".txt").
-     * If null, all files are included.
+     *                  If null, all files are included.
      * @return a {@link ScanPathResponseDTO} representing the root of the virtual file tree
      */
     public ScanPathResponseDTO scanUploadedFiles(MultipartFile[] files, String extension) {
