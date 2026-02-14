@@ -4,13 +4,13 @@ import com.jerzymaj.file_researcher_backend.DTOs.ZipArchiveDTO;
 import com.jerzymaj.file_researcher_backend.configuration.ApiRoutes;
 import com.jerzymaj.file_researcher_backend.services.ZipArchiveService;
 import com.jerzymaj.file_researcher_backend.tranlator.Translator;
-import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
 import java.util.UUID;
@@ -49,6 +49,18 @@ public class ZipArchiveController {
 
         return ResponseEntity.ok(zipArchiveDTO);
     }
+
+    @PostMapping(value = "/file-sets/{fileSetId}/zip-archives/send-uploaded-files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> sendZipArchiveFromMultipart(@PathVariable Long fileSetId,
+                                                             @RequestParam String recipientEmail,
+                                                             @RequestParam("files") MultipartFile[] files) {
+        String taskId = UUID.randomUUID().toString();
+
+        zipArchiveService.createAndSendZipFromFileSetUploaded(fileSetId, recipientEmail, files, taskId);
+
+        return ResponseEntity.ok(taskId);
+    }
+
 
     @PostMapping("/file-sets/{fileSetId}/zip-archives/send-progress")
     public ResponseEntity<String> sendZipArchiveAndShowProgress(@PathVariable Long fileSetId,

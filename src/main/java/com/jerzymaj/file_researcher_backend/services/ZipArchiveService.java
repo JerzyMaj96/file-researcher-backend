@@ -19,6 +19,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,6 +49,26 @@ public class ZipArchiveService {
     private final ZipArchiveRepository zipArchiveRepository;
     private final SentHistoryService sentHistoryService;
     private final SimpMessagingTemplate messagingTemplate;
+
+    @Async
+    @Transactional
+    public void createAndSendZipFromFileSetUploaded(Long fileSetId, String recipientEmail, MultipartFile[] files,
+                                                    String taskId) {
+        FileSet fileSet = fetchFileSet(fileSetId);
+        Path zipPath = prepareTempZipPath(fileSetId);
+
+        try {
+            createZipArchiveFromMultipart(files, zipPath, (percent, msg) -> notifyProgress(taskId, percent, msg));
+
+            ZipArchive archive = registerZipArchive(fileSet, zipPath, recipientEmail);
+
+            sendAndFinalize(archive, fileSet, zipPath, taskId);
+        } catch (Exception ex) {
+            handleError(taskId, ex);
+        } finally {
+            cleanUp(zipPath);
+        }
+    }
 
     /**
      * Asynchronously orchestrates the creation of a ZIP archive from a FileSet and
@@ -197,6 +218,46 @@ public class ZipArchiveService {
         return zipFilePath;
     }
 
+    private void createZipArchiveFromMultipart(MultipartFile[] files, Path zipPath, ProgressCallback progressCallback) throws IOException {
+
+        long totalFileSizeBytes = 0;
+
+        for (MultipartFile file : files) {
+            totalFileSizeBytes += file.getSize();
+        }
+
+        final long[] totalBytesProcessed = {0};
+        final int[] lastPercent = {0};
+        final long totalSizeFinal = totalFileSizeBytes > 0 ? totalFileSizeBytes : 1;
+
+        Set<String> addedEntries = new HashSet<>();
+
+        try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipPath))) {
+
+            for (MultipartFile file : files) {
+                String fileName = file.getOriginalFilename();
+                if (fileName == null) {
+                    fileName = file.getName();
+                }
+
+                if (!addedEntries.add(fileName)) {
+                    log.warn("Skipping duplicate entry in ZIP: {}", fileName);
+                    continue;
+                }
+
+                ZipEntry entry = new ZipEntry(fileName);
+                zos.putNextEntry(entry);
+
+                try (InputStream inputStream = file.getInputStream()) {
+                    copyInputStreamWithProgress(inputStream, zos, totalSizeFinal, totalBytesProcessed, lastPercent,
+                            progressCallback, fileName);
+                }
+
+                zos.closeEntry();
+            }
+        }
+    }
+
     /**
      * Performs the actual file compression into a ZIP archive.
      * This method reads source files from the disk, writes them to the ZipOutputStream,
@@ -308,13 +369,40 @@ public class ZipArchiveService {
      * It is safe for use in parallel streams.
      * </p>
      *
-     * @param <T>           The type of the stream elements.
+     * @param <T>          The type of the stream elements.
      * @param keyExtractor A function to extract the key used for the uniqueness check.
      * @return A predicate that returns {@code true} only the first time a specific key is encountered.
      */
     private static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
         Map<Object, Boolean> seen = new ConcurrentHashMap<>();
         return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
+    }
+
+    private void copyInputStreamWithProgress(InputStream inputStream, ZipOutputStream zos, long totalSize,
+                                             long[] bytesProcessed, int[] lastPercent, ProgressCallback progressCallback,
+                                             String currFinalName) throws IOException {
+        byte[] buffer = new byte[8192];
+        int length;
+        long lastMessageTime = 0;
+
+        while ((length = inputStream.read(buffer)) != -1) {
+            zos.write(buffer, 0, length);
+            bytesProcessed[0] += length;
+
+            int rawPercent = (int) ((bytesProcessed[0] * 100) / totalSize);
+            int currPercent = (int) (rawPercent * 0.9);
+
+            long currTime = System.currentTimeMillis();
+
+            if (currTime - lastMessageTime > 150 || currPercent > lastPercent[0]) {
+                if (currPercent > lastPercent[0]) {
+                    progressCallback.onUpdate(currPercent, "Processing " + currFinalName);
+                    lastPercent[0] = currPercent;
+                    lastMessageTime = currTime;
+                }
+            }
+        }
+
     }
 
     /**
@@ -331,7 +419,7 @@ public class ZipArchiveService {
      * @param bytesProcessed   A single-element array acting as a mutable reference for the global byte counter.
      * @param lastPercent      A single-element array acting as a mutable reference for the last reported percentage.
      * @param progressCallback The callback used to report status updates to the UI or logs.
-     * @throws IOException     If an I/O error occurs during the read/write process.
+     * @throws IOException If an I/O error occurs during the read/write process.
      */
     private void copyContentWithProgress(Path file, ZipOutputStream zos, long totalSizeFinal, long[] bytesProcessed,
                                          int[] lastPercent, ProgressCallback progressCallback) throws IOException {

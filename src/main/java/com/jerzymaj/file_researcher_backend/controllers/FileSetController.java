@@ -14,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.net.URI;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
@@ -43,8 +42,7 @@ public class FileSetController {
     }
 
     @PostMapping
-    public ResponseEntity<FileSetDTO> createNewFileSet(@Valid @RequestBody CreateFileSetDTO createFileSetDTO)
-            throws IOException {
+    public ResponseEntity<FileSetDTO> createNewFileSet(@Valid @RequestBody CreateFileSetDTO createFileSetDTO) {
 
         FileSet createdFileSet = fileSetService.createFileSet(
                 createFileSetDTO.getName(),
