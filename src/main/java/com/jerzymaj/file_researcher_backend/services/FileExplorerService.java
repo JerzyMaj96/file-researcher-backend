@@ -45,7 +45,7 @@ public class FileExplorerService {
                 continue;
             }
 
-            if (extension == null || fullPath.endsWith(extension)) {
+            if (extension == null || extension.isBlank() || fullPath.endsWith(extension)) {
                 addFileToTree(root, file, fullPath);
             }
         }

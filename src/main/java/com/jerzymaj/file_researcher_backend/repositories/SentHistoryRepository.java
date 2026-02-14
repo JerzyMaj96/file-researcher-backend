@@ -13,16 +13,17 @@ public interface SentHistoryRepository extends JpaRepository<SentHistory, Long> 
 
     @Query("""
             SELECT sh
-                FROM SentHistory sh
-                JOIN sh.zipArchive za
-                JOIN za.user u
-                WHERE u.id = :userId
-                ORDER BY sh.sendAttemptDate DESC
+            FROM SentHistory sh
+            JOIN sh.zipArchive za
+            JOIN za.user u
+            WHERE u.id = :userId
+            ORDER BY sh.sendAttemptDate DESC
             """)
     List<SentHistory> findAllByUserIdSorted(@Param("userId") Long userId);
 
     @Query(value = """
-            SELECT * FROM sent_history
+            SELECT * 
+            FROM sent_history
             WHERE zip_archive_id = :zipArchiveId
             ORDER BY send_attempt_date DESC
             """, nativeQuery = true)
@@ -34,7 +35,7 @@ public interface SentHistoryRepository extends JpaRepository<SentHistory, Long> 
             WHERE zip_archive_id = :zipArchiveId
             ORDER BY send_attempt_date DESC
             LIMIT 1
-            """,nativeQuery = true)
+            """, nativeQuery = true)
     String findLastRecipient(@Param("zipArchiveId") Long zipArchiveId);
 
 
