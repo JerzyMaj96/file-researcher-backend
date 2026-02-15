@@ -50,6 +50,29 @@ public class ZipArchiveService {
     private final SentHistoryService sentHistoryService;
     private final SimpMessagingTemplate messagingTemplate;
 
+    /**
+     * Asynchronously orchestrates the creation of a ZIP archive from uploaded files
+     * and dispatches it via email.
+     * <p>
+     * This method is specifically designed for cloud environments (e.g., Render, Heroku)
+     * with ephemeral file systems. Instead of relying on pre-existing server-side files,
+     * it processes data directly from the input streams provided in the HTTP multipart request.
+     * </p>
+     * * <b>Workflow:</b>
+     * <ol>
+     * <li>Retrieves FileSet metadata from the database.</li>
+     * <li>Allocates a unique temporary path in the system's 'tmp' directory.</li>
+     * <li>Compresses files (0-90% progress) using MultipartFile input streams.</li>
+     * <li>Registers the archive in the database with a PENDING status.</li>
+     * <li>Sends the email (90-100% progress) and updates statuses to SUCCESS.</li>
+     * <li>Ensures disk resources are purged in the 'finally' block to prevent storage leaks.</li>
+     * </ol>
+     *
+     * @param fileSetId      The ID of the associated FileSet record.
+     * @param recipientEmail The destination email address.
+     * @param files          Array of binary files received from the frontend.
+     * @param taskId         Unique UUID for task tracking via WebSocket (STOMP) notifications.
+     */
     @Async
     @Transactional
     public void createAndSendZipFromFileSetUploaded(Long fileSetId, String recipientEmail, MultipartFile[] files,
@@ -218,6 +241,28 @@ public class ZipArchiveService {
         return zipFilePath;
     }
 
+    /**
+     * Generates a ZIP archive directly from MultipartFile objects, eliminating the
+     * need for persistent source file storage on the server disk.
+     * <p>
+     * Implements a "Streaming ZIP" mechanism, which significantly reduces RAM overhead
+     * by buffering data from the HTTP request stream directly into the ZipOutputStream.
+     * </p>
+     * * <b>Key Features:</b>
+     * <ul>
+     * <li><b>Deduplication:</b> Utilizes a {@code HashSet} to track and skip files with
+     * identical names/paths, preventing {@code ZipException: duplicate entry}.</li>
+     * <li><b>Progress Tracking:</b> Calculates total payload size upfront to provide
+     * accurate progress updates to the UI.</li>
+     * <li><b>Directory Structure:</b> Leverages {@code getOriginalFilename()} to
+     * preserve the original folder hierarchy (e.g., when using 'webkitdirectory').</li>
+     * </ul>
+     *
+     * @param files            The collection of files to be compressed.
+     * @param zipPath          The destination path on the server for the temporary .zip file.
+     * @param progressCallback Functional interface for real-time progress reporting.
+     * @throws IOException If an error occurs during stream reading or disk writing.
+     */
     private void createZipArchiveFromMultipart(MultipartFile[] files, Path zipPath, ProgressCallback progressCallback) throws IOException {
 
         long totalFileSizeBytes = 0;
@@ -572,7 +617,7 @@ public class ZipArchiveService {
                                        String text) throws MessagingException {
 
         MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true);
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
         helper.setTo(recipientEmail);
         helper.setSubject(subject);
