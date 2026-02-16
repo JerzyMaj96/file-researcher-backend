@@ -96,17 +96,18 @@ public class ZipArchiveService {
      * </ol>
      */
     @Async
-    @Transactional
     public void createAndSendZipFromUploadedFiles(Long fileSetId, String recipientEmail, List<Path> filesToZip, Path sourceDir, String taskId) {
-        FileSet fileSet = fetchFileSet(fileSetId);
-        Path zipPath = prepareTempZipPath(fileSetId);
-
+        Path zipPath = null;
         try {
+            FileSet fileSet = fetchFileSet(fileSetId);
+            zipPath = prepareTempZipPath(fileSetId);
+
             createZipArchiveFromPaths(filesToZip, zipPath, (percent, msg) -> notifyProgress(taskId, percent, msg));
 
             ZipArchive archive = registerZipArchive(fileSet, zipPath, recipientEmail);
 
             sendAndFinalize(archive, fileSet, zipPath, taskId);
+
         } catch (Exception ex) {
             handleError(taskId, ex);
         } finally {
@@ -546,7 +547,6 @@ public class ZipArchiveService {
      * @param taskId  The task ID for progress updates.
      */
     private void sendAndFinalize(ZipArchive zipArchive, FileSet fileSet, Path zipPath, String taskId) {
-
         try {
             notifyProgress(taskId, 95, "Sending email to " + zipArchive.getRecipientEmail() + "...");
 
@@ -557,21 +557,40 @@ public class ZipArchiveService {
                     "Please find attached the ZIP archive of requested files."
             );
 
-            zipArchive.setStatus(ZipArchiveStatus.SUCCESS);
-            fileSet.setStatus(FileSetStatus.SENT);
-            zipArchiveRepository.saveAndFlush(zipArchive);
-            fileSetRepository.saveAndFlush(fileSet);
+            updateDatabaseAfterSuccess(zipArchive.getId(), fileSet.getId());
+
             sentHistoryService.saveSentHistory(zipArchive, zipArchive.getRecipientEmail(), true, null);
 
             notifyProgress(taskId, 100, "Completed!");
 
         } catch (Exception ex) {
             log.error("Failed to send email for task: {}", taskId, ex);
-
-            zipArchive.setStatus(ZipArchiveStatus.FAILED);
-            zipArchiveRepository.saveAndFlush(zipArchive);
-            sentHistoryService.saveSentHistory(zipArchive, zipArchive.getRecipientEmail(), false, ex.getMessage());
+            updateDatabaseAfterFailure(zipArchive.getId(), ex.getMessage());
         }
+    }
+
+    @Transactional
+    public void updateDatabaseAfterSuccess(Long archiveId, Long fileSetId) {
+        ZipArchive archive = zipArchiveRepository.findById(archiveId)
+                .orElseThrow(() -> new ZipArchiveNotFoundException("Archive not found"));
+        FileSet fileSet = fileSetRepository.findById(fileSetId)
+                .orElseThrow(() -> new FileSetNotFoundException("FileSet not found"));
+
+        archive.setStatus(ZipArchiveStatus.SUCCESS);
+        fileSet.setStatus(FileSetStatus.SENT);
+
+        zipArchiveRepository.saveAndFlush(archive);
+        fileSetRepository.saveAndFlush(fileSet);
+        log.info("Baza zaktualizowana: Archive SUCCESS, FileSet SENT");
+    }
+
+    @Transactional
+    public void updateDatabaseAfterFailure(Long archiveId, String errorMessage) {
+        zipArchiveRepository.findById(archiveId).ifPresent(archive -> {
+            archive.setStatus(ZipArchiveStatus.FAILED);
+            zipArchiveRepository.saveAndFlush(archive);
+            sentHistoryService.saveSentHistory(archive, archive.getRecipientEmail(), false, errorMessage);
+        });
     }
 
     /**
