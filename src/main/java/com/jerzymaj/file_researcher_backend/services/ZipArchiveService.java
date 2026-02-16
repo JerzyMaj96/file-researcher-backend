@@ -21,16 +21,15 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -51,37 +50,58 @@ public class ZipArchiveService {
     private final SimpMessagingTemplate messagingTemplate;
 
     /**
-     * Asynchronously orchestrates the creation of a ZIP archive from uploaded files
-     * and dispatches it via email.
+     * Entry point for the upload-to-zip process. Orchestrates synchronous file staging.
      * <p>
-     * This method is specifically designed for cloud environments (e.g., Render, Heroku)
-     * with ephemeral file systems. Instead of relying on pre-existing server-side files,
-     * it processes data directly from the input streams provided in the HTTP multipart request.
+     * <b>Why this way:</b> In environments like Render, MultipartFiles are deleted
+     * immediately after the HTTP request ends. To process them asynchronously,
+     * we first "stage" them into a secure local directory.
      * </p>
-     * * <b>Workflow:</b>
-     * <ol>
-     * <li>Retrieves FileSet metadata from the database.</li>
-     * <li>Allocates a unique temporary path in the system's 'tmp' directory.</li>
-     * <li>Compresses files (0-90% progress) using MultipartFile input streams.</li>
-     * <li>Registers the archive in the database with a PENDING status.</li>
-     * <li>Sends the email (90-100% progress) and updates statuses to SUCCESS.</li>
-     * <li>Ensures disk resources are purged in the 'finally' block to prevent storage leaks.</li>
-     * </ol>
      *
-     * @param fileSetId      The ID of the associated FileSet record.
-     * @param recipientEmail The destination email address.
-     * @param files          Array of binary files received from the frontend.
-     * @param taskId         Unique UUID for task tracking via WebSocket (STOMP) notifications.
+     * @param fileSetId      The ID of the associated FileSet.
+     * @param recipientEmail Target email address.
+     * @param files          Array of MultipartFiles from the controller.
+     * @return String        The unique taskId for WebSocket tracking.
+     * @throws IOException If file staging fails.
+     */
+    public String startZipUploadProcess(Long fileSetId, String recipientEmail, MultipartFile[] files) throws IOException {
+        String taskId = UUID.randomUUID().toString();
+
+        Path uploadDir = Paths.get("temp-uploads", taskId);
+        Files.createDirectories(uploadDir);
+
+        List<Path> savedFiles = new ArrayList<>();
+
+        for (MultipartFile file : files) {
+            Path destination = uploadDir.resolve(Objects.requireNonNull(file.getOriginalFilename()));
+            file.transferTo(destination);
+            savedFiles.add(destination);
+        }
+
+        createAndSendZipFromUploadedFiles(fileSetId, recipientEmail, savedFiles, uploadDir, taskId);
+
+        return taskId;
+    }
+
+    /**
+     * Asynchronously creates a ZIP from staged files and dispatches it via email.
+     * <p>
+     * <b>Workflow:</b>
+     * <ol>
+     * <li>Fetches metadata from database.</li>
+     * <li>Creates a ZIP archive from the staged files with progress reporting (0-90%).</li>
+     * <li>Registers the archive in PENDING status.</li>
+     * <li>Sends email (95%) and finalizes status to SUCCESS or FAILED.</li>
+     * <li>Purges all temporary resources (ZIP and staging folder) in the 'finally' block.</li>
+     * </ol>
      */
     @Async
     @Transactional
-    public void createAndSendZipFromFileSetUploaded(Long fileSetId, String recipientEmail, MultipartFile[] files,
-                                                    String taskId) {
+    public void createAndSendZipFromUploadedFiles(Long fileSetId, String recipientEmail, List<Path> filesToZip, Path sourceDir, String taskId) {
         FileSet fileSet = fetchFileSet(fileSetId);
         Path zipPath = prepareTempZipPath(fileSetId);
 
         try {
-            createZipArchiveFromMultipart(files, zipPath, (percent, msg) -> notifyProgress(taskId, percent, msg));
+            createZipArchiveFromPaths(filesToZip, zipPath, (percent, msg) -> notifyProgress(taskId, percent, msg));
 
             ZipArchive archive = registerZipArchive(fileSet, zipPath, recipientEmail);
 
@@ -90,6 +110,7 @@ public class ZipArchiveService {
             handleError(taskId, ex);
         } finally {
             cleanUp(zipPath);
+            recursiveDelete(sourceDir);
         }
     }
 
@@ -242,33 +263,18 @@ public class ZipArchiveService {
     }
 
     /**
-     * Generates a ZIP archive directly from MultipartFile objects, eliminating the
-     * need for persistent source file storage on the server disk.
-     * <p>
-     * Implements a "Streaming ZIP" mechanism, which significantly reduces RAM overhead
-     * by buffering data from the HTTP request stream directly into the ZipOutputStream.
-     * </p>
-     * * <b>Key Features:</b>
-     * <ul>
-     * <li><b>Deduplication:</b> Utilizes a {@code HashSet} to track and skip files with
-     * identical names/paths, preventing {@code ZipException: duplicate entry}.</li>
-     * <li><b>Progress Tracking:</b> Calculates total payload size upfront to provide
-     * accurate progress updates to the UI.</li>
-     * <li><b>Directory Structure:</b> Leverages {@code getOriginalFilename()} to
-     * preserve the original folder hierarchy (e.g., when using 'webkitdirectory').</li>
-     * </ul>
+     * Compresses files from given Paths into a single ZIP archive.
+     * * @param filesToZip       List of staged file paths.
      *
-     * @param files            The collection of files to be compressed.
-     * @param zipPath          The destination path on the server for the temporary .zip file.
-     * @param progressCallback Functional interface for real-time progress reporting.
-     * @throws IOException If an error occurs during stream reading or disk writing.
+     * @param zipPath          Target path for the .zip file.
+     * @param progressCallback Callback for real-time progress updates.
      */
-    private void createZipArchiveFromMultipart(MultipartFile[] files, Path zipPath, ProgressCallback progressCallback) throws IOException {
+    private void createZipArchiveFromPaths(List<Path> filesToZip, Path zipPath, ProgressCallback progressCallback) throws IOException {
 
         long totalFileSizeBytes = 0;
 
-        for (MultipartFile file : files) {
-            totalFileSizeBytes += file.getSize();
+        for (Path file : filesToZip) {
+            totalFileSizeBytes += Files.size(file);
         }
 
         final long[] totalBytesProcessed = {0};
@@ -279,11 +285,8 @@ public class ZipArchiveService {
 
         try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipPath))) {
 
-            for (MultipartFile file : files) {
-                String fileName = file.getOriginalFilename();
-                if (fileName == null) {
-                    fileName = file.getName();
-                }
+            for (Path file : filesToZip) {
+                String fileName = file.getFileName().toString();
 
                 if (!addedEntries.add(fileName)) {
                     log.warn("Skipping duplicate entry in ZIP: {}", fileName);
@@ -293,7 +296,7 @@ public class ZipArchiveService {
                 ZipEntry entry = new ZipEntry(fileName);
                 zos.putNextEntry(entry);
 
-                try (InputStream inputStream = file.getInputStream()) {
+                try (InputStream inputStream = Files.newInputStream(file)) {
                     copyInputStreamWithProgress(inputStream, zos, totalSizeFinal, totalBytesProcessed, lastPercent,
                             progressCallback, fileName);
                 }
@@ -598,6 +601,31 @@ public class ZipArchiveService {
             }
         } catch (IOException ex) {
             log.warn("Could not delete temp file", ex);
+        }
+    }
+
+    /**
+     * Recursively deletes a directory or file.
+     * Essential for maintaining clean disk space on ephemeral cloud storage.
+     *
+     * @param path Path to the file or directory to be deleted.
+     */
+    private void recursiveDelete(Path path) {
+        try {
+            if (Files.exists(path)) {
+                try (var walk = Files.walk(path)) {
+                    walk.sorted(Comparator.reverseOrder())
+                            .forEach(p -> {
+                                try {
+                                    Files.deleteIfExists(p);
+                                } catch (IOException ex) {
+                                    log.error("Unable to delete: {}", p, ex);
+                                }
+                            });
+                }
+            }
+        } catch (IOException ex) {
+            log.error("Error during directory deletion: {}", path, ex);
         }
     }
 

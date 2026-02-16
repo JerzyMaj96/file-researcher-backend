@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
 import java.util.UUID;
@@ -53,10 +54,9 @@ public class ZipArchiveController {
     @PostMapping(value = "/file-sets/{fileSetId}/zip-archives/send-uploaded-files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> sendZipArchiveFromMultipart(@PathVariable Long fileSetId,
                                                              @RequestParam String recipientEmail,
-                                                             @RequestParam("files") MultipartFile[] files) {
-        String taskId = UUID.randomUUID().toString();
+                                                             @RequestParam("files") MultipartFile[] files) throws IOException {
 
-        zipArchiveService.createAndSendZipFromFileSetUploaded(fileSetId, recipientEmail, files, taskId);
+        String taskId = zipArchiveService.startZipUploadProcess(fileSetId, recipientEmail, files);
 
         return ResponseEntity.ok(taskId);
     }
