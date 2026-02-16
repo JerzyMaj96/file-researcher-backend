@@ -66,13 +66,14 @@ public class ZipArchiveService {
     public String startZipUploadProcess(Long fileSetId, String recipientEmail, MultipartFile[] files) throws IOException {
         String taskId = UUID.randomUUID().toString();
 
-        Path uploadDir = Paths.get("temp-uploads", taskId);
+        Path uploadDir = Paths.get("temp-uploads", taskId).toAbsolutePath();
         Files.createDirectories(uploadDir);
 
         List<Path> savedFiles = new ArrayList<>();
 
         for (MultipartFile file : files) {
-            Path destination = uploadDir.resolve(Objects.requireNonNull(file.getOriginalFilename()));
+            Path destination = uploadDir.resolve(Objects.requireNonNull(file.getOriginalFilename())).toAbsolutePath();
+            Files.createDirectories(destination.getParent());
             file.transferTo(destination);
             savedFiles.add(destination);
         }
@@ -286,19 +287,19 @@ public class ZipArchiveService {
         try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipPath))) {
 
             for (Path file : filesToZip) {
-                String fileName = file.getFileName().toString();
+                String relativePath = zipPath.relativize(file).toString().replace("\\", "/");
 
-                if (!addedEntries.add(fileName)) {
-                    log.warn("Skipping duplicate entry in ZIP: {}", fileName);
+                if (!addedEntries.add(relativePath)) {
+                    log.warn("Skipping duplicate entry in ZIP: {}", relativePath);
                     continue;
                 }
 
-                ZipEntry entry = new ZipEntry(fileName);
+                ZipEntry entry = new ZipEntry(relativePath);
                 zos.putNextEntry(entry);
 
                 try (InputStream inputStream = Files.newInputStream(file)) {
                     copyInputStreamWithProgress(inputStream, zos, totalSizeFinal, totalBytesProcessed, lastPercent,
-                            progressCallback, fileName);
+                            progressCallback, relativePath);
                 }
 
                 zos.closeEntry();
