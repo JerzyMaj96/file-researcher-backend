@@ -549,7 +549,7 @@ public class ZipArchiveService {
     private void sendAndFinalize(ZipArchive zipArchive, FileSet fileSet, Path zipPath, String taskId) {
         try {
             notifyProgress(taskId, 95, "Sending email...");
-            sendZipArchiveByEmail(zipArchive.getRecipientEmail(), zipPath, "Files", "Attached files.");
+            sendZipArchiveByEmail(zipArchive.getRecipientEmail(), zipPath, "Files", "Please find attached the ZIP archive of requested files");
 
             zipArchiveStatusService.updateDatabaseAfterSuccess(zipArchive.getId(), fileSet.getId());
             sentHistoryService.saveSentHistory(zipArchive, zipArchive.getRecipientEmail(), true, null);
@@ -557,13 +557,13 @@ public class ZipArchiveService {
 
         } catch (Exception ex) {
             if (ex.getMessage() != null && ex.getMessage().contains("552-5.7.0")) {
-                log.warn("Wykryto specyficzny błąd Gmaila 552 (security), ale mail prawdopodobnie dotarł. Finalizuję jako sukces.");
+                log.warn("Detected Gmail 552-5.7.0 security warning. Message likely delivered. Finalizing as SUCCESS.");
 
                 zipArchiveStatusService.updateDatabaseAfterSuccess(zipArchive.getId(), fileSet.getId());
                 sentHistoryService.saveSentHistory(zipArchive, zipArchive.getRecipientEmail(), true, "Sent with Gmail security warning");
                 notifyProgress(taskId, 100, "Completed with warnings");
             } else {
-                log.error("KRYTYCZNY BŁĄD WYSYŁKI: {}", ex.getMessage());
+                log.error("CRITICAL DELIVERY FAILURE: {}", ex.getMessage());
                 zipArchiveStatusService.updateDatabaseAfterFailure(zipArchive.getId(), ex.getMessage());
                 notifyProgress(taskId, -1, "Error: " + ex.getMessage());
             }
