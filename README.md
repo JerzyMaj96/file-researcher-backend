@@ -1,16 +1,19 @@
 # File Researcher Backend
 
-A Spring Boot backend service that allows users to upload sets of files, compress them into ZIP archives, send them via email, and track the sending history with full security and ownership control.
+A Spring Boot backend service that allows users to upload sets of files, compress them into ZIP archives, send them via
+email, and track the sending history with full security and ownership control.
 
 ## Key Features
 
 ### 1. Asynchronous File Processing & ZIP Compression
 
-The application handles file set grouping and the packing of large directory structures (including recursive folder scanning) without blocking the main server thread.
+The application handles file set grouping and the packing of large directory structures (including recursive folder
+scanning) without blocking the main server thread.
 
 Non-blocking I/O: Utilizes the @Async annotation to execute resource-intensive tasks in the background.
 
-Smart Compression: Intelligent file filtering (e.g., skipping duplicates, handling node_modules) and efficient ZIP generation.
+Smart Compression: Intelligent file filtering (e.g., skipping duplicates, handling node_modules) and efficient ZIP
+generation.
 
 ### 2. Real-Time Progress Tracking (WebSockets)
 
@@ -18,7 +21,8 @@ Integrated WebSocket (STOMP) support provides immediate feedback to the frontend
 
 Live Updates: Users see an exact percentage progress bar (0-100%) for file processing and upload.
 
-Status Broadcasting: Detailed status messages (e.g., "Processing: file.txt", "Sending email...") are pushed to a dedicated subscription channel.
+Status Broadcasting: Detailed status messages (e.g., "Processing: file.txt", "Sending email...") are pushed to a
+dedicated subscription channel.
 
 ### 3. Robust Email Delivery System
 
@@ -50,11 +54,44 @@ Ownership Validation: Users cannot view, manage, or delete data belonging to oth
 
 Advanced database management ensures consistency in a multi-threaded environment.
 
-Transaction Management: Uses @Transactional and saveAndFlush to guarantee immediate and accurate status updates (SENT/FAILED) across asynchronous threads.
+Transaction Management: Uses @Transactional and saveAndFlush to guarantee immediate and accurate status updates (
+SENT/FAILED) across asynchronous threads.
 
-Data Consistency: Cascading deletion (CascadeType.ALL, orphanRemoval) ensures that deleting a File Set automatically cleans up all related archives and logs.
+Data Consistency: Cascading deletion (CascadeType.ALL, orphanRemoval) ensures that deleting a File Set automatically
+cleans up all related archives and logs.
 
 Optimized Queries: SQL-enhanced JPA queries for efficient data retrieval, sorting, and filtering.
+
+## Technical Challenges & Solutions
+
+### 1. Asynchronous State Management (Spring Proxy & Transactions)
+
+**Problem:** During the ZIP creation and email dispatching process, updating the database status (e.g., from `ACTIVE` to
+`SENT`) was failing due to Spring's AOP Proxy limitations. Internal method calls within the same service bypassed the
+`@Transactional` context, preventing status persistence.
+**Solution:** I decoupled the persistence logic into a dedicated `ZipArchiveStatusService`. This ensured that every
+status change (Success/Failure) is handled in a clean, external transactional context, forcing Hibernate to flush
+changes to the database even during complex asynchronous tasks.
+
+### 2. SMTP Reliability & Provider-Specific Quirks (Gmail 552 5.7.0)
+
+**Problem:** When deploying and testing, I encountered the `552 5.7.0` SMTP error. Gmail’s security filters often flag
+automated attachments (especially ZIPs containing system metadata like `.DS_Store`) as potential threats, even if the
+email is physically delivered.
+**Solution:** * **Defensive Filtering:** Implemented logic to exclude OS-specific metadata and suspicious files from the
+ZIP archives.
+
+* **Resilient Exception Handling:** Developed a selective error-handling mechanism that differentiates between critical
+  connection failures and provider-specific security warnings. This ensures the system correctly marks a task as "
+  Completed" if the message was accepted by the relay, maintaining a truthful application state.
+
+### 3. Cloud Deployment Optimization (Render)
+
+**Problem:** Hosting on Render introduced challenges with ephemeral file systems and request timeouts for large file
+processing.
+**Solution:** I implemented a "Stage-and-Process" workflow. Files are first staged into a temporary directory with a
+unique `taskId`, followed by an asynchronous processing pipeline that provides real-time progress updates via *
+*WebSockets (STOMP)**. This prevents HTTP request timeouts and ensures a smooth user experience.
 
 ---
 
@@ -93,11 +130,13 @@ Optimized Queries: SQL-enhanced JPA queries for efficient data retrieval, sortin
    git clone https://github.com/JerzyMaj96/file-researcher-backend.git
 2. Configure your database and SMTP settings in application.properties or application.yml.
 3. Build and run the application:
-./mvnw clean install
-./mvnw spring-boot:run
+   ./mvnw clean install
+   ./mvnw spring-boot:run
 
 ## Development Branch
-This repository also includes an additional branch used for testing and experimenting with new or alternative versions of methods and application features.
+
+This repository also includes an additional branch used for testing and experimenting with new or alternative versions
+of methods and application features.
 It serves as a sandbox for exploring different implementation ideas before merging stable changes into the main branch.
 
 ## License
@@ -105,6 +144,6 @@ It serves as a sandbox for exploring different implementation ideas before mergi
 This project is licensed under the MIT License.
 
 
- Feel free to contribute or open issues  
+Feel free to contribute or open issues
 --- 
- Created by  **Jerzy Maj**
+Created by  **Jerzy Maj**
