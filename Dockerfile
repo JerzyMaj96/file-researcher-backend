@@ -14,9 +14,12 @@ FROM eclipse-temurin:21-jdk-alpine
 WORKDIR /app
 
 RUN addgroup -S spring && adduser -S spring -G spring
-USER spring:spring
+
+RUN mkdir -p /app/temp-uploads && chown -R spring:spring /app/temp-uploads && chmod 755 /app/temp-uploads
 
 COPY --from=build /app/target/*.jar app.jar
+
+USER spring:spring
 
 EXPOSE 8080
 

@@ -66,7 +66,7 @@ public class ZipArchiveService {
     public String startZipUploadProcess(Long fileSetId, String recipientEmail, MultipartFile[] files) throws IOException {
         String taskId = UUID.randomUUID().toString();
 
-        Path uploadDir = Paths.get(System.getProperty("java.io.tmpdir"),"temp-uploads", taskId).toAbsolutePath();
+        Path uploadDir = Paths.get("temp-uploads", taskId).toAbsolutePath();
         Files.createDirectories(uploadDir);
 
         List<Path> savedFiles = new ArrayList<>();
