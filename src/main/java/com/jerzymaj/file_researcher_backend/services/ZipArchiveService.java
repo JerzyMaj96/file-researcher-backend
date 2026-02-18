@@ -99,6 +99,12 @@ public class ZipArchiveService {
     public void createAndSendZipFromUploadedFiles(Long fileSetId, String recipientEmail, List<Path> filesToZip, Path sourceDir, String taskId) {
         Path zipPath = null;
         try {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+            }
+
             FileSet fileSet = fetchFileSet(fileSetId);
             zipPath = prepareTempZipPath(fileSetId);
 
