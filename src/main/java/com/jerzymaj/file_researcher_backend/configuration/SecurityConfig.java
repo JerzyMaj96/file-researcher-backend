@@ -4,7 +4,10 @@ import com.jerzymaj.file_researcher_backend.services.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.*;
+import org.springframework.messaging.Message;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.messaging.access.intercept.MessageMatcherDelegatingAuthorizationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -40,6 +43,15 @@ public class SecurityConfig {
         AuthenticationManagerBuilder authBuilder = httpSecurity.getSharedObject(AuthenticationManagerBuilder.class);
         authBuilder.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
         return authBuilder.build();
+    }
+
+    @Bean
+    public AuthorizationManager<Message<?>> messageAuthorizationManager(MessageMatcherDelegatingAuthorizationManager.Builder messages) {
+        messages
+                .nullDestMatcher().permitAll()
+                .simpDestMatchers("/ws/**", "/topic/**", "/app/**").permitAll()
+                .anyMessage().permitAll();
+        return messages.build();
     }
 
     @Bean
