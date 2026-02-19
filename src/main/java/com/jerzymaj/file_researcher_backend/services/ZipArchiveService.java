@@ -4,7 +4,6 @@ import com.jerzymaj.file_researcher_backend.DTOs.ProgressUpdate;
 import com.jerzymaj.file_researcher_backend.exceptions.FileSetNotFoundException;
 import com.jerzymaj.file_researcher_backend.exceptions.ZipArchiveNotFoundException;
 import com.jerzymaj.file_researcher_backend.models.*;
-import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.ZipArchiveStatus;
 import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
 import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
@@ -99,12 +98,6 @@ public class ZipArchiveService {
     public void createAndSendZipFromUploadedFiles(Long fileSetId, String recipientEmail, List<Path> filesToZip, Path sourceDir, String taskId) {
         Path zipPath = null;
         try {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-            }
-
             FileSet fileSet = fetchFileSet(fileSetId);
             zipPath = prepareTempZipPath(fileSetId);
 
