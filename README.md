@@ -84,20 +84,11 @@ ZIP archives.
 * **Resilient Exception Handling:** Developed a selective error-handling mechanism that differentiates between critical
   connection failures and provider-specific security warnings. This ensures the system correctly marks a task as "
   Completed" if the message was accepted by the relay, maintaining a truthful application state.
-
-### 3. Cloud Deployment Optimization (Render)
-
-**Problem:** Hosting on Render introduced challenges with ephemeral file systems and request timeouts for large file
-processing.
-**Solution:** I implemented a "Stage-and-Process" workflow. Files are first staged into a temporary directory with a
-unique `taskId`, followed by an asynchronous processing pipeline that provides real-time progress updates via *
-*WebSockets (STOMP)**. This prevents HTTP request timeouts and ensures a smooth user experience.
-
 ---
 
 ## Tech Stack
 
-- **Java 17+**
+- **Java 21**
 - **Spring Boot 3(Web, Data JPA, Mail, WebSocket)**
 - **Spring Security**
 - **Spring Data JPA**
