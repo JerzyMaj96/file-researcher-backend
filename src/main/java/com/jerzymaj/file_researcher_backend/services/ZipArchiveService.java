@@ -9,7 +9,6 @@ import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
 import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
@@ -29,8 +28,6 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -112,42 +109,6 @@ public class ZipArchiveService {
         } finally {
             cleanUp(zipPath);
             recursiveDelete(sourceDir);
-        }
-    }
-
-    /**
-     * Asynchronously orchestrates the creation of a ZIP archive from a FileSet and
-     * dispatches it via email while providing real-time progress updates.
-     * <p>
-     * The workflow follows these atomic steps:
-     * 1. Data Retrieval: Fetches the FileSet metadata and validates existence.
-     * 2. Preparation: Generates a unique temporary path for the ZIP archive.
-     * 3. Compression: Executes the ZIP process with a 0-90% progress reporting range.
-     * 4. Persistence: Registers the archive in the database with a PENDING status.
-     * 5. Delivery: Sends the email and updates statuses to SUCCESS (90-100%).
-     * 6. Cleanup: Ensures the temporary disk resources are purged in the finally block.
-     *
-     * @param fileSetId      The ID of the file set to be processed.
-     * @param recipientEmail The destination email address.
-     * @param taskId         A unique Task UUID used for WebSocket topic subscription.
-     * @throws FileSetNotFoundException If the provided ID does not match any record.
-     */
-    @Async
-    @Transactional
-    public void createAndSendZipFromFileSetWithProgress(Long fileSetId, String recipientEmail, String taskId) {
-        FileSet fileSet = fetchFileSet(fileSetId);
-        Path zipPath = prepareTempZipPath(fileSetId);
-
-        try {
-            createZipArchive(fileSet.getFiles(), zipPath, (percent, msg) -> notifyProgress(taskId, percent, msg));
-
-            ZipArchive archive = registerZipArchive(fileSet, zipPath, recipientEmail);
-
-            sendAndFinalize(archive, fileSet, zipPath, taskId);
-        } catch (Exception ex) {
-            handleError(taskId, ex);
-        } finally {
-            cleanUp(zipPath);
         }
     }
 
@@ -305,126 +266,6 @@ public class ZipArchiveService {
                 zos.closeEntry();
             }
         }
-    }
-
-    /**
-     * Performs the actual file compression into a ZIP archive.
-     * This method reads source files from the disk, writes them to the ZipOutputStream,
-     * and calculates processing progress based on byte-size comparison.
-     *
-     * @param files            List of file entries to be compressed.
-     * @param zipPath          The destination path for the ZIP archive.
-     * @param progressCallback A functional interface used to report progress percentage (0-90%).
-     * @throws IOException If any file access or write operation fails.
-     */
-    private void createZipArchive(List<FileEntry> files, Path zipPath, ProgressCallback progressCallback) throws IOException {
-
-        List<FileEntry> uniqueFiles = files.stream()
-                .filter(distinctByKey(FileEntry::getPath))
-                .toList();
-
-        long totalFileSizeBytes = 0;
-
-        for (FileEntry fileEntry : uniqueFiles) {
-            Path path = Path.of(fileEntry.getPath());
-            if (!Files.exists(path)) {
-                if (Files.isDirectory(path)) {
-                    try (var stream = Files.walk(path)) {
-                        totalFileSizeBytes += stream
-                                .filter(Files::isRegularFile)
-                                .mapToLong(p -> {
-                                    try {
-                                        return Files.size(p);
-                                    } catch (IOException ex) {
-                                        return 0L;
-                                    }
-                                })
-                                .sum();
-                    }
-                } else {
-                    totalFileSizeBytes += Files.size(path);
-                }
-            }
-        }
-
-        if (totalFileSizeBytes == 0) {
-            totalFileSizeBytes = 1;
-        }
-
-        final long[] totalBytesProcessed = {0};
-        final int[] lastPercent = {0};
-        final long totalSizeFinal = totalFileSizeBytes;
-
-        Set<String> addedEntries = new HashSet<>();
-
-        try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipPath))) {
-
-            for (FileEntry fileEntry : uniqueFiles) {
-                Path sourcePath = Path.of(fileEntry.getPath());
-
-                if (!Files.exists(sourcePath)) {
-                    continue;
-                }
-
-                if (Files.isDirectory(sourcePath)) {
-                    Path folderRoot = sourcePath.getParent();
-
-                    try (var stream = Files.walk(folderRoot)) {
-                        stream.filter(Files::isRegularFile)
-                                .forEach(path -> {
-                                    try {
-                                        String relativePath = folderRoot.relativize(path).toString();
-                                        if (addedEntries.contains(relativePath)) {
-                                            return;
-                                        }
-                                        ZipEntry zipEntry = new ZipEntry(relativePath);
-                                        zos.putNextEntry(zipEntry);
-
-                                        addedEntries.add(relativePath);
-
-                                        copyContentWithProgress(path, zos, totalSizeFinal, totalBytesProcessed, lastPercent, progressCallback);
-
-                                        zos.closeEntry();
-                                    } catch (IOException ex) {
-                                        log.error("Failed to zip file inside directory: {}", path, ex);
-                                    }
-                                });
-                    }
-                } else {
-
-                    String fileName = sourcePath.getFileName().toString();
-
-                    if (addedEntries.contains(fileName)) {
-                        continue;
-                    }
-
-                    ZipEntry zipEntry = new ZipEntry(sourcePath.getFileName().toString());
-                    zos.putNextEntry(zipEntry);
-
-                    addedEntries.add(fileName);
-
-                    copyContentWithProgress(sourcePath, zos, totalSizeFinal, totalBytesProcessed, lastPercent, progressCallback);
-
-                    zos.closeEntry();
-                }
-            }
-        }
-    }
-
-    /**
-     * A stateful predicate used to filter a stream based on a unique key extracted from the elements.
-     * <p>
-     * This utility uses an internal {@link ConcurrentHashMap} to maintain the state of encountered keys.
-     * It is safe for use in parallel streams.
-     * </p>
-     *
-     * @param <T>          The type of the stream elements.
-     * @param keyExtractor A function to extract the key used for the uniqueness check.
-     * @return A predicate that returns {@code true} only the first time a specific key is encountered.
-     */
-    private static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
-        Map<Object, Boolean> seen = new ConcurrentHashMap<>();
-        return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
 
     private void copyInputStreamWithProgress(InputStream inputStream, ZipOutputStream zos, long totalSize,

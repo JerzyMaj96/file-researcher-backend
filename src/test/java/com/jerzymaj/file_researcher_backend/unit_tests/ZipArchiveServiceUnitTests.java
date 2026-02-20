@@ -3,20 +3,18 @@ package com.jerzymaj.file_researcher_backend.unit_tests;
 import com.jerzymaj.file_researcher_backend.DTOs.ProgressUpdate;
 import com.jerzymaj.file_researcher_backend.models.*;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
-import com.jerzymaj.file_researcher_backend.models.enum_classes.ZipArchiveStatus;
 import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
 import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
 import com.jerzymaj.file_researcher_backend.services.FileSetService;
 import com.jerzymaj.file_researcher_backend.services.SentHistoryService;
 import com.jerzymaj.file_researcher_backend.services.ZipArchiveService;
-import jakarta.mail.MessagingException;
+import com.jerzymaj.file_researcher_backend.services.ZipArchiveStatusService;
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -24,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -59,12 +58,14 @@ public class ZipArchiveServiceUnitTests {
     @Mock
     private SimpMessagingTemplate messagingTemplate;
 
+    @Mock
+    private ZipArchiveStatusService zipArchiveStatusService;
+
     @InjectMocks
     private ZipArchiveService zipArchiveService;
 
     private User user;
     private FileSet fileSet;
-    private String taskId;
 
     @BeforeEach
     public void setUp(@TempDir Path tempDir) throws IOException {
@@ -86,77 +87,47 @@ public class ZipArchiveServiceUnitTests {
         fileSet.setStatus(FileSetStatus.ACTIVE);
         fileSet.setFiles(List.of(fe1));
 
-        taskId = UUID.randomUUID().toString();
+        zipArchiveService = new ZipArchiveService(
+                mailSender,
+                fileSetRepository,
+                fileSetService,
+                zipArchiveRepository,
+                zipArchiveStatusService,
+                sentHistoryService,
+                messagingTemplate
+        );
 
         lenient().when(fileSetRepository.findByIdWithFiles(fileSet.getId())).thenReturn(Optional.of(fileSet));
         lenient().when(zipArchiveRepository.findMaxSendNumberByFileSetId(anyLong())).thenReturn(0);
         lenient().when(mailSender.createMimeMessage()).thenReturn(new MimeMessage((Session) null));
+        lenient().doNothing().when(zipArchiveStatusService).updateDatabaseAfterSuccess(anyLong(), anyLong());
+        lenient().doNothing().when(zipArchiveStatusService).updateDatabaseAfterFailure(anyLong(), anyString());
     }
 
     @Test
-    public void shouldCreateAndSendZipArchive_Success() throws MessagingException {
-        // Given
+    public void shouldStartZipUploadProcess_AndStageFilesCorrectly() throws IOException {
+        MockMultipartFile file1 = new MockMultipartFile("files", "test1.txt", "text/plain", "content1".getBytes());
+        MockMultipartFile file2 = new MockMultipartFile("files", "test2.txt", "text/plain", "content2".getBytes());
+        MockMultipartFile[] files = {file1, file2};
+
         when(zipArchiveRepository.save(any(ZipArchive.class))).thenAnswer(i -> i.getArgument(0));
 
-        // When
-        zipArchiveService.createAndSendZipFromFileSetWithProgress(fileSet.getId(), fileSet.getRecipientEmail(), taskId);
+        String returnedTaskId = zipArchiveService.startZipUploadProcess(fileSet.getId(), "test@mail.com", files);
 
-        // Then
-        verify(mailSender).send(any(MimeMessage.class));
+        assertNotNull(returnedTaskId);
 
-        ArgumentCaptor<ZipArchive> archiveCaptor = ArgumentCaptor.forClass(ZipArchive.class);
-        verify(zipArchiveRepository, atLeastOnce()).save(archiveCaptor.capture());
-
-        // Sprawdzamy ostatni status
-        ZipArchive finalArchive = archiveCaptor.getAllValues().get(archiveCaptor.getAllValues().size() - 1);
-        assertEquals(ZipArchiveStatus.SUCCESS, finalArchive.getStatus());
-
-        ArgumentCaptor<Object> progressCaptor = ArgumentCaptor.forClass(Object.class);
-        verify(messagingTemplate, atLeastOnce()).convertAndSend(contains(taskId), progressCaptor.capture());
-
-        boolean hasSuccess = progressCaptor.getAllValues().stream()
-                .filter(p -> p instanceof ProgressUpdate)
-                .map(p -> (ProgressUpdate) p)
-                .anyMatch(p -> p.percent() == 100);
-
-        assertTrue(hasSuccess, "Should send 100% progress");
+        verify(mailSender, timeout(2000)).send(any(MimeMessage.class));
+        verify(messagingTemplate, atLeastOnce()).convertAndSend(contains(returnedTaskId), any(ProgressUpdate.class));
     }
 
     @Test
-    public void shouldHandleError_WhenFileSetNotFound() {
-        Long wrongId = 999L;
-        when(fileSetRepository.findByIdWithFiles(wrongId)).thenReturn(Optional.empty());
+    public void shouldHandleError_WhenStagingFilesFails() {
+        MockMultipartFile brokenFile = new MockMultipartFile("files", null, null, (byte[]) null);
+        MockMultipartFile[] files = {brokenFile};
 
         assertThrows(Exception.class, () -> {
-            zipArchiveService.createAndSendZipFromFileSetWithProgress(wrongId, "test@test.com", taskId);
+            zipArchiveService.startZipUploadProcess(fileSet.getId(), "test@mail.com", files);
         });
-
-        verify(mailSender, never()).send(any(MimeMessage.class));
-    }
-
-    @Test
-    public void shouldRecordFailure_WhenMailSendingFails() {
-        org.springframework.mail.MailSendException mailException =
-                new org.springframework.mail.MailSendException("SMTP Server Down");
-
-        when(zipArchiveRepository.save(any(ZipArchive.class))).thenAnswer(i -> i.getArgument(0));
-        doThrow(mailException).when(mailSender).send(any(MimeMessage.class));
-
-        try {
-            zipArchiveService.createAndSendZipFromFileSetWithProgress(fileSet.getId(), fileSet.getRecipientEmail(), taskId);
-        } catch (Exception ignored) {
-        }
-
-        ArgumentCaptor<ZipArchive> archiveCaptor = ArgumentCaptor.forClass(ZipArchive.class);
-        verify(zipArchiveRepository, atLeastOnce()).save(archiveCaptor.capture());
-        ZipArchive lastSaved = archiveCaptor.getAllValues().get(archiveCaptor.getAllValues().size() - 1);
-        assertEquals(ZipArchiveStatus.FAILED, lastSaved.getStatus());
-
-        try {
-            verify(sentHistoryService, atLeastOnce()).saveSentHistory(any(), anyString(), eq(false), any());
-        } catch (AssertionError e) {
-            System.out.println("UWAGA: Metoda saveSentHistory nie została wywołana w serwisie!");
-        }
     }
 
     @Test

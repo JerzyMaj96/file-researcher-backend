@@ -14,7 +14,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -57,18 +56,6 @@ public class ZipArchiveController {
                                                              @RequestParam("files") MultipartFile[] files) throws IOException {
 
         String taskId = zipArchiveService.startZipUploadProcess(fileSetId, recipientEmail, files);
-
-        return ResponseEntity.ok(taskId);
-    }
-
-
-    @PostMapping("/file-sets/{fileSetId}/zip-archives/send-progress")
-    public ResponseEntity<String> sendZipArchiveAndShowProgress(@PathVariable Long fileSetId,
-                                                                @RequestParam String recipientEmail) {
-
-        String taskId = UUID.randomUUID().toString();
-
-        zipArchiveService.createAndSendZipFromFileSetWithProgress(fileSetId, recipientEmail, taskId);
 
         return ResponseEntity.ok(taskId);
     }
