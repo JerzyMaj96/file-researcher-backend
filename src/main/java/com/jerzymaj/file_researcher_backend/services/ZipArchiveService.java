@@ -296,49 +296,6 @@ public class ZipArchiveService {
     }
 
     /**
-     * Copies the content of a single file into the ZIP output stream while updating the progress.
-     * <p>
-     * Progress calculation is scaled by a factor of 0.9 (mapping to a 0-90% range).
-     * To optimize performance, the progress callback is throttled to trigger only if
-     * at least 150ms have passed since the last update or if the percentage value has changed.
-     * </p>
-     *
-     * @param file             The source {@link Path} of the file to be copied.
-     * @param zos              The active {@link ZipOutputStream} being written to.
-     * @param totalSizeFinal   The total size of all files in the batch for percentage calculation.
-     * @param bytesProcessed   A single-element array acting as a mutable reference for the global byte counter.
-     * @param lastPercent      A single-element array acting as a mutable reference for the last reported percentage.
-     * @param progressCallback The callback used to report status updates to the UI or logs.
-     * @throws IOException If an I/O error occurs during the read/write process.
-     */
-    private void copyContentWithProgress(Path file, ZipOutputStream zos, long totalSizeFinal, long[] bytesProcessed,
-                                         int[] lastPercent, ProgressCallback progressCallback) throws IOException {
-        try (InputStream inputStream = Files.newInputStream(file)) {
-            byte[] buffer = new byte[8192];
-            int length;
-            long lastMessageTime = 0;
-
-            while ((length = inputStream.read(buffer)) != -1) {
-                zos.write(buffer, 0, length);
-                bytesProcessed[0] += length;
-
-                int rawPercent = (int) ((bytesProcessed[0] * 100) / totalSizeFinal);
-                int currPercent = (int) (rawPercent * 0.9);
-
-                long currTime = System.currentTimeMillis();
-
-                if (currTime - lastMessageTime > 150 || currPercent > lastPercent[0]) {
-                    if (currPercent > lastPercent[0]) {
-                        progressCallback.onUpdate(currPercent, "Processing " + file.getFileName());
-                        lastPercent[0] = currPercent;
-                        lastMessageTime = currTime;
-                    }
-                }
-            }
-        }
-    }
-
-    /**
      * Sends a STOMP message to a specific task topic via the WebSocket message broker.
      * * @param taskId   The unique ID of the task used as the destination variable.
      *
