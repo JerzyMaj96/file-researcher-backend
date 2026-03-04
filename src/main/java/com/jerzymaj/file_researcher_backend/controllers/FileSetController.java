@@ -41,18 +41,18 @@ public class FileSetController {
                 .body(Translator.convertFileSetToDTO(createdFileSet));
     }
 
-    @PostMapping
-    public ResponseEntity<FileSetDTO> createNewFileSet(@Valid @RequestBody CreateFileSetDTO createFileSetDTO) {
-
-        FileSet createdFileSet = fileSetService.createFileSet(
-                createFileSetDTO.getName(),
-                createFileSetDTO.getDescription(),
-                createFileSetDTO.getRecipientEmail(),
-                createFileSetDTO.getSelectedPaths());
-
-        return ResponseEntity.created(URI.create("/file-researcher/file-sets/" + createdFileSet.getId()))
-                .body(Translator.convertFileSetToDTO(createdFileSet));
-    }
+//    @PostMapping
+//    public ResponseEntity<FileSetDTO> createNewFileSet(@Valid @RequestBody CreateFileSetDTO createFileSetDTO) {
+//
+//        FileSet createdFileSet = fileSetService.createFileSet(
+//                createFileSetDTO.getName(),
+//                createFileSetDTO.getDescription(),
+//                createFileSetDTO.getRecipientEmail(),
+//                createFileSetDTO.getSelectedPaths());
+//
+//        return ResponseEntity.created(URI.create("/file-researcher/file-sets/" + createdFileSet.getId()))
+//                .body(Translator.convertFileSetToDTO(createdFileSet));
+//    }
 
     @GetMapping
     public List<FileSetDTO> retrieveAllFileSets() {

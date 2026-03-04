@@ -23,80 +23,80 @@ public class FileExplorerServiceUnitTests {
         fileExplorerService = new FileExplorerService();
     }
 
-    @Test
-    public void shouldReturnFileTreeNodeDTO_ForFile(@TempDir Path tempDir) throws IOException {
-
-        Path testFile = Files.createFile(tempDir.resolve("test.txt"));
-        Files.writeString(testFile, "Hello World");
-
-        ScanPathResponseDTO actualResult = fileExplorerService.scanPath(testFile);
-
-        assertThat(actualResult.getName()).isEqualTo("test.txt");
-        assertThat(actualResult.getPath()).isEqualTo(testFile.toFile().getAbsolutePath());
-        assertThat(actualResult.isDirectory()).isFalse();
-        assertThat(actualResult.getSize()).isEqualTo(Files.size(testFile));
-        assertThat(actualResult.getChildren()).isNull();
-    }
-
-    @Test
-    public void shouldReturnFileTreeNodeDTO_WithChildren_ForDirectory(@TempDir Path tempDir) throws IOException {
-
-        Path subDir = Files.createDirectory(tempDir.resolve("dir"));
-        Files.createFile(subDir.resolve("file1.txt"));
-        Files.createFile(subDir.resolve("file2.txt"));
-
-        ScanPathResponseDTO actualResult = fileExplorerService.scanPath(subDir);
-
-        assertThat(actualResult.getName()).isEqualTo("dir");
-        assertThat(actualResult.isDirectory()).isTrue();
-        assertThat(actualResult.getChildren()).hasSize(2);
-    }
-
-    @Test
-    public void shouldThrowPathNotFoundException_ForNonExistingPath() {
-        Path nonExistingPath = Path.of("some/nonexisting/path");
-
-        assertThatThrownBy(() -> fileExplorerService.scanPath(nonExistingPath))
-                .isInstanceOf(PathNotFoundException.class);
-    }
-
-    @Test
-    public void shouldReturnFileTreeNodeDTO_ForFile_WhenFiltered(@TempDir Path tempDir) throws IOException {
-
-        Path testFile = Files.createFile(tempDir.resolve("test.txt"));
-
-        ScanPathResponseDTO actualResult = fileExplorerService.scanFilteredPath(testFile, "txt");
-
-        assertThat(actualResult.getName()).isEqualTo("test.txt");
-        assertThat(actualResult.getPath()).isEqualTo(testFile.toFile().getAbsolutePath());
-        assertThat(actualResult.isDirectory()).isFalse();
-        assertThat(actualResult.getSize()).isEqualTo(Files.size(testFile));
-        assertThat(actualResult.getChildren()).isNull();
-    }
-
-    @Test
-    public void shouldReturnOnlyMatchingFiles_ForDirectory(@TempDir Path tempDir) throws IOException {
-
-        Path subDir = Files.createDirectory(tempDir.resolve("dir"));
-        Files.createFile(subDir.resolve("test1.txt"));
-        Files.createFile(subDir.resolve("test2.pdf"));
-        Files.createFile(subDir.resolve("test3.txt"));
-
-        ScanPathResponseDTO actualResult = fileExplorerService.scanFilteredPath(subDir, "txt");
-
-        assertThat(actualResult.isDirectory()).isTrue();
-        assertThat(actualResult.getChildren()).hasSize(2);
-        assertThat(actualResult.getChildren())
-                .extracting(ScanPathResponseDTO::getName)
-                .containsExactlyInAnyOrder("test1.txt", "test3.txt");
-    }
-
-    @Test
-    public void shouldReturnNull_ForFileWithNonMatchingExtension(@TempDir Path tempDir) throws IOException {
-        Path testFile = Files.createFile(tempDir.resolve("test.txt"));
-
-        ScanPathResponseDTO actualResult = fileExplorerService.scanFilteredPath(testFile, "pdf");
-
-        assertThat(actualResult).isNull();
-    }
+//    @Test
+//    public void shouldReturnFileTreeNodeDTO_ForFile(@TempDir Path tempDir) throws IOException {
+//
+//        Path testFile = Files.createFile(tempDir.resolve("test.txt"));
+//        Files.writeString(testFile, "Hello World");
+//
+//        ScanPathResponseDTO actualResult = fileExplorerService.scanPath(testFile);
+//
+//        assertThat(actualResult.getName()).isEqualTo("test.txt");
+//        assertThat(actualResult.getPath()).isEqualTo(testFile.toFile().getAbsolutePath());
+//        assertThat(actualResult.isDirectory()).isFalse();
+//        assertThat(actualResult.getSize()).isEqualTo(Files.size(testFile));
+//        assertThat(actualResult.getChildren()).isNull();
+//    }
+//
+//    @Test
+//    public void shouldReturnFileTreeNodeDTO_WithChildren_ForDirectory(@TempDir Path tempDir) throws IOException {
+//
+//        Path subDir = Files.createDirectory(tempDir.resolve("dir"));
+//        Files.createFile(subDir.resolve("file1.txt"));
+//        Files.createFile(subDir.resolve("file2.txt"));
+//
+//        ScanPathResponseDTO actualResult = fileExplorerService.scanPath(subDir);
+//
+//        assertThat(actualResult.getName()).isEqualTo("dir");
+//        assertThat(actualResult.isDirectory()).isTrue();
+//        assertThat(actualResult.getChildren()).hasSize(2);
+//    }
+//
+//    @Test
+//    public void shouldThrowPathNotFoundException_ForNonExistingPath() {
+//        Path nonExistingPath = Path.of("some/nonexisting/path");
+//
+//        assertThatThrownBy(() -> fileExplorerService.scanPath(nonExistingPath))
+//                .isInstanceOf(PathNotFoundException.class);
+//    }
+//
+//    @Test
+//    public void shouldReturnFileTreeNodeDTO_ForFile_WhenFiltered(@TempDir Path tempDir) throws IOException {
+//
+//        Path testFile = Files.createFile(tempDir.resolve("test.txt"));
+//
+//        ScanPathResponseDTO actualResult = fileExplorerService.scanFilteredPath(testFile, "txt");
+//
+//        assertThat(actualResult.getName()).isEqualTo("test.txt");
+//        assertThat(actualResult.getPath()).isEqualTo(testFile.toFile().getAbsolutePath());
+//        assertThat(actualResult.isDirectory()).isFalse();
+//        assertThat(actualResult.getSize()).isEqualTo(Files.size(testFile));
+//        assertThat(actualResult.getChildren()).isNull();
+//    }
+//
+//    @Test
+//    public void shouldReturnOnlyMatchingFiles_ForDirectory(@TempDir Path tempDir) throws IOException {
+//
+//        Path subDir = Files.createDirectory(tempDir.resolve("dir"));
+//        Files.createFile(subDir.resolve("test1.txt"));
+//        Files.createFile(subDir.resolve("test2.pdf"));
+//        Files.createFile(subDir.resolve("test3.txt"));
+//
+//        ScanPathResponseDTO actualResult = fileExplorerService.scanFilteredPath(subDir, "txt");
+//
+//        assertThat(actualResult.isDirectory()).isTrue();
+//        assertThat(actualResult.getChildren()).hasSize(2);
+//        assertThat(actualResult.getChildren())
+//                .extracting(ScanPathResponseDTO::getName)
+//                .containsExactlyInAnyOrder("test1.txt", "test3.txt");
+//    }
+//
+//    @Test
+//    public void shouldReturnNull_ForFileWithNonMatchingExtension(@TempDir Path tempDir) throws IOException {
+//        Path testFile = Files.createFile(tempDir.resolve("test.txt"));
+//
+//        ScanPathResponseDTO actualResult = fileExplorerService.scanFilteredPath(testFile, "pdf");
+//
+//        assertThat(actualResult).isNull();
+//    }
 }

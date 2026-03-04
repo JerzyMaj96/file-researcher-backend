@@ -53,13 +53,7 @@ public class ZipArchiveServiceUnitTests {
     private ZipArchiveRepository zipArchiveRepository;
 
     @Mock
-    private SentHistoryService sentHistoryService;
-
-    @Mock
     private SimpMessagingTemplate messagingTemplate;
-
-    @Mock
-    private ZipArchiveStatusService zipArchiveStatusService;
 
     @InjectMocks
     private ZipArchiveService zipArchiveService;
@@ -87,21 +81,9 @@ public class ZipArchiveServiceUnitTests {
         fileSet.setStatus(FileSetStatus.ACTIVE);
         fileSet.setFiles(List.of(fe1));
 
-        zipArchiveService = new ZipArchiveService(
-                mailSender,
-                fileSetRepository,
-                fileSetService,
-                zipArchiveRepository,
-                zipArchiveStatusService,
-                sentHistoryService,
-                messagingTemplate
-        );
-
         lenient().when(fileSetRepository.findByIdWithFiles(fileSet.getId())).thenReturn(Optional.of(fileSet));
         lenient().when(zipArchiveRepository.findMaxSendNumberByFileSetId(anyLong())).thenReturn(0);
         lenient().when(mailSender.createMimeMessage()).thenReturn(new MimeMessage((Session) null));
-        lenient().doNothing().when(zipArchiveStatusService).updateDatabaseAfterSuccess(anyLong(), anyLong());
-        lenient().doNothing().when(zipArchiveStatusService).updateDatabaseAfterFailure(anyLong(), anyString());
     }
 
     @Test

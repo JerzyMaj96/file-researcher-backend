@@ -8,6 +8,7 @@ import com.jerzymaj.file_researcher_backend.services.FileExplorerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,7 +25,7 @@ public class FileExplorerController {
 
     // CLOUD / WEB
 
-    @PostMapping("/upload")
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ScanPathResponseDTO> scanUploadedFiles(@RequestParam("files")MultipartFile[] files,
                                                         @RequestParam(required = false) String extension) {
 
@@ -33,23 +34,23 @@ public class FileExplorerController {
         return ResponseEntity.ok(fileExplorerService.scanUploadedFiles(files, extension));
     }
 
-    // LOCAL
-
-    @PostMapping("/scan")
-    public ResponseEntity<ScanPathResponseDTO> scanPath(@Valid @RequestBody ScanPathRequest request) {
-
-        Path path = Path.of(request.path());
-        log.info("Scanning path: {}", path);
-
-        return ResponseEntity.ok(fileExplorerService.scanPath(path));
-    }
-
-    @PostMapping("/scan/filtered")
-    public ResponseEntity<ScanPathResponseDTO> scanFilteredPath(@Valid @RequestBody ScanPathWithFilterRequest request) {
-
-        Path path = Path.of(request.path());
-        log.info("Scanning filtered path: {} with extension: {}", path, request.extension());
-
-        return ResponseEntity.ok(fileExplorerService.scanFilteredPath(path, request.extension()));
-    }
+//    // LOCAL
+//
+//    @PostMapping("/scan")
+//    public ResponseEntity<ScanPathResponseDTO> scanPath(@Valid @RequestBody ScanPathRequest request) {
+//
+//        Path path = Path.of(request.path());
+//        log.info("Scanning path: {}", path);
+//
+//        return ResponseEntity.ok(fileExplorerService.scanPath(path));
+//    }
+//
+//    @PostMapping("/scan/filtered")
+//    public ResponseEntity<ScanPathResponseDTO> scanFilteredPath(@Valid @RequestBody ScanPathWithFilterRequest request) {
+//
+//        Path path = Path.of(request.path());
+//        log.info("Scanning filtered path: {} with extension: {}", path, request.extension());
+//
+//        return ResponseEntity.ok(fileExplorerService.scanFilteredPath(path, request.extension()));
+//    }
 }

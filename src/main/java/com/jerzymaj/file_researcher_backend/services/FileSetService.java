@@ -83,55 +83,55 @@ public class FileSetService {
         return fileSetRepository.save(fileSet);
     }
 
-    /**
-     * Creates a new {@link FileSet} for the currently authenticated user.
-     * <p>
-     * This method validates the list of selected file paths, ensures that at least one file is selected,
-     * converts each path into a {@link FileEntry} (creating new entries if they do not already exist),
-     * and associates them with the newly created FileSet. The FileSet is initialized with status {@link FileSetStatus#ACTIVE}.
-     *
-     * @param name           the name of the new FileSet
-     * @param description    optional description for the FileSet
-     * @param recipientEmail the email of the recipient who can access the FileSet
-     * @param selectedPaths  list of absolute or relative file paths to include in the FileSet
-     * @return the newly created {@link FileSet} with all associated {@link FileEntry} objects
-     */
-
-    @Transactional
-    public FileSet createFileSet(String name,
-                                 String description,
-                                 String recipientEmail,
-                                 List<String> selectedPaths
-    ) {
-
-        if (selectedPaths == null || selectedPaths.isEmpty()) {
-            throw new NoFilesSelectedException("At least one file must be selected");
-        }
-
-        Long currentUserId = getCurrentUserId();// todo to check if I need to use AccesDeniedException
-
-        User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new UserNotFoundException("User " + currentUserId + " not found"));
-
-        FileSet fileSet = fileSetRepository.save(
-                FileSet.builder()
-                        .name(name)
-                        .description(description)
-                        .recipientEmail(recipientEmail)
-                        .status(FileSetStatus.ACTIVE)
-                        .user(currentUser)
-                        .build()
-        );
-
-        List<FileEntry> entries = selectedPaths.stream()
-                .map(path -> fileEntryRepository.findByPath(path)
-                        .orElseGet(() -> fileEntryRepository.save(convertPathToFileEntry(path))))
-                .toList();
-
-        fileSet.setFiles(entries);
-
-        return fileSet;
-    }
+//    /**
+//     * Creates a new {@link FileSet} for the currently authenticated user.
+//     * <p>
+//     * This method validates the list of selected file paths, ensures that at least one file is selected,
+//     * converts each path into a {@link FileEntry} (creating new entries if they do not already exist),
+//     * and associates them with the newly created FileSet. The FileSet is initialized with status {@link FileSetStatus#ACTIVE}.
+//     *
+//     * @param name           the name of the new FileSet
+//     * @param description    optional description for the FileSet
+//     * @param recipientEmail the email of the recipient who can access the FileSet
+//     * @param selectedPaths  list of absolute or relative file paths to include in the FileSet
+//     * @return the newly created {@link FileSet} with all associated {@link FileEntry} objects
+//     */
+//
+//    @Transactional
+//    public FileSet createFileSet(String name,
+//                                 String description,
+//                                 String recipientEmail,
+//                                 List<String> selectedPaths
+//    ) {
+//
+//        if (selectedPaths == null || selectedPaths.isEmpty()) {
+//            throw new NoFilesSelectedException("At least one file must be selected");
+//        }
+//
+//        Long currentUserId = getCurrentUserId();
+//
+//        User currentUser = userRepository.findById(currentUserId)
+//                .orElseThrow(() -> new UserNotFoundException("User " + currentUserId + " not found"));
+//
+//        FileSet fileSet = fileSetRepository.save(
+//                FileSet.builder()
+//                        .name(name)
+//                        .description(description)
+//                        .recipientEmail(recipientEmail)
+//                        .status(FileSetStatus.ACTIVE)
+//                        .user(currentUser)
+//                        .build()
+//        );
+//
+//        List<FileEntry> entries = selectedPaths.stream()
+//                .map(path -> fileEntryRepository.findByPath(path)
+//                        .orElseGet(() -> fileEntryRepository.save(convertPathToFileEntry(path))))
+//                .toList();
+//
+//        fileSet.setFiles(entries);
+//
+//        return fileSet;
+//    }
 
     public List<FileSet> getAllFileSets() {
         Long currentUserId = getCurrentUserId();
@@ -168,21 +168,21 @@ public class FileSetService {
      * @throws UncheckedIOException if reading file attributes fails
      */
 
-    private FileEntry convertPathToFileEntry(String path) {
-        try {
-            Path p = Path.of(path);
-            boolean directory = Files.isDirectory(p);
-
-            return FileEntry.builder()
-                    .name(p.getFileName().toString())
-                    .path(p.toAbsolutePath().toString())
-                    .size(directory ? null : Files.size(p))
-                    .extension(directory ? null : getExtension(p))
-                    .build();
-        } catch (IOException exception) {
-            throw new UncheckedIOException("Unable to read file info: " + path, exception);
-        }
-    }
+//    private FileEntry convertPathToFileEntry(String path) {
+//        try {
+//            Path p = Path.of(path);
+//            boolean directory = Files.isDirectory(p);
+//
+//            return FileEntry.builder()
+//                    .name(p.getFileName().toString())
+//                    .path(p.toAbsolutePath().toString())
+//                    .size(directory ? null : Files.size(p))
+//                    .extension(directory ? null : getExtension(p))
+//                    .build();
+//        } catch (IOException exception) {
+//            throw new UncheckedIOException("Unable to read file info: " + path, exception);
+//        }
+//    }
 
     /**
      * Extracts the file extension from a {@link Path}.
