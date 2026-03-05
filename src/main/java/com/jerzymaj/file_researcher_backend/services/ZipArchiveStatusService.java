@@ -36,7 +36,7 @@ public class ZipArchiveStatusService {
 
         zipArchiveRepository.save(zipArchive);
         fileSetRepository.saveAndFlush(fileSet);
-        log.info("Successfully updated database after Zip Archive successfully");
+        log.info("Successfully updated database after sending Zip and ZipArchive creation");
     }
 
     @Transactional
