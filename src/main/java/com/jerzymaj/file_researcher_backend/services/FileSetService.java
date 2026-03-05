@@ -17,10 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.AccessDeniedException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,6 +50,10 @@ public class FileSetService {
         for (MultipartFile file : files) {
             String originalPathString = file.getOriginalFilename();
 
+            if (originalPathString == null || originalPathString.isBlank()) {
+                continue;
+            }
+
             FileEntry fileEntry = fileEntryRepository.findByPath(file.getOriginalFilename())
                     .orElseGet(() -> {
                         Path originalPath = Path.of(originalPathString);
@@ -69,69 +70,15 @@ public class FileSetService {
             fileEntries.add(fileEntry);
         }
 
-        FileSet fileSet = fileSetRepository.save(
-                FileSet.builder()
-                        .name(name)
-                        .description(description)
-                        .recipientEmail(recipientEmail)
-                        .status(FileSetStatus.ACTIVE)
-                        .user(currentUser)
-                        .files(fileEntries)
-                        .build()
-        );
-
-        return fileSetRepository.save(fileSet);
+        return fileSetRepository.save(FileSet.builder()
+                .name(name)
+                .description(description)
+                .recipientEmail(recipientEmail)
+                .status(FileSetStatus.ACTIVE)
+                .user(currentUser)
+                .files(fileEntries)
+                .build());
     }
-
-//    /**
-//     * Creates a new {@link FileSet} for the currently authenticated user.
-//     * <p>
-//     * This method validates the list of selected file paths, ensures that at least one file is selected,
-//     * converts each path into a {@link FileEntry} (creating new entries if they do not already exist),
-//     * and associates them with the newly created FileSet. The FileSet is initialized with status {@link FileSetStatus#ACTIVE}.
-//     *
-//     * @param name           the name of the new FileSet
-//     * @param description    optional description for the FileSet
-//     * @param recipientEmail the email of the recipient who can access the FileSet
-//     * @param selectedPaths  list of absolute or relative file paths to include in the FileSet
-//     * @return the newly created {@link FileSet} with all associated {@link FileEntry} objects
-//     */
-//
-//    @Transactional
-//    public FileSet createFileSet(String name,
-//                                 String description,
-//                                 String recipientEmail,
-//                                 List<String> selectedPaths
-//    ) {
-//
-//        if (selectedPaths == null || selectedPaths.isEmpty()) {
-//            throw new NoFilesSelectedException("At least one file must be selected");
-//        }
-//
-//        Long currentUserId = getCurrentUserId();
-//
-//        User currentUser = userRepository.findById(currentUserId)
-//                .orElseThrow(() -> new UserNotFoundException("User " + currentUserId + " not found"));
-//
-//        FileSet fileSet = fileSetRepository.save(
-//                FileSet.builder()
-//                        .name(name)
-//                        .description(description)
-//                        .recipientEmail(recipientEmail)
-//                        .status(FileSetStatus.ACTIVE)
-//                        .user(currentUser)
-//                        .build()
-//        );
-//
-//        List<FileEntry> entries = selectedPaths.stream()
-//                .map(path -> fileEntryRepository.findByPath(path)
-//                        .orElseGet(() -> fileEntryRepository.save(convertPathToFileEntry(path))))
-//                .toList();
-//
-//        fileSet.setFiles(entries);
-//
-//        return fileSet;
-//    }
 
     public List<FileSet> getAllFileSets() {
         Long currentUserId = getCurrentUserId();
@@ -157,32 +104,6 @@ public class FileSetService {
         fileSetRepository.deleteById(fileSetId);
     }
 
-    /**
-     * Converts a given file system path into a {@link FileEntry} object.
-     * <p>
-     * Checks whether the path represents a directory or a regular file,
-     * calculates file size if applicable, and extracts the file extension.
-     *
-     * @param path absolute or relative path to a file or directory
-     * @return a {@link FileEntry} object representing the file or directory
-     * @throws UncheckedIOException if reading file attributes fails
-     */
-
-//    private FileEntry convertPathToFileEntry(String path) {
-//        try {
-//            Path p = Path.of(path);
-//            boolean directory = Files.isDirectory(p);
-//
-//            return FileEntry.builder()
-//                    .name(p.getFileName().toString())
-//                    .path(p.toAbsolutePath().toString())
-//                    .size(directory ? null : Files.size(p))
-//                    .extension(directory ? null : getExtension(p))
-//                    .build();
-//        } catch (IOException exception) {
-//            throw new UncheckedIOException("Unable to read file info: " + path, exception);
-//        }
-//    }
 
     /**
      * Extracts the file extension from a {@link Path}.

@@ -1,6 +1,5 @@
 package com.jerzymaj.file_researcher_backend.unit_tests;
 
-import com.jerzymaj.file_researcher_backend.DTOs.FileSetDTO;
 import com.jerzymaj.file_researcher_backend.DTOs.UserDTO;
 import com.jerzymaj.file_researcher_backend.exceptions.NoFilesSelectedException;
 import com.jerzymaj.file_researcher_backend.exceptions.UserNotFoundException;
@@ -14,22 +13,19 @@ import com.jerzymaj.file_researcher_backend.services.FileSetService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,28 +55,25 @@ public class FileSetServiceUnitTests {
     private String description;
     private String recipientEmail;
     private UserDTO ownerDTO;
-    private List<String> selectedPaths;
-
-    private User user;
+    MockMultipartFile file1;
+    MockMultipartFile file2;
+    MockMultipartFile[]  files;
 
     @BeforeEach
-    public void setUp(@TempDir Path tempDir) throws IOException {
+    public void setUp() throws IOException {
         name = "test";
         description = "This is a test fileset description";
         recipientEmail = "someone@mail.com";
 
-        Path tempFile1 = Files.createFile(tempDir.resolve("test1.txt"));
-        Path tempFile2 = Files.createFile(tempDir.resolve("test2.txt"));
-        Path tempFile3 = Files.createFile(tempDir.resolve("test3.csv"));
-
-        selectedPaths = List.of(
-                tempFile1.toString(),
-                tempFile2.toString(),
-                tempFile3.toString());
+        file1 = new MockMultipartFile("files", "test1.txt",
+                "text/plain", "content1".getBytes());
+        file2 = new MockMultipartFile("files", "directory/test2.pdf",
+                "text/plain", "content2".getBytes());
+        files = new MockMultipartFile[]{file1, file2};
 
         ownerDTO = new UserDTO(1L, "jerzy", "jerzy@mail.com", LocalDateTime.now());
 
-        user = new User();
+        User user = new User();
         user.setId(ownerDTO.getId());
         user.setName(ownerDTO.getName());
         user.setEmail(ownerDTO.getEmail());
@@ -104,31 +97,30 @@ public class FileSetServiceUnitTests {
         });
     }
 
-//    @Test
-//    public void shouldCreateFileSet_IfSuccess() throws IOException {
-//        FileSet actualResult = fileSetService
-//                .createFileSet(name, description, recipientEmail, selectedPaths);
-//
-//        assertThat(actualResult).isNotNull();
-//        assertThat(actualResult.getId()).isEqualTo(1L);
-//        assertThat(actualResult.getName()).isEqualTo(name);
-//        assertThat(actualResult.getDescription()).isEqualTo(description);
-//        assertThat(actualResult.getRecipientEmail()).isEqualTo(recipientEmail);
-//        assertThat(actualResult.getFiles()).hasSize(selectedPaths.size());
-//    }
-//
-//    @Test
-//    public void shouldThrowNoFilesSelectedException_WhenNoFilesSelected() {
-//        assertThatThrownBy(() ->
-//                fileSetService.createFileSet(name, description, recipientEmail, List.of())
-//        ).isInstanceOf(NoFilesSelectedException.class);
-//    }
-//
-//    @Test
-//    public void shouldThrowUserNotFoundException_IfFailed() {
-//        when(userRepository.findById(ownerDTO.getId())).thenReturn(Optional.empty());
-//
-//        assertThatThrownBy(() -> fileSetService.createFileSet(name, description, recipientEmail, selectedPaths))
-//                .isInstanceOf(UserNotFoundException.class);
-//    }
+    @Test
+    public void shouldCreateFileSet_IfSuccess() throws IOException {
+        FileSet actualResult = fileSetService
+                .createFileSetFromUploadedFiles(name, description, recipientEmail, files);
+
+        assertThat(actualResult).isNotNull();
+        assertThat(actualResult.getId()).isEqualTo(1L);
+        assertThat(actualResult.getName()).isEqualTo(name);
+        assertThat(actualResult.getDescription()).isEqualTo(description);
+        assertThat(actualResult.getRecipientEmail()).isEqualTo(recipientEmail);
+    }
+
+    @Test
+    public void shouldThrowNoFilesSelectedException_WhenNoFilesSelected() {
+        assertThatThrownBy(() ->
+                fileSetService.createFileSetFromUploadedFiles(name, description, recipientEmail, new MockMultipartFile[0])
+        ).isInstanceOf(NoFilesSelectedException.class);
+    }
+
+    @Test
+    public void shouldThrowUserNotFoundException_IfFailed() {
+        when(userRepository.findByName(ownerDTO.getName())).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> fileSetService.createFileSetFromUploadedFiles(name, description, recipientEmail, files))
+                .isInstanceOf(UserNotFoundException.class);
+    }
 }
