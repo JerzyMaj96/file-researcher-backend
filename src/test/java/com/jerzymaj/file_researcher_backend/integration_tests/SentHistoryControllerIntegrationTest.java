@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jerzymaj.file_researcher_backend.models.*;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
 import com.jerzymaj.file_researcher_backend.repositories.*;
+import jakarta.transaction.Transactional;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,7 +15,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.io.IOException;
@@ -31,9 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@TestPropertySource(properties = {
-        "springdoc.api-docs.enabled=false",
-        "springdoc.swagger-ui.enabled=false"})
+@Transactional
 public class SentHistoryControllerIntegrationTest {
 
     @Autowired

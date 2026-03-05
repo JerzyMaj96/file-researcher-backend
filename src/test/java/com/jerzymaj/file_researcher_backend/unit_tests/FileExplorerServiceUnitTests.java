@@ -1,102 +1,69 @@
 package com.jerzymaj.file_researcher_backend.unit_tests;
 
 import com.jerzymaj.file_researcher_backend.DTOs.ScanPathResponseDTO;
-import com.jerzymaj.file_researcher_backend.exceptions.PathNotFoundException;
 import com.jerzymaj.file_researcher_backend.services.FileExplorerService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.springframework.mock.web.MockMultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class FileExplorerServiceUnitTests {
 
     FileExplorerService fileExplorerService;
 
+    MockMultipartFile file1;
+    MockMultipartFile file2;
+    MockMultipartFile[]  files;
+
     @BeforeEach
     public void setUp() {
         fileExplorerService = new FileExplorerService();
+
+        file1 = new MockMultipartFile("files", "test1.txt",
+                "text/plain", "content1".getBytes());
+        file2 = new MockMultipartFile("files", "directory/test2.pdf",
+                "text/plain", "content2".getBytes());
+        files = new MockMultipartFile[]{file1, file2};
     }
 
-//    @Test
-//    public void shouldReturnFileTreeNodeDTO_ForFile(@TempDir Path tempDir) throws IOException {
-//
-//        Path testFile = Files.createFile(tempDir.resolve("test.txt"));
-//        Files.writeString(testFile, "Hello World");
-//
-//        ScanPathResponseDTO actualResult = fileExplorerService.scanPath(testFile);
-//
-//        assertThat(actualResult.getName()).isEqualTo("test.txt");
-//        assertThat(actualResult.getPath()).isEqualTo(testFile.toFile().getAbsolutePath());
-//        assertThat(actualResult.isDirectory()).isFalse();
-//        assertThat(actualResult.getSize()).isEqualTo(Files.size(testFile));
-//        assertThat(actualResult.getChildren()).isNull();
-//    }
-//
-//    @Test
-//    public void shouldReturnFileTreeNodeDTO_WithChildren_ForDirectory(@TempDir Path tempDir) throws IOException {
-//
-//        Path subDir = Files.createDirectory(tempDir.resolve("dir"));
-//        Files.createFile(subDir.resolve("file1.txt"));
-//        Files.createFile(subDir.resolve("file2.txt"));
-//
-//        ScanPathResponseDTO actualResult = fileExplorerService.scanPath(subDir);
-//
-//        assertThat(actualResult.getName()).isEqualTo("dir");
-//        assertThat(actualResult.isDirectory()).isTrue();
-//        assertThat(actualResult.getChildren()).hasSize(2);
-//    }
-//
-//    @Test
-//    public void shouldThrowPathNotFoundException_ForNonExistingPath() {
-//        Path nonExistingPath = Path.of("some/nonexisting/path");
-//
-//        assertThatThrownBy(() -> fileExplorerService.scanPath(nonExistingPath))
-//                .isInstanceOf(PathNotFoundException.class);
-//    }
-//
-//    @Test
-//    public void shouldReturnFileTreeNodeDTO_ForFile_WhenFiltered(@TempDir Path tempDir) throws IOException {
-//
-//        Path testFile = Files.createFile(tempDir.resolve("test.txt"));
-//
-//        ScanPathResponseDTO actualResult = fileExplorerService.scanFilteredPath(testFile, "txt");
-//
-//        assertThat(actualResult.getName()).isEqualTo("test.txt");
-//        assertThat(actualResult.getPath()).isEqualTo(testFile.toFile().getAbsolutePath());
-//        assertThat(actualResult.isDirectory()).isFalse();
-//        assertThat(actualResult.getSize()).isEqualTo(Files.size(testFile));
-//        assertThat(actualResult.getChildren()).isNull();
-//    }
-//
-//    @Test
-//    public void shouldReturnOnlyMatchingFiles_ForDirectory(@TempDir Path tempDir) throws IOException {
-//
-//        Path subDir = Files.createDirectory(tempDir.resolve("dir"));
-//        Files.createFile(subDir.resolve("test1.txt"));
-//        Files.createFile(subDir.resolve("test2.pdf"));
-//        Files.createFile(subDir.resolve("test3.txt"));
-//
-//        ScanPathResponseDTO actualResult = fileExplorerService.scanFilteredPath(subDir, "txt");
-//
-//        assertThat(actualResult.isDirectory()).isTrue();
-//        assertThat(actualResult.getChildren()).hasSize(2);
-//        assertThat(actualResult.getChildren())
-//                .extracting(ScanPathResponseDTO::getName)
-//                .containsExactlyInAnyOrder("test1.txt", "test3.txt");
-//    }
-//
-//    @Test
-//    public void shouldReturnNull_ForFileWithNonMatchingExtension(@TempDir Path tempDir) throws IOException {
-//        Path testFile = Files.createFile(tempDir.resolve("test.txt"));
-//
-//        ScanPathResponseDTO actualResult = fileExplorerService.scanFilteredPath(testFile, "pdf");
-//
-//        assertThat(actualResult).isNull();
-//    }
+    @Test
+    public void shouldReturnScanPathResponseDTO_ForFilesWithoutFilter() {
+
+        ScanPathResponseDTO rootNode = fileExplorerService.scanUploadedFiles(files, null);
+
+        assertThat(rootNode.getName()).isEqualTo("Root");
+        assertThat(rootNode.isDirectory()).isTrue();
+        assertThat(rootNode.getChildren()).hasSize(2);
+
+        List<ScanPathResponseDTO> children = rootNode.getChildren();
+
+        assertThat(children.getFirst().getName()).isEqualTo("test1.txt");
+        assertThat(children.getFirst().isDirectory()).isFalse();
+        assertThat(children.getFirst().getSize()).isEqualTo(file1.getSize());
+
+        ScanPathResponseDTO pdfNode = rootNode.getChildren().getLast().getChildren().getFirst();
+
+        assertThat(pdfNode.getName()).isEqualTo("test2.pdf");
+        assertThat(pdfNode.isDirectory()).isFalse();
+        assertThat(pdfNode.getSize()).isEqualTo(file2.getSize());
+    }
+
+    @Test
+    public void shouldReturnScanPathResponseDTO_ForFilesWithFilter() {
+
+        ScanPathResponseDTO rootNode = fileExplorerService.scanUploadedFiles(files, "txt");
+
+        assertThat(rootNode.getName()).isEqualTo("Root");
+        assertThat(rootNode.isDirectory()).isTrue();
+        assertThat(rootNode.getChildren()).hasSize(1);
+
+        ScanPathResponseDTO child = rootNode.getChildren().getFirst();
+
+        assertThat(child.getName()).isEqualTo("test1.txt");
+        assertThat(child.isDirectory()).isFalse();
+        assertThat(child.getSize()).isEqualTo(file1.getSize());
+    }
 }

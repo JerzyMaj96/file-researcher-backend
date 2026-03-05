@@ -1,19 +1,14 @@
 package com.jerzymaj.file_researcher_backend.controllers;
 
 import com.jerzymaj.file_researcher_backend.DTOs.ScanPathResponseDTO;
-import com.jerzymaj.file_researcher_backend.DTOs.ScanPathWithFilterRequest;
-import com.jerzymaj.file_researcher_backend.DTOs.ScanPathRequest;
 import com.jerzymaj.file_researcher_backend.configuration.ApiRoutes;
 import com.jerzymaj.file_researcher_backend.services.FileExplorerService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.nio.file.Path;
 
 @Slf4j
 @RestController
