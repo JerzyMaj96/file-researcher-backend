@@ -1,13 +1,11 @@
 package com.jerzymaj.file_researcher_backend.controllers;
 
-import com.jerzymaj.file_researcher_backend.DTOs.CreateFileSetDTO;
 import com.jerzymaj.file_researcher_backend.DTOs.FileSetDTO;
 import com.jerzymaj.file_researcher_backend.configuration.ApiRoutes;
 import com.jerzymaj.file_researcher_backend.models.FileSet;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
 import com.jerzymaj.file_researcher_backend.services.FileSetService;
 import com.jerzymaj.file_researcher_backend.tranlator.Translator;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -40,19 +38,6 @@ public class FileSetController {
         return ResponseEntity.created(URI.create("/file-researcher/file-sets/" + createdFileSet.getId()))
                 .body(Translator.convertFileSetToDTO(createdFileSet));
     }
-
-//    @PostMapping
-//    public ResponseEntity<FileSetDTO> createNewFileSet(@Valid @RequestBody CreateFileSetDTO createFileSetDTO) {
-//
-//        FileSet createdFileSet = fileSetService.createFileSet(
-//                createFileSetDTO.getName(),
-//                createFileSetDTO.getDescription(),
-//                createFileSetDTO.getRecipientEmail(),
-//                createFileSetDTO.getSelectedPaths());
-//
-//        return ResponseEntity.created(URI.create("/file-researcher/file-sets/" + createdFileSet.getId()))
-//                .body(Translator.convertFileSetToDTO(createdFileSet));
-//    }
 
     @GetMapping
     public List<FileSetDTO> retrieveAllFileSets() {

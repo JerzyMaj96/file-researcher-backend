@@ -44,7 +44,7 @@ public class FileSetControllerIntegrationTests {
 
     @Test
     @WithMockUser(username = "tester", roles = "USER")
-    public void shouldCreateNewFileSet(@TempDir Path tempDir) throws Exception {
+    public void shouldCreateNewFileSetFromUploaded(@TempDir Path tempDir) throws Exception {
         User testUser = new User();
         testUser.setName("tester");
         testUser.setEmail("tester@mail.com");

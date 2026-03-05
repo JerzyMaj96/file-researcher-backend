@@ -1,22 +1,16 @@
 package com.jerzymaj.file_researcher_backend.integration_tests;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jerzymaj.file_researcher_backend.DTOs.ScanPathWithFilterRequest;
-import com.jerzymaj.file_researcher_backend.DTOs.ScanPathRequest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -28,47 +22,48 @@ public class FileExplorerControllerIntegrationTests {
     @Autowired
     MockMvc mockMvc;
 
-    @Autowired
-    ObjectMapper objectMapper;
+    MockMultipartFile file1;
+    MockMultipartFile file2;
+    MockMultipartFile[] files;
 
-    @Test
-    @WithMockUser
-    public void shouldScanPath() throws Exception {
-        Path tempFile = Files.createTempFile("testFile", ".txt");
-
-        ScanPathRequest request = new ScanPathRequest(tempFile.toString());
-        String jsonRequest = objectMapper.writeValueAsString(request);
-
-        mockMvc.perform(post("/file-researcher/explorer/scan")
-                        .contentType(APPLICATION_JSON)
-                        .content(jsonRequest))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value(tempFile.getFileName().toString()))
-                .andExpect(jsonPath("$.path").value(tempFile.toAbsolutePath().toString()))
-                .andExpect(jsonPath("$.directory").value(false))
-                .andExpect(jsonPath("$.children").doesNotExist());
+    @BeforeEach
+    public void setup() {
+        file1 = new MockMultipartFile("files", "test1.txt",
+                "text/plain", "content1".getBytes());
+        file2 = new MockMultipartFile("files", "directory/test2.pdf",
+                "text/plain", "content2".getBytes());
+        files = new MockMultipartFile[]{file1, file2};
     }
 
     @Test
     @WithMockUser
-    public void shouldScanFilteredPath() throws Exception {
-        Path tempSubDir = Files.createTempDirectory("dir");
-        Files.createFile(tempSubDir.resolve("test1.txt"));
-        Files.createFile(tempSubDir.resolve("test2.pdf"));
-        Files.createFile(tempSubDir.resolve("test3.txt"));
+    public void shouldScanPath() throws Exception {
 
-        ScanPathWithFilterRequest request = new ScanPathWithFilterRequest(tempSubDir.toString(), "txt");
-        String jsonRequest = objectMapper.writeValueAsString(request);
-
-        mockMvc.perform(post("/file-researcher/explorer/scan/filtered")
-                        .contentType(APPLICATION_JSON)
-                        .content(jsonRequest))
+        mockMvc.perform(multipart("/file-researcher/explorer/upload")
+                        .file(file1)
+                        .file(file2))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value(tempSubDir.getFileName().toString()))
-                .andExpect(jsonPath("$.path").value(tempSubDir.toAbsolutePath().toString()))
+                .andExpect(jsonPath("$.name").value("Root"))
                 .andExpect(jsonPath("$.directory").value(true))
                 .andExpect(jsonPath("$.children").isArray())
-                .andExpect(jsonPath("$.children.length()").value(2))
-                .andExpect(jsonPath("$.children[*].name").value(containsInAnyOrder("test1.txt", "test3.txt")));
+                .andExpect(jsonPath("$.children[0].name").value("test1.txt"))
+                .andExpect(jsonPath("$.children[0].directory").value(false));
+    }
+
+    @Test
+    @WithMockUser
+    public void shouldScanPathWithFilter() throws Exception {
+        mockMvc.perform(multipart("/file-researcher/explorer/upload")
+                        .file(file1)
+                        .file(file2)
+                        .param("extension","pdf"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Root"))
+                .andExpect(jsonPath("$.directory").value(true))
+                .andExpect(jsonPath("$.children").isArray())
+                .andExpect(jsonPath("$.children[0].name").value("directory"))
+                .andExpect(jsonPath("$.children[0].directory").value(true))
+                .andExpect(jsonPath("$.children[0].children[0].name").value("test2.pdf"))
+                .andExpect(jsonPath("$.children[0].children[0].directory").value(false));
     }
 }
