@@ -215,11 +215,10 @@ public class ZipArchiveService {
      * @return A Path pointing to the target temporary ZIP file.
      */
     private Path prepareTempZipPath(Long fileSetId) {
-        Path zipFilePath = null;
 
         int sendCounter = zipArchiveRepository.findMaxSendNumberByFileSetId(fileSetId) + 1;
         String zipFileName = "fileset-" + fileSetId + "-" + sendCounter + ".zip";
-        zipFilePath = Path.of(System.getProperty("java.io.tmpdir"), zipFileName);
+        Path zipFilePath = Path.of(System.getProperty("java.io.tmpdir"), zipFileName);
 
         return zipFilePath;
     }
