@@ -51,7 +51,7 @@ public class ZipArchiveController {
     }
 
     @PostMapping(value = "/file-sets/{fileSetId}/zip-archives/send-uploaded-files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> sendZipArchiveFromMultipart(@PathVariable Long fileSetId,
+    public ResponseEntity<String> sendZipArchiveFromUploaded(@PathVariable Long fileSetId,
                                                              @RequestParam String recipientEmail,
                                                              @RequestParam("files") MultipartFile[] files) throws IOException {
 

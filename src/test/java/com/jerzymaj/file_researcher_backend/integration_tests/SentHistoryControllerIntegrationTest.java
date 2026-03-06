@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jerzymaj.file_researcher_backend.models.*;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
 import com.jerzymaj.file_researcher_backend.repositories.*;
-import jakarta.transaction.Transactional;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -31,7 +31,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Transactional
 public class SentHistoryControllerIntegrationTest {
 
     @Autowired
@@ -56,6 +55,8 @@ public class SentHistoryControllerIntegrationTest {
     private SentHistoryRepository sentHistoryRepository;
 
     private FileSet fileSet;
+    MockMultipartFile file1;
+    MockMultipartFile file2;
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -83,6 +84,11 @@ public class SentHistoryControllerIntegrationTest {
         fileSet = fileSetRepository.save(fileSet);
         fileSet.getFiles().add(fileEntry);
         fileSet = fileSetRepository.save(fileSet);
+
+        file1 = new MockMultipartFile("files", "test1.txt",
+                "text/plain", "content1".getBytes());
+        file2 = new MockMultipartFile("files", "directory/test2.pdf",
+                "text/plain", "content2".getBytes());
     }
 
     @AfterEach
@@ -98,7 +104,9 @@ public class SentHistoryControllerIntegrationTest {
     @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveAllSentHistoryForZipArchive() throws Exception {
 
-        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send-progress", fileSet.getId())
+        mockMvc.perform(multipart("/file-researcher/file-sets/{fileSetId}/zip-archives/send-uploaded-files", fileSet.getId())
+                        .file(file1)
+                        .file(file2)
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk());
 
@@ -114,7 +122,9 @@ public class SentHistoryControllerIntegrationTest {
     @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveLastRecipient() throws Exception {
 
-        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send-progress", fileSet.getId())
+        mockMvc.perform(multipart("/file-researcher/file-sets/{fileSetId}/zip-archives/send-uploaded-files", fileSet.getId())
+                        .file(file1)
+                        .file(file2)
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
@@ -130,7 +140,9 @@ public class SentHistoryControllerIntegrationTest {
     @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveSentHistoryById() throws Exception {
 
-        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send-progress", fileSet.getId())
+        mockMvc.perform(multipart("/file-researcher/file-sets/{fileSetId}/zip-archives/send-uploaded-files", fileSet.getId())
+                        .file(file1)
+                        .file(file2)
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk());
 
@@ -151,7 +163,9 @@ public class SentHistoryControllerIntegrationTest {
     @WithMockUser(username = "tester", roles = "USER")
     public void shouldDeleteSentHistoryById() throws Exception {
 
-        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send-progress", fileSet.getId())
+        mockMvc.perform(multipart("/file-researcher/file-sets/{fileSetId}/zip-archives/send-uploaded-files", fileSet.getId())
+                        .file(file1)
+                        .file(file2)
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
@@ -188,12 +202,12 @@ public class SentHistoryControllerIntegrationTest {
     }
 
     private String getHistoryResponse(Long zipArchiveId) throws Exception {
-        return  mockMvc.perform(get("/file-researcher/zip-archives/{zipArchiveId}/history", zipArchiveId))
+        return mockMvc.perform(get("/file-researcher/zip-archives/{zipArchiveId}/history", zipArchiveId))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
     }
 
-    private Long getHistoryId (String historyResponse) throws JsonProcessingException {
+    private Long getHistoryId(String historyResponse) throws JsonProcessingException {
         return objectMapper.readTree(historyResponse)
                 .get(0)
                 .get("id")

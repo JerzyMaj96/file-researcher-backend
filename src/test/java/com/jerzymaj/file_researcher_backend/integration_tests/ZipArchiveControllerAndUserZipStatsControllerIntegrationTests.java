@@ -5,7 +5,6 @@ import com.jerzymaj.file_researcher_backend.models.*;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.ZipArchiveStatus;
 import com.jerzymaj.file_researcher_backend.repositories.*;
-import jakarta.transaction.Transactional;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -35,7 +35,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(TestMailConfig.class)
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
-@Transactional
 public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
 
     @Autowired
@@ -57,6 +56,8 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     private SentHistoryRepository sentHistoryRepository;
 
     private FileSet fileSet;
+    MockMultipartFile file1;
+    MockMultipartFile file2;
 
     @BeforeEach
     public void setUp() throws IOException {
@@ -87,6 +88,11 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
         fileSet.setFiles(new ArrayList<>(List.of(fileEntry)));
 
         fileSet = fileSetRepository.save(fileSet);
+
+        file1 = new MockMultipartFile("files", "test1.txt",
+                "text/plain", "content1".getBytes());
+        file2 = new MockMultipartFile("files", "directory/test2.pdf",
+                "text/plain", "content2".getBytes());
     }
 
     @AfterEach
@@ -100,8 +106,10 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
 
     @Test
     @WithMockUser(username = "tester", roles = "USER")
-    public void shouldSendZipArchive() throws Exception {
-        String taskId = mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send-progress", fileSet.getId())
+    public void shouldSendZipArchiveFromUploaded() throws Exception {
+        String taskId = mockMvc.perform(multipart("/file-researcher/file-sets/{fileSetId}/zip-archives/send-uploaded-files", fileSet.getId())
+                        .file(file1)
+                        .file(file2)
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk())
                 .andReturn()
@@ -125,7 +133,9 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     @Test
     @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveAllZipArchives() throws Exception {
-        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send-progress", fileSet.getId())
+        mockMvc.perform(multipart("/file-researcher/file-sets/{fileSetId}/zip-archives/send-uploaded-files", fileSet.getId())
+                        .file(file1)
+                        .file(file2)
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk());
 
@@ -141,7 +151,9 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     @Test
     @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveZipArchiveById() throws Exception {
-        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send-progress", fileSet.getId())
+        mockMvc.perform(multipart("/file-researcher/file-sets/{fileSetId}/zip-archives/send-uploaded-files", fileSet.getId())
+                        .file(file1)
+                        .file(file2)
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk());
 
@@ -159,7 +171,9 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     @Test
     @WithMockUser(username = "tester", roles = "USER")
     public void shouldDeleteZipArchiveById() throws Exception { //REPAIR
-        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send-progress", fileSet.getId())
+        mockMvc.perform(multipart("/file-researcher/file-sets/{fileSetId}/zip-archives/send-uploaded-files", fileSet.getId())
+                        .file(file1)
+                        .file(file2)
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk());
 
@@ -180,7 +194,9 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     @Test
     @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveSentStatistics() throws Exception {
-        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send-progress", fileSet.getId())
+        mockMvc.perform(multipart("/file-researcher/file-sets/{fileSetId}/zip-archives/send-uploaded-files", fileSet.getId())
+                        .file(file1)
+                        .file(file2)
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk());
 
@@ -195,7 +211,9 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     @Test
     @WithMockUser(username = "tester", roles = "USER")
     public void shouldRetrieveLargeZipArchives() throws Exception {
-        mockMvc.perform(post("/file-researcher/file-sets/{fileSetId}/zip-archives/send-progress", fileSet.getId())
+        mockMvc.perform(multipart("/file-researcher/file-sets/{fileSetId}/zip-archives/send-uploaded-files", fileSet.getId())
+                        .file(file1)
+                        .file(file2)
                         .param("recipientEmail", "email@mail.com"))
                 .andExpect(status().isOk());
 
