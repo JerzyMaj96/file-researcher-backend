@@ -9,6 +9,11 @@ spring:
       max-file-size: 200MB
       max-request-size: 500MB
 
+logging:
+  level:
+    root: INFO
+    com.jerzymaj.file_researcher_backend: DEBUG
+
 app:
   jwt:
     secret: ${JWT_SECRET}

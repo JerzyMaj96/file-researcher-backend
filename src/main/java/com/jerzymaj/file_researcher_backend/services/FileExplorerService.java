@@ -52,9 +52,6 @@ public class FileExplorerService {
      * @param fullPath the original full path of the file used to replicate the folder structure
      */
     private void addFileToTree(ScanPathResponseDTO root, MultipartFile file, String fullPath) {
-        if (fullPath == null) {
-            return;
-        }
 
         String[] pathParts = fullPath.split("/");
 
