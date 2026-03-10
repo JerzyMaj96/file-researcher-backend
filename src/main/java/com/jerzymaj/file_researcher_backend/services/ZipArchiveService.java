@@ -218,15 +218,14 @@ public class ZipArchiveService {
 
         int sendCounter = zipArchiveRepository.findMaxSendNumberByFileSetId(fileSetId) + 1;
         String zipFileName = "fileset-" + fileSetId + "-" + sendCounter + ".zip";
-        Path zipFilePath = Path.of(System.getProperty("java.io.tmpdir"), zipFileName);
 
-        return zipFilePath;
+        return Path.of(System.getProperty("java.io.tmpdir"), zipFileName);
     }
 
     /**
      * Compresses files from given Paths into a single ZIP archive.
-     * * @param filesToZip       List of staged file paths.
      *
+     * @param filesToZip       List of staged file paths.
      * @param zipPath          Target path for the .zip file.
      * @param progressCallback Callback for real-time progress updates.
      */
