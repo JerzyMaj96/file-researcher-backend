@@ -266,6 +266,27 @@ public class ZipArchiveService {
         }
     }
 
+    /**
+     * Copies data from an input stream to the ZIP output stream while calculating
+     * and reporting real-time progress.
+     * <p>
+     * <b>Progress Logic:</b>
+     * The method scales the raw copy progress to 90% of the total task,
+     * leaving the remaining 10% for finalization and email dispatch.
+     * Updates are throttled to every 150ms or every percentage increase
+     * to prevent flooding the WebSocket broker.
+     * </p>
+     *
+     * @param inputStream      The source stream of the file being compressed.
+     * @param zos              The target ZIP output stream.
+     * @param totalSize        Total size of all files in the batch (for percentage calculation).
+     * @param bytesProcessed   A single-element array tracking cumulative bytes across multiple files.
+     * @param lastPercent      A single-element array tracking the last reported percentage to avoid redundant updates.
+     * @param progressCallback The functional interface used to push updates to the frontend.
+     * @param currFinalName    The name of the file currently being processed (for status messages).
+     * @throws IOException     If a read/write error occurs during the copy process.
+     */
+
     private void copyInputStreamWithProgress(InputStream inputStream, ZipOutputStream zos, long totalSize,
                                              long[] bytesProcessed, int[] lastPercent, ProgressCallback progressCallback,
                                              String currFinalName) throws IOException {
@@ -325,7 +346,6 @@ public class ZipArchiveService {
                 .recipientEmail(recipientEmail)
                 .fileSet(fileSet)
                 .user(fileSet.getUser())
-                .creationDate(LocalDateTime.now())
                 .sendNumber(sendCounter)
                 .build()
         );
