@@ -25,9 +25,7 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -59,7 +57,7 @@ public class ZipArchiveService {
      * @return String        The unique taskId for WebSocket tracking.
      * @throws IOException If file staging fails.
      */
-    public String startZipUploadProcess(Long fileSetId, String recipientEmail, MultipartFile[] files) throws IOException {
+    public String startZipProcessFromUploaded(Long fileSetId, String recipientEmail, MultipartFile[] files) throws IOException {
         String taskId = UUID.randomUUID().toString();
 
         Path uploadDir = Paths.get("temp-uploads", taskId).toAbsolutePath();
@@ -98,7 +96,7 @@ public class ZipArchiveService {
             FileSet fileSet = fetchFileSet(fileSetId);
             zipPath = prepareTempZipPath(fileSetId);
 
-            createZipArchiveFromPaths(filesToZip, zipPath, (percent, msg) -> notifyProgress(taskId, percent, msg));
+            createZipArchiveFromPaths(filesToZip, zipPath, sourceDir, (percent, msg) -> notifyProgress(taskId, percent, msg));
 
             ZipArchive archive = registerZipArchive(fileSet, zipPath, recipientEmail);
 
@@ -227,9 +225,10 @@ public class ZipArchiveService {
      *
      * @param filesToZip       List of staged file paths.
      * @param zipPath          Target path for the .zip file.
+     * @param sourceDir
      * @param progressCallback Callback for real-time progress updates.
      */
-    private void createZipArchiveFromPaths(List<Path> filesToZip, Path zipPath, ProgressCallback progressCallback) throws IOException {
+    private void createZipArchiveFromPaths(List<Path> filesToZip, Path zipPath, Path sourceDir, ProgressCallback progressCallback) throws IOException {
 
         long totalFileSizeBytes = 0;
 
@@ -246,7 +245,7 @@ public class ZipArchiveService {
         try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipPath))) {
 
             for (Path file : filesToZip) {
-                String relativePath = zipPath.relativize(file).toString().replace("\\", "/");
+                String relativePath = sourceDir.relativize(file).toString().replace("\\", "/");
 
                 if (!addedEntries.add(relativePath)) {
                     log.warn("Skipping duplicate entry in ZIP: {}", relativePath);

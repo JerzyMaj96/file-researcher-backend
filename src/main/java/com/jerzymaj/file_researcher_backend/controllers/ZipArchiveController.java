@@ -55,7 +55,7 @@ public class ZipArchiveController {
                                                              @RequestParam String recipientEmail,
                                                              @RequestParam("files") MultipartFile[] files) throws IOException {
 
-        String taskId = zipArchiveService.startZipUploadProcess(fileSetId, recipientEmail, files);
+        String taskId = zipArchiveService.startZipProcessFromUploaded(fileSetId, recipientEmail, files);
 
         return ResponseEntity.ok(taskId);
     }
