@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.nio.file.AccessDeniedException;
@@ -35,7 +36,13 @@ public class FileSetController {
                 recipientEmail,
                 files);
 
-        return ResponseEntity.created(URI.create("/file-researcher/file-sets/" + createdFileSet.getId()))
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(createdFileSet.getId())
+                .toUri();
+
+        return ResponseEntity.created(location)
                 .body(Translator.convertFileSetToDTO(createdFileSet));
     }
 
