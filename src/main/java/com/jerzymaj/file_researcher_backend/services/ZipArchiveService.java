@@ -10,6 +10,7 @@ import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,9 @@ public class ZipArchiveService {
     private final SentHistoryService sentHistoryService;
     private final SimpMessagingTemplate messagingTemplate;
 
+    @Value("${storage.upload-dir:temp-uploads}")
+    private String storageBaseDir;
+
     /**
      * Entry point for the upload-to-zip process. Orchestrates synchronous file staging.
      * <p>
@@ -60,7 +64,7 @@ public class ZipArchiveService {
     public String startZipProcessFromUploaded(Long fileSetId, String recipientEmail, MultipartFile[] files) throws IOException {
         String taskId = UUID.randomUUID().toString();
 
-        Path uploadDir = Paths.get("temp-uploads", taskId).toAbsolutePath();
+        Path uploadDir = Paths.get(storageBaseDir, taskId).toAbsolutePath();
         Files.createDirectories(uploadDir);
 
         List<Path> savedFiles = new ArrayList<>();
