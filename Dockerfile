@@ -8,7 +8,7 @@ RUN mvn dependency:go-offline -B
 
 COPY src ./src
 
-RUN mvn clean package -DskipTests
+RUN mvn clean package -Dmaven.test.skip=true
 
 FROM eclipse-temurin:21-jre-alpine
 
@@ -24,4 +24,4 @@ USER spring:spring
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-Dstorage.upload-dir=/app/temp-uploads", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Dstorage.upload-dir=/app/temp-uploads", "-jar", "app.jar"]
