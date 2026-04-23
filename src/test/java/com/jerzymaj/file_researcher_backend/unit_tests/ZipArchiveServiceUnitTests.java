@@ -23,6 +23,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -30,7 +31,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -54,6 +54,12 @@ public class ZipArchiveServiceUnitTests {
 
     @Mock
     private SimpMessagingTemplate messagingTemplate;
+
+    @Mock
+    private ZipArchiveStatusService zipArchiveStatusService;
+
+    @Mock
+    private SentHistoryService sentHistoryService;
 
     @InjectMocks
     private ZipArchiveService zipArchiveService;
@@ -81,9 +87,14 @@ public class ZipArchiveServiceUnitTests {
         fileSet.setStatus(FileSetStatus.ACTIVE);
         fileSet.setFiles(List.of(fe1));
 
+        ReflectionTestUtils.setField(zipArchiveService, "storageBaseDir", tempDir.toString());
+
         lenient().when(fileSetRepository.findByIdWithFiles(fileSet.getId())).thenReturn(Optional.of(fileSet));
         lenient().when(zipArchiveRepository.findMaxSendNumberByFileSetId(anyLong())).thenReturn(0);
         lenient().when(mailSender.createMimeMessage()).thenReturn(new MimeMessage((Session) null));
+        lenient().doNothing().when(zipArchiveStatusService).updateDatabaseAfterSuccess(anyLong(), anyLong());
+        lenient().when(sentHistoryService.saveSentHistory(any(ZipArchive.class), anyString(), anyBoolean(), anyString()))
+                .thenAnswer(i -> i.getArgument(0));
     }
 
     @Test
