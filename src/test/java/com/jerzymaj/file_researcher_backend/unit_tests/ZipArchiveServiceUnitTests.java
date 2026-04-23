@@ -94,7 +94,7 @@ public class ZipArchiveServiceUnitTests {
 
         when(zipArchiveRepository.save(any(ZipArchive.class))).thenAnswer(i -> i.getArgument(0));
 
-        String returnedTaskId = zipArchiveService.startZipUploadProcess(fileSet.getId(), "test@mail.com", files);
+        String returnedTaskId = zipArchiveService.startZipProcessFromUploaded(fileSet.getId(), "test@mail.com", files);
 
         assertNotNull(returnedTaskId);
 
@@ -108,7 +108,7 @@ public class ZipArchiveServiceUnitTests {
         MockMultipartFile[] files = {brokenFile};
 
         assertThrows(Exception.class, () -> {
-            zipArchiveService.startZipUploadProcess(fileSet.getId(), "test@mail.com", files);
+            zipArchiveService.startZipProcessFromUploaded(fileSet.getId(), "test@mail.com", files);
         });
     }
 

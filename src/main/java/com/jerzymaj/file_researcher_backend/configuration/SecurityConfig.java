@@ -28,7 +28,7 @@ public class SecurityConfig {
     private final JWTAuthenticationFilter jwtAuthenticationFilter;
 
     @Value("${app.http/ws.allowed-origins}")
-    private String allowedOrigins;
+    private final String[] allowedOrigins;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
