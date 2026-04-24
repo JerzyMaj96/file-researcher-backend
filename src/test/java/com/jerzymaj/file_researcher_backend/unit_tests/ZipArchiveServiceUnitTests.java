@@ -88,6 +88,7 @@ public class ZipArchiveServiceUnitTests {
         fileSet.setFiles(List.of(fe1));
 
         ReflectionTestUtils.setField(zipArchiveService, "storageBaseDir", tempDir.toString());
+        ReflectionTestUtils.setField(zipArchiveService, "self", zipArchiveService);
 
         lenient().when(fileSetRepository.findByIdWithFiles(fileSet.getId())).thenReturn(Optional.of(fileSet));
         lenient().when(zipArchiveRepository.findMaxSendNumberByFileSetId(anyLong())).thenReturn(0);
