@@ -10,7 +10,9 @@ import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +46,10 @@ public class ZipArchiveService {
     private final SentHistoryService sentHistoryService;
     private final SimpMessagingTemplate messagingTemplate;
 
+    @Lazy
+    @Autowired
+    private ZipArchiveService self;
+
     @Value("${storage.upload-dir:temp-uploads}")
     private String storageBaseDir;
 
@@ -76,7 +82,7 @@ public class ZipArchiveService {
             savedFiles.add(destination);
         }
 
-        createAndSendZipFromUploadedFiles(fileSetId, recipientEmail, savedFiles, uploadDir, taskId);
+        self.createAndSendZipFromUploadedFiles(fileSetId, recipientEmail, savedFiles, uploadDir, taskId);
 
         return taskId;
     }
@@ -130,7 +136,7 @@ public class ZipArchiveService {
             throw new AccessDeniedException("You do not have permission to access this FileSet.");
         }
 
-        return zipArchiveRepository.findAllByUserId(currentUserId);
+        return zipArchiveRepository.findAllByFileSetId(fileSetId);
     }
 
     public ZipArchive getZipArchiveById(Long fileSetId, Long zipArchiveId) throws AccessDeniedException {
