@@ -39,6 +39,7 @@ public class ZipArchiveService {
 
 
     private final JavaMailSender mailSender;
+    private final ZipArchiveCreator zipArchiveCreator;
     private final FileSetRepository fileSetRepository;
     private final FileSetService fileSetService;
     private final ZipArchiveRepository zipArchiveRepository;
@@ -104,7 +105,7 @@ public class ZipArchiveService {
         Path zipPath = null;
         try {
             FileSet fileSet = fetchFileSet(fileSetId);
-            zipPath = prepareTempZipPath(fileSetId);
+            zipPath = zipArchiveCreator.prepareTempPath(fileSetId, );
 
             createZipArchiveFromPaths(filesToZip, zipPath, sourceDir, (percent, msg) -> notifyProgress(taskId, percent, msg));
 
