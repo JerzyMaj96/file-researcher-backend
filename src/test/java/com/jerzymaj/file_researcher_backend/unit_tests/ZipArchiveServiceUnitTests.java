@@ -117,13 +117,15 @@ public class ZipArchiveServiceUnitTests {
     }
 
     @Test
-    public void shouldHandleError_WhenStagingFilesFails() {
+    public void shouldHandleError_WhenStagingFilesFails() throws IOException {
         MockMultipartFile brokenFile = new MockMultipartFile("files", null, null, (byte[]) null);
         MockMultipartFile[] files = {brokenFile};
 
-        assertThrows(Exception.class, () -> {
-            zipArchiveService.startZipProcessFromUploaded(fileSet.getId(), "test@mail.com", files);
-        });
+        when(fileStager.stageUpload(files)).thenThrow(new IOException("Staging failed"));
+
+        assertThrows(IOException.class, () ->
+                zipArchiveService.startZipProcessFromUploaded(fileSet.getId(), "test@mail.com", files)
+        );
     }
 
     @Test
