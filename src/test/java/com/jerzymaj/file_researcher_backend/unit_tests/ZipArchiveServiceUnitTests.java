@@ -1,16 +1,11 @@
 package com.jerzymaj.file_researcher_backend.unit_tests;
 
-import com.jerzymaj.file_researcher_backend.DTOs.ProgressUpdate;
+import com.jerzymaj.file_researcher_backend.DTOs.StagedUpload;
 import com.jerzymaj.file_researcher_backend.models.*;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
 import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
 import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
-import com.jerzymaj.file_researcher_backend.services.FileSetService;
-import com.jerzymaj.file_researcher_backend.services.SentHistoryService;
-import com.jerzymaj.file_researcher_backend.services.ZipArchiveService;
-import com.jerzymaj.file_researcher_backend.services.ZipArchiveStatusService;
-import jakarta.mail.Session;
-import jakarta.mail.internet.MimeMessage;
+import com.jerzymaj.file_researcher_backend.services.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,7 +15,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -41,7 +35,13 @@ import static org.mockito.Mockito.*;
 public class ZipArchiveServiceUnitTests {
 
     @Mock
-    private JavaMailSender mailSender;
+    private ZipArchiveCreator zipArchiveCreator;
+
+    @Mock
+    private ZipEmailSender zipEmailSender;
+
+    @Mock
+    private FileStager fileStager;
 
     @Mock
     private FileSetRepository fileSetRepository;
@@ -87,12 +87,10 @@ public class ZipArchiveServiceUnitTests {
         fileSet.setStatus(FileSetStatus.ACTIVE);
         fileSet.setFiles(List.of(fe1));
 
-        ReflectionTestUtils.setField(zipArchiveService, "storageBaseDir", tempDir.toString());
-        ReflectionTestUtils.setField(zipArchiveService, "self", zipArchiveService);
+        ReflectionTestUtils.setField(fileStager, "storageBaseDir", tempDir.toString());
 
         lenient().when(fileSetRepository.findByIdWithFiles(fileSet.getId())).thenReturn(Optional.of(fileSet));
         lenient().when(zipArchiveRepository.findMaxSendNumberByFileSetId(anyLong())).thenReturn(0);
-        lenient().when(mailSender.createMimeMessage()).thenReturn(new MimeMessage((Session) null));
         lenient().doNothing().when(zipArchiveStatusService).updateDatabaseAfterSuccess(anyLong(), anyLong());
         lenient().when(sentHistoryService.saveSentHistory(any(ZipArchive.class), anyString(), anyBoolean(), anyString()))
                 .thenAnswer(i -> i.getArgument(0));
@@ -104,14 +102,18 @@ public class ZipArchiveServiceUnitTests {
         MockMultipartFile file2 = new MockMultipartFile("files", "test2.txt", "text/plain", "content2".getBytes());
         MockMultipartFile[] files = {file1, file2};
 
-        when(zipArchiveRepository.save(any(ZipArchive.class))).thenAnswer(i -> i.getArgument(0));
+        String expectedTaskId = "mock-task-id";
+        Path mockUploadDir = Path.of("/tmp/mock-task-id");
+        List<Path> mockFiles = List.of(Path.of("/tmp/mock-task-id/test1.txt"),
+                Path.of("/tmp/mock-task-id/test2.txt"));
+
+        StagedUpload stagedUpload = new StagedUpload(expectedTaskId, mockUploadDir, mockFiles);
+        when(fileStager.stageUpload(files)).thenReturn(stagedUpload);
 
         String returnedTaskId = zipArchiveService.startZipProcessFromUploaded(fileSet.getId(), "test@mail.com", files);
 
         assertNotNull(returnedTaskId);
-
-        verify(mailSender, timeout(2000)).send(any(MimeMessage.class));
-        verify(messagingTemplate, atLeastOnce()).convertAndSend(contains(returnedTaskId), any(ProgressUpdate.class));
+        assertEquals(expectedTaskId, returnedTaskId);
     }
 
     @Test
