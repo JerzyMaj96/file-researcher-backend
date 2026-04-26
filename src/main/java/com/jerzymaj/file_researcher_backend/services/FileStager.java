@@ -1,5 +1,6 @@
 package com.jerzymaj.file_researcher_backend.services;
 
+import com.jerzymaj.file_researcher_backend.DTOs.StagedUpload;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -10,6 +11,8 @@ public class FileStager {
     @Value("${storage.upload-dir:temp-uploads}")
     private String storageBaseDir;
 
-    public StagedUpload stageUpload(MultipartFile[] files) {}
+    public StagedUpload stageUpload(MultipartFile[] files) {
+
+    }
 
 }
