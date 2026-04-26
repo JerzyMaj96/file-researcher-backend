@@ -24,10 +24,10 @@ public class ZipEmailSender {
      * @throws MessagingException if an error occurs while sending the email
      */
 
-    private void sendZipArchiveByEmail(String recipientEmail,
-                                       Path zipFilePath,
-                                       String subject,
-                                       String text) throws MessagingException {
+    public void sendZipArchiveByEmail(String recipientEmail,
+                                      Path zipFilePath,
+                                      String subject,
+                                      String text) throws MessagingException {
 
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
