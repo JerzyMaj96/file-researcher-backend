@@ -20,6 +20,16 @@ public class FileStager {
     @Value("${storage.upload-dir:temp-uploads}")
     private String storageBaseDir;
 
+    /**
+     * Stages uploaded files to a temporary local directory for asynchronous processing.
+     * MultipartFiles are transferred to disk before the HTTP request ends to prevent
+     * data loss in ephemeral environments like Render.
+     *
+     * @param files Array of MultipartFiles from the HTTP request.
+     * @return StagedUpload containing the taskId, upload directory path, and saved file paths.
+     * @throws IOException If creating directories or transferring files fails.
+     */
+
     public StagedUpload stageUpload(MultipartFile[] files) throws IOException {
         String taskId = UUID.randomUUID().toString();
 

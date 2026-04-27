@@ -63,12 +63,17 @@ public class ZipArchiveService {
      * <p>
      * <b>Workflow:</b>
      * <ol>
-     * <li>Fetches metadata from database.</li>
-     * <li>Creates a ZIP archive from the staged files with progress reporting (0-90%).</li>
+     * <li>Fetches FileSet metadata from the database.</li>
+     * <li>Creates a ZIP archive from staged files with progress reporting (0-90%).</li>
      * <li>Registers the archive in PENDING status.</li>
      * <li>Sends email (95%) and finalizes status to SUCCESS or FAILED.</li>
-     * <li>Purges all temporary resources (ZIP and staging folder) in the 'finally' block.</li>
+     * <li>Purges all temporary resources (ZIP and staging folder) in the finally block.</li>
      * </ol>
+     * </p>
+     *
+     * @param fileSetId      The ID of the associated FileSet.
+     * @param recipientEmail Target email address.
+     * @param stagedUpload   The staged upload containing taskId, file paths, and upload directory.
      */
     @Async
     public void createAndSendZipAsync(Long fileSetId, String recipientEmail, StagedUpload stagedUpload) {

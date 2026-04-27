@@ -22,7 +22,7 @@ public class ZipArchiveCreator {
      *
      * @param filesToZip       List of staged file paths.
      * @param zipPath          Target path for the .zip file.
-     * @param sourceDir
+     * @param sourceDir        The base directory used to calculate relative paths inside the ZIP.
      * @param progressCallback Callback for real-time progress updates.
      */
 
