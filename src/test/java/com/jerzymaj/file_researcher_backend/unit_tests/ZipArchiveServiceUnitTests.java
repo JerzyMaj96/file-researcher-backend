@@ -140,8 +140,6 @@ public class ZipArchiveServiceUnitTests {
 
         Path fakeZipPath = Files.createFile(tempDir.resolve("test-archive.zip"));
 
-        when(fileSetRepository.findByIdWithFiles(fileSet.getId())).thenReturn(Optional.of(fileSet));
-        when(zipArchiveRepository.findMaxSendNumberByFileSetId(fileSet.getId())).thenReturn(0);
         when(zipArchiveRepository.save(any(ZipArchive.class)))
                 .thenAnswer(i -> i.getArgument(0));
         when(zipArchiveCreator.prepareTempPath(anyLong(), anyInt()))
