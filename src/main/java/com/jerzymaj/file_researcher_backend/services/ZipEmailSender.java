@@ -2,6 +2,7 @@ package com.jerzymaj.file_researcher_backend.services;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -10,9 +11,10 @@ import org.springframework.stereotype.Service;
 import java.nio.file.Path;
 
 @Service
+@RequiredArgsConstructor
 public class ZipEmailSender {
 
-    JavaMailSender mailSender;
+    private final JavaMailSender mailSender;
 
     /**
      * Sends a ZIP archive as an email attachment to the specified recipient.
