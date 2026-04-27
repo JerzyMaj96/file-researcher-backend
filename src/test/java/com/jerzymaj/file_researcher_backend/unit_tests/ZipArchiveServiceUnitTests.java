@@ -1,5 +1,6 @@
 package com.jerzymaj.file_researcher_backend.unit_tests;
 
+import com.jerzymaj.file_researcher_backend.DTOs.ProgressUpdate;
 import com.jerzymaj.file_researcher_backend.DTOs.StagedUpload;
 import com.jerzymaj.file_researcher_backend.models.*;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
@@ -148,8 +149,25 @@ public class ZipArchiveServiceUnitTests {
 
         zipArchiveService.createAndSendZipAsync(fileSet.getId(), fileSet.getRecipientEmail(), stagedUpload);
 
-        verify(zipArchiveCreator).createZipArchiveFromPaths(any(), any(), any(), any());
-        verify(zipEmailSender).sendZipArchiveByEmail(any(), any(), any(), any());
+        verify(zipArchiveCreator).createZipArchiveFromPaths(
+                eq(stagedUpload.files()),
+                eq(fakeZipPath),
+                eq(stagedUpload.uploadDir()),
+                any());
+
+
+        verify(zipEmailSender).sendZipArchiveByEmail(
+                eq(fileSet.getRecipientEmail()),
+                eq(fakeZipPath),
+                any(),
+                any());
+
+        verify(zipArchiveStatusService).updateDatabaseAfterSuccess(any(), eq(fileSet.getId()));
+        verify(sentHistoryService).saveSentHistory(any(), eq(fileSet.getRecipientEmail()), eq(true), any());
+        verify(messagingTemplate).convertAndSend(
+                contains(expectedTaskId),
+                argThat((ProgressUpdate msg) -> msg.percent() == 100)
+        );
     }
 
     @Test
