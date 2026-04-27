@@ -6,6 +6,7 @@ import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
 import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
 import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
 import com.jerzymaj.file_researcher_backend.services.*;
+import jakarta.mail.MessagingException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -66,6 +67,9 @@ public class ZipArchiveServiceUnitTests {
 
     private User user;
     private FileSet fileSet;
+    private StagedUpload stagedUpload;
+    private String expectedTaskId;
+
 
     @BeforeEach
     public void setUp(@TempDir Path tempDir) throws IOException {
@@ -94,6 +98,14 @@ public class ZipArchiveServiceUnitTests {
         lenient().doNothing().when(zipArchiveStatusService).updateDatabaseAfterSuccess(anyLong(), anyLong());
         lenient().when(sentHistoryService.saveSentHistory(any(ZipArchive.class), anyString(), anyBoolean(), anyString()))
                 .thenAnswer(i -> i.getArgument(0));
+
+        expectedTaskId = "mock-task-id";
+
+        Path mockUploadDir = Path.of("/tmp/mock-task-id");
+        List<Path> mockFiles = List.of(Path.of("/tmp/mock-task-id/test1.txt"),
+                Path.of("/tmp/mock-task-id/test2.txt"));
+
+        stagedUpload = new StagedUpload(expectedTaskId, mockUploadDir, mockFiles);
     }
 
     @Test
@@ -102,12 +114,6 @@ public class ZipArchiveServiceUnitTests {
         MockMultipartFile file2 = new MockMultipartFile("files", "test2.txt", "text/plain", "content2".getBytes());
         MockMultipartFile[] files = {file1, file2};
 
-        String expectedTaskId = "mock-task-id";
-        Path mockUploadDir = Path.of("/tmp/mock-task-id");
-        List<Path> mockFiles = List.of(Path.of("/tmp/mock-task-id/test1.txt"),
-                Path.of("/tmp/mock-task-id/test2.txt"));
-
-        StagedUpload stagedUpload = new StagedUpload(expectedTaskId, mockUploadDir, mockFiles);
         when(fileStager.stageUpload(files)).thenReturn(stagedUpload);
 
         String returnedTaskId = zipArchiveService.startZipProcessFromUploaded(fileSet.getId(), "test@mail.com", files);
@@ -126,6 +132,24 @@ public class ZipArchiveServiceUnitTests {
         assertThrows(IOException.class, () ->
                 zipArchiveService.startZipProcessFromUploaded(fileSet.getId(), "test@mail.com", files)
         );
+    }
+
+    @Test
+    public void shouldCreateAndSendZipAsync_IfSuccess(@TempDir Path tempDir) throws IOException, MessagingException {
+
+        Path fakeZipPath = Files.createFile(tempDir.resolve("test-archive.zip"));
+
+        when(fileSetRepository.findByIdWithFiles(fileSet.getId())).thenReturn(Optional.of(fileSet));
+        when(zipArchiveRepository.findMaxSendNumberByFileSetId(fileSet.getId())).thenReturn(0);
+        when(zipArchiveRepository.save(any(ZipArchive.class)))
+                .thenAnswer(i -> i.getArgument(0));
+        when(zipArchiveCreator.prepareTempPath(anyLong(), anyInt()))
+                .thenReturn(fakeZipPath);
+
+        zipArchiveService.createAndSendZipAsync(fileSet.getId(), fileSet.getRecipientEmail(), stagedUpload);
+
+        verify(zipArchiveCreator).createZipArchiveFromPaths(any(), any(), any(), any());
+        verify(zipEmailSender).sendZipArchiveByEmail(any(), any(), any(), any());
     }
 
     @Test
