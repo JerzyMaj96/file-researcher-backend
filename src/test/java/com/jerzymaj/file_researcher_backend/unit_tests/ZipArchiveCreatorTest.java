@@ -14,8 +14,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.zip.ZipFile;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -54,5 +53,24 @@ public class ZipArchiveCreatorTest {
         }
 
         verify(progressCallback, atLeastOnce()).onUpdate(anyInt(), anyString());
+    }
+
+    @Test
+    public void shouldSkipDuplicateEntries(@TempDir Path tempDir) throws IOException {
+
+        Path sourceDir = Files.createDirectories(tempDir.resolve("source"));
+        Path file1 = Files.writeString(sourceDir.resolve("test.txt"), "some txt content for testing");
+
+        List<Path> filesToZip = List.of(file1, file1);
+        Path zipPath = Files.createFile(tempDir.resolve("test.zip"));
+
+        zipArchiveCreator.createZipArchiveFromPaths(filesToZip,zipPath,sourceDir, (percent, message) -> {});
+
+        assertTrue(Files.exists(zipPath));
+        assertTrue(Files.size(zipPath) > 0);
+
+        try (ZipFile zipFile = new ZipFile(zipPath.toFile())) {
+            assertEquals(1, zipFile.size());
+        }
     }
 }
