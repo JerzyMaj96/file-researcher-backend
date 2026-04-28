@@ -26,9 +26,6 @@ public class ZipEmailSenderUnitTest {
     @Mock
     private JavaMailSender mailSender;
 
-    @Mock
-    private MimeMessage message;
-
     @InjectMocks
     private ZipEmailSender zipEmailSender;
 
@@ -37,7 +34,7 @@ public class ZipEmailSenderUnitTest {
 
         Path zipFilePath = Files.createFile(tempDir.resolve("test.zip"));
 
-        message = new MimeMessage((Session) null);
+        MimeMessage message = new MimeMessage((Session) null);
 
         when(mailSender.createMimeMessage()).thenReturn(message);
 
