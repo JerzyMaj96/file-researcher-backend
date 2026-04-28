@@ -2,6 +2,7 @@ package com.jerzymaj.file_researcher_backend.unit_tests;
 
 import com.jerzymaj.file_researcher_backend.DTOs.StagedUpload;
 import com.jerzymaj.file_researcher_backend.services.FileStager;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -22,10 +23,15 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class FileStagerUnitTest {
 
+    private FileStager fileStager;
+
+    @BeforeEach
+    public void setUp() {
+        fileStager = new FileStager();
+    }
+
     @Test
     public void ShouldStageUpload_IfSuccess(@TempDir Path tempDir) throws IOException {
-
-        FileStager fileStager = new FileStager();
 
         ReflectionTestUtils.setField(fileStager, "storageBaseDir", tempDir.toString());
 
