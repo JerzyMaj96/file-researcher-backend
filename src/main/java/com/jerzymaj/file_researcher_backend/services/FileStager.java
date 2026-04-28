@@ -26,7 +26,7 @@ public class FileStager {
      * data loss in ephemeral environments like Render.
      *
      * @param files Array of MultipartFiles from the HTTP request.
-     * @return StagedUpload containing the taskId, upload directory path, and saved file paths.
+     * @return {@link StagedUpload} containing the taskId, upload directory path, and saved file paths.
      * @throws IOException If creating directories or transferring files fails.
      */
 

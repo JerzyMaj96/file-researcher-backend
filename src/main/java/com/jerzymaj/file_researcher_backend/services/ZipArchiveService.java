@@ -47,7 +47,7 @@ public class ZipArchiveService {
      * @param fileSetId      The ID of the associated FileSet.
      * @param recipientEmail Target email address.
      * @param files          Array of MultipartFiles from the controller.
-     * @return String        The unique taskId for WebSocket tracking.
+     * @return {@link String} The unique taskId for WebSocket tracking.
      * @throws IOException If file staging fails.
      */
     public String startZipProcessFromUploaded(Long fileSetId, String recipientEmail, MultipartFile[] files) throws IOException {
