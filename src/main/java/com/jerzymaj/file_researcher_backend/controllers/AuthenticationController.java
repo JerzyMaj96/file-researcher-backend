@@ -31,8 +31,6 @@ public class AuthenticationController {
                 )
         );
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
         return jwTokenProvider.generateToken(authentication);
     }
 }
