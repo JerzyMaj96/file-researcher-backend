@@ -60,7 +60,6 @@ public class UserController {
     }
 
     @DeleteMapping("/delete-me")
-    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Void> deleteCurrentUser() {
         userService.deleteCurrentUser();
         return ResponseEntity.noContent().build();
