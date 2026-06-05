@@ -1,4 +1,4 @@
-package com.jerzymaj.file_researcher_backend.services;
+package com.jerzymaj.file_researcher_backend.security;
 
 import com.jerzymaj.file_researcher_backend.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;

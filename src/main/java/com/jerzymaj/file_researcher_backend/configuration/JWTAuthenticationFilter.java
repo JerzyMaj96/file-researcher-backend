@@ -1,6 +1,6 @@
 package com.jerzymaj.file_researcher_backend.configuration;
 
-import com.jerzymaj.file_researcher_backend.services.CustomUserDetailsService;
+import com.jerzymaj.file_researcher_backend.security.CustomUserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

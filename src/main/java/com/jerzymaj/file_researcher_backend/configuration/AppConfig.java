@@ -1,6 +1,6 @@
 package com.jerzymaj.file_researcher_backend.configuration;
 
-import com.jerzymaj.file_researcher_backend.services.CustomUserDetailsService;
+import com.jerzymaj.file_researcher_backend.security.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
