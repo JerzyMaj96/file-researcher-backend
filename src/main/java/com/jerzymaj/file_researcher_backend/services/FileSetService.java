@@ -2,7 +2,6 @@ package com.jerzymaj.file_researcher_backend.services;
 
 import com.jerzymaj.file_researcher_backend.exceptions.FileSetNotFoundException;
 import com.jerzymaj.file_researcher_backend.exceptions.NoFilesSelectedException;
-import com.jerzymaj.file_researcher_backend.exceptions.UserNotFoundException;
 import com.jerzymaj.file_researcher_backend.models.FileEntry;
 import com.jerzymaj.file_researcher_backend.models.FileSet;
 import com.jerzymaj.file_researcher_backend.models.User;
@@ -48,19 +47,8 @@ public class FileSetService {
                 continue;
             }
 
-            FileEntry fileEntry = fileEntryRepository.findByPath(file.getOriginalFilename())
-                    .orElseGet(() -> {
-                        Path originalPath = Path.of(originalPathString);
-                        String extension = getExtension(originalPath);
+            FileEntry fileEntry = getOrCreateFileEntry(file, originalPathString);
 
-                        return fileEntryRepository.save(FileEntry.builder()
-                                .name(originalPath.getFileName().toString())
-                                .path(originalPathString)
-                                .size(file.getSize())
-                                .extension(extension)
-                                .build()
-                        );
-                    });
             fileEntries.add(fileEntry);
         }
 
@@ -88,22 +76,6 @@ public class FileSetService {
     public void deleteFileSetById(Long fileSetId) throws AccessDeniedException {
         FileSet fileSet = getFileSetForCurrentUser(fileSetId);
         fileSetRepository.deleteById(fileSet.getId());
-    }
-
-
-    /**
-     * Extracts the file extension from a {@link Path}.
-     * <p>
-     * If the file name does not contain a dot, an empty string is returned.
-     *
-     * @param path path of the file
-     * @return file extension (without the dot) or empty string if none
-     */
-
-    protected static String getExtension(Path path) {
-        String fileName = path.getFileName().toString();
-        int index = fileName.lastIndexOf('.');
-        return (index > 0) ? fileName.substring(index + 1) : "";
     }
 
     /**
@@ -180,5 +152,42 @@ public class FileSetService {
         }
 
         return fileSet;
+    }
+
+    /**
+     * Extracts the file extension from a {@link Path}.
+     * <p>
+     * If the file name does not contain a dot, an empty string is returned.
+     *
+     * @param path path of the file
+     * @return file extension (without the dot) or empty string if none
+     */
+
+    protected static String getExtension(Path path) {
+        String fileName = path.getFileName().toString();
+        int index = fileName.lastIndexOf('.');
+        return (index > 0) ? fileName.substring(index + 1) : "";
+    }
+
+    /**
+     * Retrieves an existing {@link FileEntry} by path or creates and saves a new one.
+     *
+     * @param file               the uploaded file
+     * @param originalPathString the original file path as a string
+     * @return existing or newly created {@link FileEntry}
+     */
+
+    private FileEntry getOrCreateFileEntry(MultipartFile file, String originalPathString) {
+        return fileEntryRepository.findByPath(originalPathString)
+                .orElseGet(() -> {
+                    Path originalPath = Path.of(originalPathString);
+                    return fileEntryRepository.save(FileEntry.builder()
+                            .name(originalPath.getFileName().toString())
+                            .path(originalPathString)
+                            .size(file.getSize())
+                            .extension(getExtension(originalPath))
+                            .build()
+                    );
+                });
     }
 }
