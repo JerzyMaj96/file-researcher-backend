@@ -8,6 +8,7 @@ import com.jerzymaj.file_researcher_backend.models.*;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.ZipArchiveStatus;
 import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
 import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
+import com.jerzymaj.file_researcher_backend.security.AuthFacade;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
@@ -30,7 +31,7 @@ public class ZipArchiveService {
     private final ZipEmailSender zipEmailSender;
     private final FileStager fileStager;
     private final FileSetRepository fileSetRepository;
-    private final FileSetService fileSetService;
+    private final AuthFacade authFacade;
     private final ZipArchiveRepository zipArchiveRepository;
     private final ZipArchiveStatusService zipArchiveStatusService;
     private final SentHistoryService sentHistoryService;
@@ -102,13 +103,13 @@ public class ZipArchiveService {
     }
 
     public List<ZipArchive> getAllZipArchives() {
-        Long currentUserId = fileSetService.getCurrentUserId();
+        Long currentUserId = authFacade.getCurrentUserId();
 
         return zipArchiveRepository.findAllByUserId(currentUserId);
     }
 
     public List<ZipArchive> getAllZipArchivesForFileSet(Long fileSetId) throws AccessDeniedException {
-        Long currentUserId = fileSetService.getCurrentUserId();
+        Long currentUserId = authFacade.getCurrentUserId();
 
         FileSet fileSet = fileSetRepository.findById(fileSetId)
                 .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
@@ -121,31 +122,12 @@ public class ZipArchiveService {
     }
 
     public ZipArchive getZipArchiveById(Long fileSetId, Long zipArchiveId) throws AccessDeniedException {
-        Long currentUserId = fileSetService.getCurrentUserId();
-
-        ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId)
-                .orElseThrow(() -> new ZipArchiveNotFoundException("ZipArchive not found: " + zipArchiveId));
-
-        if (!zipArchive.getUser().getId().equals(currentUserId)
-                || !zipArchive.getFileSet().getId().equals(fileSetId)) {
-            throw new AccessDeniedException("You do not have permission to access this FileSet.");
-        }
-
-        return zipArchive;
+        return getZipArchiveForCurrentUser(fileSetId, zipArchiveId);
     }
 
     public void deleteZipArchive(Long fileSetId, Long zipArchiveId) throws AccessDeniedException {
-        ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId)
-                .orElseThrow(() -> new ZipArchiveNotFoundException("ZipArchive not found: " + zipArchiveId));
-
-        Long currentUserId = fileSetService.getCurrentUserId();
-
-        if (!zipArchive.getUser().getId().equals(currentUserId)
-                || !zipArchive.getFileSet().getId().equals(fileSetId)) {
-            throw new AccessDeniedException("You do not have permission to delete this FileSet.");
-        }
-
-        zipArchiveRepository.deleteById(zipArchiveId);
+        ZipArchive zipArchive = getZipArchiveForCurrentUser(fileSetId, zipArchiveId);
+        zipArchiveRepository.deleteById(zipArchive.getId());
     }
 
     /**
@@ -160,7 +142,7 @@ public class ZipArchiveService {
      */
 
     public Map<String, Object> getZipStatsForCurrentUser() {
-        Long userId = fileSetService.getCurrentUserId();
+        Long userId = authFacade.getCurrentUserId();
 
         return zipArchiveRepository.countSuccessAndFailuresByUser(userId);
     }
@@ -178,9 +160,33 @@ public class ZipArchiveService {
      */
 
     public List<ZipArchive> getLargeZipFiles(Long minSize) {
-        Long userId = fileSetService.getCurrentUserId();
+        Long userId = authFacade.getCurrentUserId();
 
         return zipArchiveRepository.findLargeZipArchives(userId, minSize);
+    }
+
+    /**
+     * Retrieves a {@link ZipArchive} by ID and validates that it belongs to the current user and the given FileSet.
+     *
+     * @param fileSetId    ID of the FileSet the archive should belong to
+     * @param zipArchiveId ID of the ZipArchive to retrieve
+     * @return the {@link ZipArchive} if found and owned by the current user
+     * @throws AccessDeniedException      if the current user does not own the archive, or it does not belong to the given FileSet
+     * @throws ZipArchiveNotFoundException if no ZipArchive exists for the given ID
+     */
+
+    private ZipArchive getZipArchiveForCurrentUser(Long fileSetId, Long zipArchiveId) throws AccessDeniedException {
+        ZipArchive zipArchive = zipArchiveRepository.findById(zipArchiveId)
+                .orElseThrow(() -> new ZipArchiveNotFoundException("ZipArchive not found: " + zipArchiveId));
+
+        Long currentUserId = authFacade.getCurrentUserId();
+
+        if (!zipArchive.getUser().getId().equals(currentUserId)
+                || !zipArchive.getFileSet().getId().equals(fileSetId)) {
+            throw new AccessDeniedException("You do not have permission to access this ZipArchive.");
+        }
+
+        return zipArchive;
     }
 
     /**
