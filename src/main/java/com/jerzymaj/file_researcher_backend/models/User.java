@@ -58,7 +58,7 @@ public class User implements UserDetails {
     }
 
     @Override
-    public String getUsername() { // todo sprawdzić czy nie lepiej emailem
+    public String getUsername() {
         return name;
     }
 }
