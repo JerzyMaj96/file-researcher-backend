@@ -8,7 +8,7 @@ import com.jerzymaj.file_researcher_backend.models.FileSet;
 import com.jerzymaj.file_researcher_backend.models.User;
 import com.jerzymaj.file_researcher_backend.repositories.FileEntryRepository;
 import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
-import com.jerzymaj.file_researcher_backend.repositories.UserRepository;
+import com.jerzymaj.file_researcher_backend.security.AuthFacade;
 import com.jerzymaj.file_researcher_backend.services.FileSetService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,7 +46,7 @@ public class FileSetServiceUnitTests {
     private FileSetRepository fileSetRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private AuthFacade authFacade;
 
     @InjectMocks
     private FileSetService fileSetService;
@@ -60,7 +60,7 @@ public class FileSetServiceUnitTests {
     MockMultipartFile[]  files;
 
     @BeforeEach
-    public void setUp() throws IOException {
+    public void setUp() {
         name = "test";
         description = "This is a test fileset description";
         recipientEmail = "someone@mail.com";
@@ -78,16 +78,8 @@ public class FileSetServiceUnitTests {
         user.setName(ownerDTO.getName());
         user.setEmail(ownerDTO.getEmail());
 
-        Authentication authentication = Mockito.mock(Authentication.class);
-        when(authentication.getName()).thenReturn(user.getName());
-
-        SecurityContext securityContext = Mockito.mock(SecurityContext.class);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-
-        SecurityContextHolder.setContext(securityContext);
-
-        when(userRepository.findByName(user.getName())).thenReturn(Optional.of(user));
-        when(userRepository.findById(ownerDTO.getId())).thenReturn(Optional.of(user));
+        when(authFacade.getCurrentUser()).thenReturn(user);
+        when(authFacade.getCurrentUserId()).thenReturn(user.getId());
         lenient().when(fileEntryRepository.findByPath(anyString())).thenReturn(Optional.empty());
         lenient().when(fileEntryRepository.save(any(FileEntry.class))).thenAnswer(invocation -> invocation.getArgument(0));
         lenient().when(fileSetRepository.save(any(FileSet.class))).thenAnswer(invocation -> {
@@ -98,7 +90,7 @@ public class FileSetServiceUnitTests {
     }
 
     @Test
-    public void shouldCreateFileSet_IfSuccess() throws IOException {
+    public void shouldCreateFileSet_IfSuccess() {
         FileSet actualResult = fileSetService
                 .createFileSetFromUploadedFiles(name, description, recipientEmail, files);
 
@@ -114,13 +106,5 @@ public class FileSetServiceUnitTests {
         assertThatThrownBy(() ->
                 fileSetService.createFileSetFromUploadedFiles(name, description, recipientEmail, new MockMultipartFile[0])
         ).isInstanceOf(NoFilesSelectedException.class);
-    }
-
-    @Test
-    public void shouldThrowUserNotFoundException_IfFailed() {
-        when(userRepository.findByName(ownerDTO.getName())).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> fileSetService.createFileSetFromUploadedFiles(name, description, recipientEmail, files))
-                .isInstanceOf(UserNotFoundException.class);
     }
 }
