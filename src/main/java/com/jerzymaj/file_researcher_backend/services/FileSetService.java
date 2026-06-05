@@ -9,11 +9,9 @@ import com.jerzymaj.file_researcher_backend.models.User;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
 import com.jerzymaj.file_researcher_backend.repositories.FileEntryRepository;
 import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
-import com.jerzymaj.file_researcher_backend.repositories.UserRepository;
+import com.jerzymaj.file_researcher_backend.security.AuthFacade;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -28,7 +26,7 @@ public class FileSetService {
 
     private final FileEntryRepository fileEntryRepository;
     private final FileSetRepository fileSetRepository;
-    private final UserRepository userRepository;
+    private final AuthFacade authFacade;
 
     @Transactional
     public FileSet createFileSetFromUploadedFiles(String name,
@@ -39,11 +37,7 @@ public class FileSetService {
             throw new NoFilesSelectedException("Files haven't been uploaded");
         }
 
-        Long currentUserId = getCurrentUserId();
-
-        User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new UserNotFoundException("User " + currentUserId + " not found"));
-
+        User currentUser = authFacade.getCurrentUser();
 
         List<FileEntry> fileEntries = new ArrayList<>();
 
@@ -81,7 +75,7 @@ public class FileSetService {
     }
 
     public List<FileSet> getAllFileSets() {
-        Long currentUserId = getCurrentUserId();
+        Long currentUserId = authFacade.getCurrentUserId();
 
         return fileSetRepository.findAllByUserId(currentUserId);
     }
@@ -92,16 +86,8 @@ public class FileSetService {
     }
 
     public void deleteFileSetById(Long fileSetId) throws AccessDeniedException {
-        FileSet fileSet = fileSetRepository.findById(fileSetId)
-                .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
-
-        Long currentUserId = getCurrentUserId();
-
-        if (!fileSet.getUser().getId().equals(currentUserId)) {
-            throw new AccessDeniedException("You do not have permission to delete this FileSet.");
-        }
-
-        fileSetRepository.deleteById(fileSetId);
+        FileSet fileSet = getFileSetForCurrentUser(fileSetId);
+        fileSetRepository.deleteById(fileSet.getId());
     }
 
 
@@ -121,46 +107,17 @@ public class FileSetService {
     }
 
     /**
-     * Returns the ID of the currently authenticated user.
-     *
-     * @return the current user ID
-     * @throws UserNotFoundException if the user cannot be found
-     */
-
-    public Long getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String userName = authentication.getName();
-
-        return userRepository.findByName(userName)
-                .orElseThrow(() -> new UserNotFoundException("User not found: " + userName))
-                .getId();
-    }
-
-    /**
      * Changes the status of a {@link FileSet} if the current user has permissions.
      *
      * @param fileSetId        ID of the FileSet
      * @param newFileSetStatus new status to set
      * @return the updated {@link FileSet}
-     * @throws AccessDeniedException    if the user cannot change the status
-     * @throws FileSetNotFoundException if the FileSet cannot be found
      */
 
     public FileSet changeFileSetStatus(Long fileSetId, FileSetStatus newFileSetStatus) throws AccessDeniedException {
-        FileSet fileSet = fileSetRepository.findById(fileSetId)
-                .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
-
-
-        Long currentUserId = getCurrentUserId();
-
-        if (!fileSet.getUser().getId().equals(currentUserId)) {
-            throw new AccessDeniedException("You do not have permission to change this FileSet status.");
-        }
-
+        FileSet fileSet = getFileSetForCurrentUser(fileSetId);
         fileSet.setStatus(newFileSetStatus);
-        fileSetRepository.save(fileSet);
-
-        return fileSet;
+        return fileSetRepository.save(fileSet);
     }
 
     /**
@@ -169,24 +126,12 @@ public class FileSetService {
      * @param fileSetId ID of the FileSet
      * @param newEmail  new recipient email
      * @return the updated {@link FileSet}
-     * @throws AccessDeniedException    if the user cannot change the email
-     * @throws FileSetNotFoundException if the FileSet cannot be found
      */
 
     public FileSet changeRecipientEmail(Long fileSetId, String newEmail) throws AccessDeniedException {
-        FileSet fileSet = fileSetRepository.findById(fileSetId)
-                .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
-
-        Long currentUserId = getCurrentUserId();
-
-        if (!fileSet.getUser().getId().equals(currentUserId)) {
-            throw new AccessDeniedException("You do not have permission to change the recipient email.");
-        }
-
+        FileSet fileSet = getFileSetForCurrentUser(fileSetId);
         fileSet.setRecipientEmail(newEmail);
-        fileSetRepository.save(fileSet);
-
-        return fileSet;
+        return fileSetRepository.save(fileSet);
     }
 
     /**
@@ -195,24 +140,12 @@ public class FileSetService {
      * @param fileSetId ID of the FileSet
      * @param newName   new name to set
      * @return the updated {@link FileSet}
-     * @throws AccessDeniedException    if the user cannot change the name
-     * @throws FileSetNotFoundException if the FileSet cannot be found
      */
 
     public FileSet changeFileSetName(Long fileSetId, String newName) throws AccessDeniedException {
-        FileSet fileSet = fileSetRepository.findById(fileSetId)
-                .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
-
-        Long currentUserId = getCurrentUserId();
-
-        if (!fileSet.getUser().getId().equals(currentUserId)) {
-            throw new AccessDeniedException("You do not have permission to change the name.");
-        }
-
+        FileSet fileSet = getFileSetForCurrentUser(fileSetId);
         fileSet.setName(newName);
-        fileSetRepository.save(fileSet);
-
-        return fileSet;
+        return fileSetRepository.save(fileSet);
     }
 
     /**
@@ -221,22 +154,30 @@ public class FileSetService {
      * @param fileSetId      ID of the FileSet
      * @param newDescription new description
      * @return the updated {@link FileSet}
-     * @throws AccessDeniedException    if the user cannot change the description
-     * @throws FileSetNotFoundException if the FileSet cannot be found
      */
 
     public FileSet changeFileSetDescription(Long fileSetId, String newDescription) throws AccessDeniedException {
+        FileSet fileSet = getFileSetForCurrentUser(fileSetId);
+        fileSet.setDescription(newDescription);
+        return fileSetRepository.save(fileSet);
+    }
+
+    /**
+     * Retrieves a {@link FileSet} by ID and validates that it belongs to the current user.
+     *
+     * @param fileSetId ID of the FileSet
+     * @return the {@link FileSet} if found and owned by the current user
+     * @throws AccessDeniedException    if the current user does not own the FileSet
+     * @throws FileSetNotFoundException if the FileSet cannot be found
+     */
+
+    private FileSet getFileSetForCurrentUser(Long fileSetId) throws AccessDeniedException {
         FileSet fileSet = fileSetRepository.findById(fileSetId)
                 .orElseThrow(() -> new FileSetNotFoundException("FileSet not found: " + fileSetId));
 
-        Long currentUserId = getCurrentUserId();
-
-        if (!fileSet.getUser().getId().equals(currentUserId)) {
-            throw new AccessDeniedException("You do not have permission to change the description.");
+        if (!fileSet.getUser().getId().equals(authFacade.getCurrentUserId())) {
+            throw new AccessDeniedException("You do not have permission to modify this FileSet.");
         }
-
-        fileSet.setDescription(newDescription);
-        fileSetRepository.save(fileSet);
 
         return fileSet;
     }
