@@ -1,15 +1,16 @@
 package com.jerzymaj.file_researcher_backend.controllers;
 
+import com.jerzymaj.file_researcher_backend.DTOs.SendZipRequest;
 import com.jerzymaj.file_researcher_backend.DTOs.ZipArchiveDTO;
 import com.jerzymaj.file_researcher_backend.configuration.ApiRoutes;
 import com.jerzymaj.file_researcher_backend.services.ZipArchiveService;
 import com.jerzymaj.file_researcher_backend.tranlator.Translator;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
@@ -52,10 +53,9 @@ public class ZipArchiveController {
 
     @PostMapping(value = "/file-sets/{fileSetId}/zip-archives/send-uploaded-files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> sendZipArchiveFromUploaded(@PathVariable Long fileSetId,
-                                                             @RequestParam String recipientEmail,
-                                                             @RequestParam("files") MultipartFile[] files) throws IOException {
+                                                             @Valid @ModelAttribute SendZipRequest zipRequest) throws IOException {
 
-        String taskId = zipArchiveService.startZipProcessFromUploaded(fileSetId, recipientEmail, files);
+        String taskId = zipArchiveService.startZipProcessFromUploaded(fileSetId, zipRequest.recipientEmail(), zipRequest.files());
 
         return ResponseEntity.ok(taskId);
     }
