@@ -1,6 +1,7 @@
 package com.jerzymaj.file_researcher_backend.exceptions;
 
 import jakarta.mail.MessagingException;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -19,6 +20,12 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
     public final ResponseEntity<ErrorDetails> handleAllExceptions(Exception ex, WebRequest request) {
 
         return buildResponse(ex, request, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorDetails> handleConstraintViolationException(ConstraintViolationException ex, WebRequest request) {
+
+        return buildResponse(ex, request, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(ExistingUserException.class)
