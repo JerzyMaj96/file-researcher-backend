@@ -6,6 +6,7 @@ import com.jerzymaj.file_researcher_backend.models.*;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
 import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
 import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
+import com.jerzymaj.file_researcher_backend.security.AuthFacade;
 import com.jerzymaj.file_researcher_backend.services.*;
 import jakarta.mail.MessagingException;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,7 +50,7 @@ public class ZipArchiveServiceUnitTests {
     private FileSetRepository fileSetRepository;
 
     @Mock
-    private FileSetService fileSetService;
+    private AuthFacade authFacade;
 
     @Mock
     private ZipArchiveRepository zipArchiveRepository;
@@ -170,7 +171,7 @@ public class ZipArchiveServiceUnitTests {
 
     @Test
     public void shouldReturnStatsMap() {
-        when(fileSetService.getCurrentUserId()).thenReturn(user.getId());
+        when(authFacade.getCurrentUserId()).thenReturn(user.getId());
         when(zipArchiveRepository.countSuccessAndFailuresByUser(user.getId()))
                 .thenReturn(Map.of("SUCCESS", 5L, "FAILED", 2L));
 
@@ -181,7 +182,7 @@ public class ZipArchiveServiceUnitTests {
 
     @Test
     public void shouldReturnLargeZipFiles() {
-        when(fileSetService.getCurrentUserId()).thenReturn(user.getId());
+        when(authFacade.getCurrentUserId()).thenReturn(user.getId());
         ZipArchive largeArchive = ZipArchive.builder().archiveName("large.zip").size(1000L).build();
         when(zipArchiveRepository.findLargeZipArchives(user.getId(), 500L))
                 .thenReturn(List.of(largeArchive));

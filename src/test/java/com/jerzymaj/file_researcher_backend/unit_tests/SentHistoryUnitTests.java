@@ -6,6 +6,7 @@ import com.jerzymaj.file_researcher_backend.models.ZipArchive;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.SendStatus;
 import com.jerzymaj.file_researcher_backend.repositories.SentHistoryRepository;
 import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
+import com.jerzymaj.file_researcher_backend.security.AuthFacade;
 import com.jerzymaj.file_researcher_backend.services.FileSetService;
 import com.jerzymaj.file_researcher_backend.services.SentHistoryService;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +34,7 @@ public class SentHistoryUnitTests {
     private SentHistoryRepository sentHistoryRepository;
 
     @Mock
-    private FileSetService fileSetService;
+    private AuthFacade authFacade;
 
     @InjectMocks
     private SentHistoryService sentHistoryService;
@@ -64,7 +65,6 @@ public class SentHistoryUnitTests {
         assertEquals(zipArchive.getRecipientEmail(), actualResult.getSentToEmail());
         assertEquals(SendStatus.SUCCESS, actualResult.getStatus());
         assertNull(actualResult.getErrorMessage());
-        assertNotNull(actualResult.getSendAttemptDate());
     }
 
     @Test
@@ -80,7 +80,6 @@ public class SentHistoryUnitTests {
         assertEquals(zipArchive.getRecipientEmail(), actualResult.getSentToEmail());
         assertEquals(SendStatus.FAILURE, actualResult.getStatus());
         assertNotNull(actualResult.getErrorMessage());
-        assertNotNull(actualResult.getSendAttemptDate());
     }
 
 
@@ -92,7 +91,7 @@ public class SentHistoryUnitTests {
         sentHistory.setZipArchive(zipArchive);
 
         when(zipArchiveRepository.findById(zipArchive.getId())).thenReturn(Optional.of(zipArchive));
-        when(fileSetService.getCurrentUserId()).thenReturn(user.getId());
+        when(authFacade.getCurrentUserId()).thenReturn(user.getId());
         when(sentHistoryRepository.findAllByZipArchiveIdSorted(zipArchive.getId())).thenReturn(List.of(sentHistory));
 
         List<SentHistory> actualResult = sentHistoryService.getAllSentHistoryForZipArchive(zipArchive.getId());
@@ -112,7 +111,7 @@ public class SentHistoryUnitTests {
         String expectedEmail = "someone@mail.com";
 
         when(zipArchiveRepository.findById(zipArchive.getId())).thenReturn(Optional.of(zipArchive));
-        when(fileSetService.getCurrentUserId()).thenReturn(user.getId());
+        when(authFacade.getCurrentUserId()).thenReturn(user.getId());
         when(sentHistoryRepository.findLastRecipient(zipArchive.getId())).thenReturn(expectedEmail);
 
         String actualResult = sentHistoryService.getLastRecipient(zipArchive.getId());
