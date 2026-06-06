@@ -174,7 +174,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
 
     @Test
     @WithMockCustomUser
-    public void shouldDeleteZipArchiveById() throws Exception { //REPAIR
+    public void shouldDeleteZipArchiveById() throws Exception {
         mockMvc.perform(multipart("/file-researcher/file-sets/{fileSetId}/zip-archives/send-uploaded-files", fileSet.getId())
                         .file(file1)
                         .file(file2)
