@@ -7,7 +7,6 @@ import com.jerzymaj.file_researcher_backend.models.enum_classes.SendStatus;
 import com.jerzymaj.file_researcher_backend.repositories.SentHistoryRepository;
 import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
 import com.jerzymaj.file_researcher_backend.security.AuthFacade;
-import com.jerzymaj.file_researcher_backend.services.FileSetService;
 import com.jerzymaj.file_researcher_backend.services.SentHistoryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -103,10 +102,6 @@ public class SentHistoryUnitTests {
 
     @Test
     public void shouldGetLastRecipient() throws AccessDeniedException {
-
-        SentHistory sentHistory = new SentHistory();
-        sentHistory.setId(1L);
-        sentHistory.setZipArchive(zipArchive);
 
         String expectedEmail = "someone@mail.com";
 
