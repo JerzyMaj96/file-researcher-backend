@@ -1,16 +1,17 @@
 package com.jerzymaj.file_researcher_backend.controllers;
 
+import com.jerzymaj.file_researcher_backend.DTOs.CreateFileSetRequest;
 import com.jerzymaj.file_researcher_backend.DTOs.FileSetDTO;
 import com.jerzymaj.file_researcher_backend.configuration.ApiRoutes;
 import com.jerzymaj.file_researcher_backend.models.FileSet;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
 import com.jerzymaj.file_researcher_backend.services.FileSetService;
 import com.jerzymaj.file_researcher_backend.tranlator.Translator;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
@@ -25,16 +26,13 @@ public class FileSetController {
     private final FileSetService fileSetService;
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<FileSetDTO> createNewFileSetFromUploaded(@RequestParam("name") String name,
-                                                       @RequestParam("description") String description,
-                                                       @RequestParam("recipientEmail") String recipientEmail,
-                                                       @RequestParam("files") MultipartFile[] files) {
+    public ResponseEntity<FileSetDTO> createNewFileSetFromUploaded(@Valid @ModelAttribute CreateFileSetRequest request) {
 
         FileSet createdFileSet = fileSetService.createFileSetFromUploadedFiles(
-                name,
-                description,
-                recipientEmail,
-                files);
+                request.name(),
+                request.description(),
+                request.recipientEmail(),
+                request.files());
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
