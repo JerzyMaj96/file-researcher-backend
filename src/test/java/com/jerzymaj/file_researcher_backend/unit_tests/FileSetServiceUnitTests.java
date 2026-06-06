@@ -2,7 +2,6 @@ package com.jerzymaj.file_researcher_backend.unit_tests;
 
 import com.jerzymaj.file_researcher_backend.DTOs.UserDTO;
 import com.jerzymaj.file_researcher_backend.exceptions.NoFilesSelectedException;
-import com.jerzymaj.file_researcher_backend.exceptions.UserNotFoundException;
 import com.jerzymaj.file_researcher_backend.models.FileEntry;
 import com.jerzymaj.file_researcher_backend.models.FileSet;
 import com.jerzymaj.file_researcher_backend.models.User;
@@ -15,16 +14,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
