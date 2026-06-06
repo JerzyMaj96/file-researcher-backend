@@ -18,7 +18,13 @@ public class WithMockCustomUserSecurityContextFactory implements WithSecurityCon
     @Override
     public SecurityContext createSecurityContext(WithMockCustomUser annotation) {
         User user = userRepository.findByName(annotation.username())
-                .orElseThrow(() -> new IllegalStateException("User not found: " + annotation.username()));
+                .orElseGet(() -> {
+                    User newUser = new User();
+                    newUser.setName(annotation.username());
+                    newUser.setEmail(annotation.username() + "@mail.com");
+                    newUser.setPassword("password");
+                    return userRepository.save(newUser);
+                });
 
         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                 user, null, user.getAuthorities());
