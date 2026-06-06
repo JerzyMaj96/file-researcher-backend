@@ -16,90 +16,74 @@ import java.time.LocalDateTime;
 public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(Exception.class)
-    public final ResponseEntity<ErrorDetails> handleAllExceptions(Exception ex, WebRequest request) throws Exception {
-        ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
-                request.getDescription(false));
+    public final ResponseEntity<ErrorDetails> handleAllExceptions(Exception ex, WebRequest request) {
 
-        return new ResponseEntity<>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
+        return buildResponse(ex, request, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(ExistingUserException.class)
-    public final ResponseEntity<ErrorDetails> handleExistingUserException(ExistingUserException ex, WebRequest request) throws Exception {
-        ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
-                request.getDescription(false));
+    public final ResponseEntity<ErrorDetails> handleExistingUserException(ExistingUserException ex, WebRequest request) {
 
-        return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
+        return buildResponse(ex, request, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(UserNotFoundException.class)
-    public final ResponseEntity<ErrorDetails> handleUserNotFoundException(UserNotFoundException ex, WebRequest request) throws Exception {
-        ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
-                request.getDescription(false));
+    public final ResponseEntity<ErrorDetails> handleUserNotFoundException(UserNotFoundException ex, WebRequest request) {
 
-        return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
+        return buildResponse(ex, request, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(PathNotFoundException.class)
-    public final ResponseEntity<ErrorDetails> handlePathNotFoundException(PathNotFoundException ex, WebRequest request) throws Exception {
-        ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
-                request.getDescription(false));
+    public final ResponseEntity<ErrorDetails> handlePathNotFoundException(PathNotFoundException ex, WebRequest request) {
 
-        return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
+        return buildResponse(ex, request, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(NoFilesSelectedException.class)
-    public final ResponseEntity<ErrorDetails> handleNoFilesSelectedException(NoFilesSelectedException ex, WebRequest request) throws Exception {
-        ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
-                request.getDescription(false));
+    public final ResponseEntity<ErrorDetails> handleNoFilesSelectedException(NoFilesSelectedException ex, WebRequest request) {
 
-        return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
+        return buildResponse(ex, request, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(FileSetNotFoundException.class)
-    public final ResponseEntity<ErrorDetails> handleFileSetNotFoundException(FileSetNotFoundException ex, WebRequest request) throws Exception {
-        ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
-                request.getDescription(false));
+    public final ResponseEntity<ErrorDetails> handleFileSetNotFoundException(FileSetNotFoundException ex, WebRequest request) {
 
-        return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
+        return buildResponse(ex, request, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(ZipArchiveNotFoundException.class)
-    public final ResponseEntity<ErrorDetails> handleZipArchiveNotFoundException(ZipArchiveNotFoundException ex, WebRequest request) throws Exception {
-        ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
-                request.getDescription(false));
+    public final ResponseEntity<ErrorDetails> handleZipArchiveNotFoundException(ZipArchiveNotFoundException ex, WebRequest request) {
 
-        return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
+        return buildResponse(ex, request, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(SentHistoryNotFoundException.class)
-    public final ResponseEntity<ErrorDetails> handleSentHistoryNotFoundException(SentHistoryNotFoundException ex, WebRequest request) throws Exception {
-        ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
-                request.getDescription(false));
+    public final ResponseEntity<ErrorDetails> handleSentHistoryNotFoundException(SentHistoryNotFoundException ex, WebRequest request) {
 
-        return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
+        return buildResponse(ex, request, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public final ResponseEntity<ErrorDetails> handleAccessDeniedExceptionException(AccessDeniedException ex, WebRequest request) throws Exception {
-        ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
-                request.getDescription(false));
+    public final ResponseEntity<ErrorDetails> handleAccessDeniedExceptionException(AccessDeniedException ex, WebRequest request) {
 
-        return new ResponseEntity<>(errorDetails, HttpStatus.FORBIDDEN);
+        return buildResponse(ex, request, HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(MessagingException.class)
-    public final ResponseEntity<ErrorDetails> handleMessagingException(MessagingException ex, WebRequest request) throws Exception {
-        ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
-                request.getDescription(false));
+    public final ResponseEntity<ErrorDetails> handleMessagingException(MessagingException ex, WebRequest request) {
 
-        return new ResponseEntity<>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
+        return buildResponse(ex, request, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(IOException.class)
-    public final ResponseEntity<ErrorDetails> handleIOException(IOException ex, WebRequest request) throws Exception {
+    public final ResponseEntity<ErrorDetails> handleIOException(IOException ex, WebRequest request) {
+
+        return buildResponse(ex, request, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    private ResponseEntity<ErrorDetails> buildResponse(Exception ex, WebRequest request, HttpStatus status) {
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), ex.getMessage(),
                 request.getDescription(false));
-
-        return new ResponseEntity<>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>(errorDetails, status);
     }
 }
