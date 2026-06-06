@@ -5,6 +5,7 @@ import com.jerzymaj.file_researcher_backend.exceptions.ExistingUserException;
 import com.jerzymaj.file_researcher_backend.exceptions.UserNotFoundException;
 import com.jerzymaj.file_researcher_backend.models.User;
 import com.jerzymaj.file_researcher_backend.repositories.UserRepository;
+import com.jerzymaj.file_researcher_backend.security.AuthFacade;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,6 +19,7 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final AuthFacade authFacade;
     private final PasswordEncoder passwordEncoder;
 
     public List<User> findAllUsers() {
@@ -59,12 +61,7 @@ public class UserService {
      */
 
     public void deleteCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = authentication.getName();
-
-        User currentUser = userRepository.findByName(currentUsername)
-                .orElseThrow(() -> new UserNotFoundException("Current user hasn't been found"));
-
+        User currentUser = authFacade.getCurrentUser();
         userRepository.delete(currentUser);
     }
 }
