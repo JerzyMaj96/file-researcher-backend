@@ -1,6 +1,7 @@
 package com.jerzymaj.file_researcher_backend.integration_tests;
 
 import com.jerzymaj.file_researcher_backend.configuration.TestMailConfig;
+import com.jerzymaj.file_researcher_backend.configuration.WithMockCustomUser;
 import com.jerzymaj.file_researcher_backend.models.*;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.ZipArchiveStatus;
@@ -61,11 +62,14 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
 
     @BeforeEach
     public void setUp() throws IOException {
-        User user = new User();
-        user.setName("tester");
-        user.setEmail("tester@mail.com");
-        user.setPassword("secret123");
-        user = userRepository.save(user);
+        User user = userRepository.findByName("tester")
+                .orElseGet(() -> {
+                    User newUser = new User();
+                    newUser.setName("tester");
+                    newUser.setEmail("tester@mail.com");
+                    newUser.setPassword("secret123");
+                    return userRepository.save(newUser);
+                });
 
         FileEntry fileEntry = new FileEntry();
         fileEntry.setName("test1.txt");
@@ -105,7 +109,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     }
 
     @Test
-    @WithMockUser(username = "tester", roles = "USER")
+    @WithMockCustomUser
     public void shouldSendZipArchiveFromUploaded() throws Exception {
         String taskId = mockMvc.perform(multipart("/file-researcher/file-sets/{fileSetId}/zip-archives/send-uploaded-files", fileSet.getId())
                         .file(file1)
@@ -131,7 +135,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     }
 
     @Test
-    @WithMockUser(username = "tester", roles = "USER")
+    @WithMockCustomUser
     public void shouldRetrieveAllZipArchives() throws Exception {
         mockMvc.perform(multipart("/file-researcher/file-sets/{fileSetId}/zip-archives/send-uploaded-files", fileSet.getId())
                         .file(file1)
@@ -149,7 +153,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
 
 
     @Test
-    @WithMockUser(username = "tester", roles = "USER")
+    @WithMockCustomUser
     public void shouldRetrieveZipArchiveById() throws Exception {
         mockMvc.perform(multipart("/file-researcher/file-sets/{fileSetId}/zip-archives/send-uploaded-files", fileSet.getId())
                         .file(file1)
@@ -169,7 +173,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     }
 
     @Test
-    @WithMockUser(username = "tester", roles = "USER")
+    @WithMockCustomUser
     public void shouldDeleteZipArchiveById() throws Exception { //REPAIR
         mockMvc.perform(multipart("/file-researcher/file-sets/{fileSetId}/zip-archives/send-uploaded-files", fileSet.getId())
                         .file(file1)
@@ -192,7 +196,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     }
 
     @Test
-    @WithMockUser(username = "tester", roles = "USER")
+    @WithMockCustomUser
     public void shouldRetrieveSentStatistics() throws Exception {
         mockMvc.perform(multipart("/file-researcher/file-sets/{fileSetId}/zip-archives/send-uploaded-files", fileSet.getId())
                         .file(file1)
@@ -209,7 +213,7 @@ public class ZipArchiveControllerAndUserZipStatsControllerIntegrationTests {
     }
 
     @Test
-    @WithMockUser(username = "tester", roles = "USER")
+    @WithMockCustomUser
     public void shouldRetrieveLargeZipArchives() throws Exception {
         mockMvc.perform(multipart("/file-researcher/file-sets/{fileSetId}/zip-archives/send-uploaded-files", fileSet.getId())
                         .file(file1)
