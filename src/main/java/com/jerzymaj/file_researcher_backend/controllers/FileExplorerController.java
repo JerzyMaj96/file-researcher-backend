@@ -1,6 +1,7 @@
 package com.jerzymaj.file_researcher_backend.controllers;
 
 import com.jerzymaj.file_researcher_backend.DTOs.ScanPathResponseDTO;
+import com.jerzymaj.file_researcher_backend.DTOs.ScanRequest;
 import com.jerzymaj.file_researcher_backend.configuration.ApiRoutes;
 import com.jerzymaj.file_researcher_backend.services.FileExplorerService;
 import lombok.RequiredArgsConstructor;
@@ -8,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
@@ -18,12 +18,11 @@ public class FileExplorerController {
 
     private final FileExplorerService fileExplorerService;
 
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE) // todo dać tu dto i walidację
-    public ResponseEntity<ScanPathResponseDTO> scanUploadedFiles(@RequestParam("files")MultipartFile[] files,
-                                                        @RequestParam(required = false) String extension) {
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ScanPathResponseDTO> scanUploadedFiles(@ModelAttribute ScanRequest scanRequest) {
 
-        log.info("Received {} files for scanning", files.length);
+        log.info("Received {} files for scanning", scanRequest.files().length);
 
-        return ResponseEntity.ok(fileExplorerService.scanUploadedFiles(files, extension));
+        return ResponseEntity.ok(fileExplorerService.scanUploadedFiles(scanRequest.files(), scanRequest.extension()));
     }
 }
