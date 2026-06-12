@@ -3,13 +3,12 @@ package com.jerzymaj.file_researcher_backend.controllers;
 import com.jerzymaj.file_researcher_backend.DTOs.RegisterUserDTO;
 import com.jerzymaj.file_researcher_backend.DTOs.UserDTO;
 import com.jerzymaj.file_researcher_backend.configuration.ApiRoutes;
+import com.jerzymaj.file_researcher_backend.security.AuthFacade;
 import com.jerzymaj.file_researcher_backend.services.UserService;
 import com.jerzymaj.file_researcher_backend.tranlator.Translator;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -22,6 +21,7 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final AuthFacade authFacade;
 
     @GetMapping
     public List<UserDTO> retrieveAllUsers() {
@@ -39,11 +39,9 @@ public class UserController {
     }
 
     @GetMapping("/authentication")
-    public ResponseEntity<UserDTO> retrieveCurrentUser(Authentication authentication) {
-        String userName = authentication.getName();
-        UserDTO userDTO = Translator.convertUserToDTO(userService.findUserByName(userName));
+    public ResponseEntity<UserDTO> retrieveCurrentUser() {
 
-        return ResponseEntity.ok(userDTO);
+        return ResponseEntity.ok(Translator.convertUserToDTO(authFacade.getCurrentUser()));
     }
 
     @PostMapping

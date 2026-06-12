@@ -18,7 +18,7 @@ public class FileExplorerController {
 
     private final FileExplorerService fileExplorerService;
 
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE) // todo dać tu dto i walidację
     public ResponseEntity<ScanPathResponseDTO> scanUploadedFiles(@RequestParam("files")MultipartFile[] files,
                                                         @RequestParam(required = false) String extension) {
 

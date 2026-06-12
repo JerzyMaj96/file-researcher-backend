@@ -22,7 +22,7 @@ public class AuthenticationController {
     private final JWTProvider jwTokenProvider;
 
     @PostMapping("login")
-    public String authenticateUser(@RequestBody LoginRequest loginRequest) {
+    public String loginUser(@RequestBody LoginRequest loginRequest) { // todo zobić z tego login
 
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(

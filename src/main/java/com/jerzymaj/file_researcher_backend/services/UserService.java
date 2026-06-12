@@ -38,7 +38,7 @@ public class UserService {
 
     public User registerUser(RegisterUserDTO registerUserDTO) {
 
-        if (userRepository.existsByName(registerUserDTO.getName())) {
+        if (userRepository.existsByName(registerUserDTO.getName())) { // todo czy to jest potrzebne skoro mam unique w User
             throw new ExistingUserException("Name '" + registerUserDTO.getName() + "' is already taken");
         }
         if (userRepository.existsByEmail(registerUserDTO.getEmail())) {

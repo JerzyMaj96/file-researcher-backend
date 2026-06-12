@@ -163,7 +163,7 @@ public class FileSetService {
      * @return file extension (without the dot) or empty string if none
      */
 
-    protected static String getExtension(Path path) {
+    private static String getExtension(Path path) {
         String fileName = path.getFileName().toString();
         int index = fileName.lastIndexOf('.');
         return (index > 0) ? fileName.substring(index + 1) : "";
