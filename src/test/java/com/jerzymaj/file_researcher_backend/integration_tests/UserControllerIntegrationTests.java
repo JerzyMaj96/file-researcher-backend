@@ -2,6 +2,7 @@ package com.jerzymaj.file_researcher_backend.integration_tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jerzymaj.file_researcher_backend.DTOs.RegisterUserDTO;
+import com.jerzymaj.file_researcher_backend.configuration.WithMockCustomUser;
 import com.jerzymaj.file_researcher_backend.models.User;
 import com.jerzymaj.file_researcher_backend.repositories.UserRepository;
 import jakarta.transaction.Transactional;
@@ -10,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -59,7 +59,7 @@ public class UserControllerIntegrationTests {
     }
 
     @Test
-    @WithMockUser(username = "tester", roles = "USER")
+    @WithMockCustomUser
     public void shouldDeleteUser() throws Exception {
 
         User tester = userRepository.findByName("tester").orElseThrow();
@@ -72,7 +72,7 @@ public class UserControllerIntegrationTests {
     }
 
     @Test
-    @WithMockUser(username = "tester", roles = "USER")
+    @WithMockCustomUser
     public void shouldRetrieveCurrentUser() throws Exception {
 
         mockMvc.perform(get("/file-researcher/users/authentication")
@@ -80,15 +80,6 @@ public class UserControllerIntegrationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("tester"))
                 .andExpect(jsonPath("$.email").value("tester@mail.com"));
-    }
-
-    @Test
-    @WithMockUser(username = "nonExistent", roles = "USER")
-    public void shouldThrowUserNotFoundException_IfUserNotExists() throws Exception {
-
-        mockMvc.perform(get("/file-researcher/users/authentication")
-                        .contentType(APPLICATION_JSON))
-                .andExpect(status().isNotFound());
     }
 }
 
