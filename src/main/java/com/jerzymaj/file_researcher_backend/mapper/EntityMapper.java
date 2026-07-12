@@ -1,9 +1,12 @@
-package com.jerzymaj.file_researcher_backend.tranlator;
+package com.jerzymaj.file_researcher_backend.mapper;
 
 import com.jerzymaj.file_researcher_backend.DTOs.*;
 import com.jerzymaj.file_researcher_backend.models.*;
 
-public class Translator {
+public final class EntityMapper {
+
+    private EntityMapper() {
+    }
 
     public static UserDTO convertUserToDTO(User user) {
         return UserDTO.builder()
@@ -24,7 +27,7 @@ public class Translator {
                 .creationDate(fileSet.getCreationDate())
                 .userId(fileSet.getUser().getId())
                 .files(fileSet.getFiles().stream()
-                        .map(Translator::convertFileEntryToDTO)
+                        .map(EntityMapper::convertFileEntryToDTO)
                         .toList())
                 .build();
     }
@@ -52,7 +55,7 @@ public class Translator {
                 .fileSetId(zipArchive.getFileSet().getId())
                 .userId(zipArchive.getUser().getId())
                 .sentHistoryList(zipArchive.getSentHistoryList().stream()
-                        .map(Translator::convertSentHistoryToDTO)
+                        .map(EntityMapper::convertSentHistoryToDTO)
                         .toList())
                 .build();
     }

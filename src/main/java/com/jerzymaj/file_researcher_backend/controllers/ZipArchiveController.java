@@ -4,7 +4,7 @@ import com.jerzymaj.file_researcher_backend.DTOs.SendZipRequest;
 import com.jerzymaj.file_researcher_backend.DTOs.ZipArchiveDTO;
 import com.jerzymaj.file_researcher_backend.configuration.ApiRoutes;
 import com.jerzymaj.file_researcher_backend.services.ZipArchiveService;
-import com.jerzymaj.file_researcher_backend.tranlator.Translator;
+import com.jerzymaj.file_researcher_backend.mapper.EntityMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +28,7 @@ public class ZipArchiveController {
     @GetMapping("/zip-archives")
     public List<ZipArchiveDTO> retrieveAllZipArchivesForUser() {
         return zipArchiveService.getAllZipArchives().stream()
-                .map(Translator::convertZipArchiveToDTO)
+                .map(EntityMapper::convertZipArchiveToDTO)
                 .toList();
     }
 
@@ -36,7 +36,7 @@ public class ZipArchiveController {
     public List<ZipArchiveDTO> retrieveAllZipArchivesForFileSet(@PathVariable Long fileSetId)
             throws AccessDeniedException {
         return zipArchiveService.getAllZipArchivesForFileSet(fileSetId).stream()
-                .map(Translator::convertZipArchiveToDTO)
+                .map(EntityMapper::convertZipArchiveToDTO)
                 .toList();
     }
 
@@ -45,7 +45,7 @@ public class ZipArchiveController {
                                                                 @PathVariable Long zipArchiveId)
             throws AccessDeniedException {
 
-        ZipArchiveDTO zipArchiveDTO = Translator.convertZipArchiveToDTO(
+        ZipArchiveDTO zipArchiveDTO = EntityMapper.convertZipArchiveToDTO(
                 zipArchiveService.getZipArchiveById(fileSetId, zipArchiveId));
 
         return ResponseEntity.ok(zipArchiveDTO);

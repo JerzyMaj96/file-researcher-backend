@@ -3,7 +3,7 @@ package com.jerzymaj.file_researcher_backend.controllers;
 import com.jerzymaj.file_researcher_backend.DTOs.SentHistoryDTO;
 import com.jerzymaj.file_researcher_backend.configuration.ApiRoutes;
 import com.jerzymaj.file_researcher_backend.services.SentHistoryService;
-import com.jerzymaj.file_researcher_backend.tranlator.Translator;
+import com.jerzymaj.file_researcher_backend.mapper.EntityMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,7 +21,7 @@ public class SentHistoryController {
     @GetMapping("/history")
     public List<SentHistoryDTO> retrieveAllSentHistoryForUser() {
         return sentHistoryService.getAllSentHistory().stream()
-                .map(Translator::convertSentHistoryToDTO)
+                .map(EntityMapper::convertSentHistoryToDTO)
                 .toList();
     }
 
@@ -29,7 +29,7 @@ public class SentHistoryController {
     public ResponseEntity<List<SentHistoryDTO>> retrieveAllSentHistoryForZipArchive(@PathVariable Long zipArchiveId) throws AccessDeniedException {
 
         List<SentHistoryDTO> sentHistoryDTOList = sentHistoryService.getAllSentHistoryForZipArchive(zipArchiveId).stream()
-                .map(Translator::convertSentHistoryToDTO)
+                .map(EntityMapper::convertSentHistoryToDTO)
                 .toList();
 
         if (sentHistoryDTOList.isEmpty()) {
@@ -55,7 +55,7 @@ public class SentHistoryController {
     public ResponseEntity<SentHistoryDTO> retrieveSentHistoryById(@PathVariable Long zipArchiveId,
                                                                   @PathVariable Long sentHistoryId) throws AccessDeniedException {
 
-        SentHistoryDTO sentHistoryDTO = Translator.convertSentHistoryToDTO(
+        SentHistoryDTO sentHistoryDTO = EntityMapper.convertSentHistoryToDTO(
                 sentHistoryService.getSentHistoryById(zipArchiveId, sentHistoryId));
 
         return ResponseEntity.ok(sentHistoryDTO);

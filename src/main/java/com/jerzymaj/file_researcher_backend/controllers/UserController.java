@@ -5,7 +5,7 @@ import com.jerzymaj.file_researcher_backend.DTOs.UserDTO;
 import com.jerzymaj.file_researcher_backend.configuration.ApiRoutes;
 import com.jerzymaj.file_researcher_backend.security.AuthFacade;
 import com.jerzymaj.file_researcher_backend.services.UserService;
-import com.jerzymaj.file_researcher_backend.tranlator.Translator;
+import com.jerzymaj.file_researcher_backend.mapper.EntityMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,14 +26,14 @@ public class UserController {
     @GetMapping
     public List<UserDTO> retrieveAllUsers() {
         return userService.findAllUsers().stream()
-                .map(Translator::convertUserToDTO)
+                .map(EntityMapper::convertUserToDTO)
                 .toList();
     }
 
     @GetMapping("/{userId}")
     public ResponseEntity<UserDTO> retrieveUserById(@PathVariable Long userId) {
 
-        UserDTO userDTO = Translator.convertUserToDTO(userService.findUserById(userId));
+        UserDTO userDTO = EntityMapper.convertUserToDTO(userService.findUserById(userId));
 
         return ResponseEntity.ok(userDTO);
     }
@@ -41,12 +41,12 @@ public class UserController {
     @GetMapping("/authentication")
     public ResponseEntity<UserDTO> retrieveCurrentUser() {
 
-        return ResponseEntity.ok(Translator.convertUserToDTO(authFacade.getCurrentUser()));
+        return ResponseEntity.ok(EntityMapper.convertUserToDTO(authFacade.getCurrentUser()));
     }
 
     @PostMapping
     public ResponseEntity<UserDTO> createNewUser(@Valid @RequestBody RegisterUserDTO registerUserDTO) {
-        UserDTO createdUserDTO = Translator.convertUserToDTO(userService.registerUser(registerUserDTO));
+        UserDTO createdUserDTO = EntityMapper.convertUserToDTO(userService.registerUser(registerUserDTO));
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()

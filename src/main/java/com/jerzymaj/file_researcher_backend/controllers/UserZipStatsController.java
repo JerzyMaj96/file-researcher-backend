@@ -3,7 +3,7 @@ package com.jerzymaj.file_researcher_backend.controllers;
 import com.jerzymaj.file_researcher_backend.DTOs.ZipArchiveDTO;
 import com.jerzymaj.file_researcher_backend.configuration.ApiRoutes;
 import com.jerzymaj.file_researcher_backend.services.ZipArchiveService;
-import com.jerzymaj.file_researcher_backend.tranlator.Translator;
+import com.jerzymaj.file_researcher_backend.mapper.EntityMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,7 +28,7 @@ public class UserZipStatsController {
     @GetMapping("/large")
     public List<ZipArchiveDTO> retrieveLargeZipArchives(@RequestParam(defaultValue = "10000000") Long minSize) { //todo check which default size to set
         return zipArchiveService.getLargeZipFiles(minSize).stream()
-                .map(Translator::convertZipArchiveToDTO)
+                .map(EntityMapper::convertZipArchiveToDTO)
                 .toList();
     }
 }
