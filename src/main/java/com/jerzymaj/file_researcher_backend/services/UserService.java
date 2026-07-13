@@ -7,6 +7,7 @@ import com.jerzymaj.file_researcher_backend.models.User;
 import com.jerzymaj.file_researcher_backend.repositories.UserRepository;
 import com.jerzymaj.file_researcher_backend.security.AuthFacade;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,7 +39,7 @@ public class UserService {
 
     public User registerUser(RegisterUserDTO registerUserDTO) {
 
-        if (userRepository.existsByName(registerUserDTO.getName())) { // todo czy to jest potrzebne skoro mam unique w User
+        if (userRepository.existsByName(registerUserDTO.getName())) {
             throw new ExistingUserException("Name '" + registerUserDTO.getName() + "' is already taken");
         }
         if (userRepository.existsByEmail(registerUserDTO.getEmail())) {
@@ -51,7 +52,12 @@ public class UserService {
                 .password(passwordEncoder.encode(registerUserDTO.getPassword()))
                 .build();
 
-        return userRepository.save(user);
+        try {
+            return userRepository.save(user);
+        } catch (DataIntegrityViolationException e) {
+            throw new ExistingUserException("Name '" + registerUserDTO.getName()
+                    + "' or email '" + registerUserDTO.getEmail() + "' is already taken");
+        }
     }
 
     /**
