@@ -24,10 +24,10 @@ public class UserController {
     private final AuthFacade authFacade;
 
     @GetMapping
-    public List<UserDTO> retrieveAllUsers() {
-        return userService.findAllUsers().stream()
+    public ResponseEntity<List<UserDTO>> retrieveAllUsers() {
+        return ResponseEntity.ok(userService.findAllUsers().stream()
                 .map(EntityMapper::convertUserToDTO)
-                .toList();
+                .toList());
     }
 
     @GetMapping("/{userId}")
