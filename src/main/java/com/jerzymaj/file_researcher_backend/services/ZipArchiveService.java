@@ -2,6 +2,7 @@ package com.jerzymaj.file_researcher_backend.services;
 
 import com.jerzymaj.file_researcher_backend.DTOs.ProgressUpdate;
 import com.jerzymaj.file_researcher_backend.DTOs.StagedUpload;
+import com.jerzymaj.file_researcher_backend.DTOs.ZipStatsResponse;
 import com.jerzymaj.file_researcher_backend.exceptions.FileSetNotFoundException;
 import com.jerzymaj.file_researcher_backend.exceptions.ZipArchiveNotFoundException;
 import com.jerzymaj.file_researcher_backend.models.*;
@@ -141,7 +142,7 @@ public class ZipArchiveService {
      * typically including counts of successful and failed ZIP sends
      */
 
-    public Map<String, Object> getZipStatsForCurrentUser() {
+    public ZipStatsResponse getZipStatsForCurrentUser() {
         Long userId = authFacade.getCurrentUserId();
 
         return zipArchiveRepository.countSuccessAndFailuresByUser(userId);

@@ -1,5 +1,6 @@
 package com.jerzymaj.file_researcher_backend.repositories;
 
+import com.jerzymaj.file_researcher_backend.DTOs.ZipStatsResponse;
 import com.jerzymaj.file_researcher_backend.models.ZipArchive;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -25,14 +26,14 @@ public interface ZipArchiveRepository extends JpaRepository<ZipArchive, Long> {
     int findMaxSendNumberByFileSetId(@Param("fileSetId") Long fileSetId);
 
     @Query("""
-            SELECT new map(
+            SELECT new com.jerzymaj.file_researcher_backend.DTOs.ZipStatsResponse(
                 SUM(CASE WHEN z.status = 'SUCCESS' THEN 1 ELSE 0 END) as successCount,
                 SUM(CASE WHEN z.status = 'FAILED' THEN 1 ELSE 0 END) as failureCount
             )
             FROM ZipArchive z
             WHERE z.user.id = :userId
             """)
-    Map<String, Object> countSuccessAndFailuresByUser(@Param("userId") Long userId);
+    ZipStatsResponse countSuccessAndFailuresByUser(@Param("userId") Long userId);
 
     @Query(value = """
             SELECT *

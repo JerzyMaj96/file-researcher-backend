@@ -2,6 +2,7 @@ package com.jerzymaj.file_researcher_backend.unit_tests;
 
 import com.jerzymaj.file_researcher_backend.DTOs.ProgressUpdate;
 import com.jerzymaj.file_researcher_backend.DTOs.StagedUpload;
+import com.jerzymaj.file_researcher_backend.DTOs.ZipStatsResponse;
 import com.jerzymaj.file_researcher_backend.models.*;
 import com.jerzymaj.file_researcher_backend.models.enum_classes.FileSetStatus;
 import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
@@ -173,11 +174,11 @@ public class ZipArchiveServiceUnitTests {
     public void shouldReturnStatsMap() {
         when(authFacade.getCurrentUserId()).thenReturn(user.getId());
         when(zipArchiveRepository.countSuccessAndFailuresByUser(user.getId()))
-                .thenReturn(Map.of("SUCCESS", 5L, "FAILED", 2L));
+                .thenReturn(new ZipStatsResponse(5L, 2L));
 
-        Map<String, Object> result = zipArchiveService.getZipStatsForCurrentUser();
+        ZipStatsResponse result = zipArchiveService.getZipStatsForCurrentUser();
 
-        assertEquals(5L, result.get("SUCCESS"));
+        assertEquals(5L, result.successCount());
     }
 
     @Test

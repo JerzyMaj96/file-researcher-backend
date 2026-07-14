@@ -1,10 +1,12 @@
 package com.jerzymaj.file_researcher_backend.controllers;
 
 import com.jerzymaj.file_researcher_backend.DTOs.ZipArchiveDTO;
+import com.jerzymaj.file_researcher_backend.DTOs.ZipStatsResponse;
 import com.jerzymaj.file_researcher_backend.configuration.ApiRoutes;
 import com.jerzymaj.file_researcher_backend.services.ZipArchiveService;
 import com.jerzymaj.file_researcher_backend.mapper.EntityMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,8 +23,8 @@ public class UserZipStatsController {
     private final ZipArchiveService zipArchiveService;
 
     @GetMapping("/stats")
-    public Map<String, Object> retrieveSentStatistics() {
-        return zipArchiveService.getZipStatsForCurrentUser();
+    public ResponseEntity<ZipStatsResponse> retrieveSentStatistics() {
+        return ResponseEntity.ok(zipArchiveService.getZipStatsForCurrentUser());
     }
 
     @GetMapping("/large")
