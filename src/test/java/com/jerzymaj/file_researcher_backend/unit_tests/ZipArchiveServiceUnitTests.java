@@ -1,6 +1,5 @@
 package com.jerzymaj.file_researcher_backend.unit_tests;
 
-import com.jerzymaj.file_researcher_backend.DTOs.ProgressUpdate;
 import com.jerzymaj.file_researcher_backend.DTOs.StagedUpload;
 import com.jerzymaj.file_researcher_backend.DTOs.ZipStatsResponse;
 import com.jerzymaj.file_researcher_backend.models.*;
@@ -9,7 +8,6 @@ import com.jerzymaj.file_researcher_backend.repositories.FileSetRepository;
 import com.jerzymaj.file_researcher_backend.repositories.ZipArchiveRepository;
 import com.jerzymaj.file_researcher_backend.security.AuthFacade;
 import com.jerzymaj.file_researcher_backend.services.*;
-import jakarta.mail.MessagingException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,7 +25,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,6 +34,9 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class ZipArchiveServiceUnitTests {
+
+    @Mock
+    private ZipArchiveProcessor zipArchiveProcessor;
 
     @Mock
     private ZipArchiveCreator zipArchiveCreator;
@@ -123,6 +123,7 @@ public class ZipArchiveServiceUnitTests {
 
         assertNotNull(returnedTaskId);
         assertEquals(expectedTaskId, returnedTaskId);
+        verify(zipArchiveProcessor).createAndSendZipAsync(fileSet.getId(), "test@mail.com", stagedUpload);
     }
 
     @Test
@@ -134,39 +135,6 @@ public class ZipArchiveServiceUnitTests {
 
         assertThrows(IOException.class, () ->
                 zipArchiveService.startZipProcessFromUploaded(fileSet.getId(), "test@mail.com", files)
-        );
-    }
-
-    @Test
-    public void shouldCreateAndSendZipAsync_IfSuccess(@TempDir Path tempDir) throws IOException, MessagingException {
-
-        Path fakeZipPath = Files.createFile(tempDir.resolve("test-archive.zip"));
-
-        when(zipArchiveRepository.save(any(ZipArchive.class)))
-                .thenAnswer(i -> i.getArgument(0));
-        when(zipArchiveCreator.prepareTempPath(anyLong(), anyInt()))
-                .thenReturn(fakeZipPath);
-
-        zipArchiveService.createAndSendZipAsync(fileSet.getId(), fileSet.getRecipientEmail(), stagedUpload);
-
-        verify(zipArchiveCreator).createZipArchiveFromPaths(
-                eq(stagedUpload.files()),
-                eq(fakeZipPath),
-                eq(stagedUpload.uploadDir()),
-                any());
-
-
-        verify(zipEmailSender).sendZipArchiveByEmail(
-                eq(fileSet.getRecipientEmail()),
-                eq(fakeZipPath),
-                any(),
-                any());
-
-        verify(zipArchiveStatusService).updateDatabaseAfterSuccess(any(), eq(fileSet.getId()));
-        verify(sentHistoryService).saveSentHistory(any(), eq(fileSet.getRecipientEmail()), eq(true), any());
-        verify(messagingTemplate).convertAndSend(
-                contains(expectedTaskId),
-                argThat((ProgressUpdate msg) -> msg.percent() == 100)
         );
     }
 
