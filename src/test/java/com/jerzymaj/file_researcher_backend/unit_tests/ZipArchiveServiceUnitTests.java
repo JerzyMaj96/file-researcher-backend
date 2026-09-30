@@ -39,12 +39,6 @@ public class ZipArchiveServiceUnitTests {
     private ZipArchiveProcessor zipArchiveProcessor;
 
     @Mock
-    private ZipArchiveCreator zipArchiveCreator;
-
-    @Mock
-    private ZipEmailSender zipEmailSender;
-
-    @Mock
     private FileStager fileStager;
 
     @Mock
