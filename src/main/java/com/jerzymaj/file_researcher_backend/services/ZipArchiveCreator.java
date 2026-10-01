@@ -10,6 +10,8 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -35,8 +37,8 @@ public class ZipArchiveCreator {
             totalFileSizeBytes += Files.size(file);
         }
 
-        final long[] totalBytesProcessed = {0};
-        final int[] lastPercent = {0};
+        final AtomicLong totalBytesProcessed = new AtomicLong();
+        final AtomicInteger lastPercent = new AtomicInteger();
         final long totalSizeFinal = totalFileSizeBytes > 0 ? totalFileSizeBytes : 1;
 
         Set<String> addedEntries = new HashSet<>();
@@ -71,22 +73,23 @@ public class ZipArchiveCreator {
      * <b>Progress Logic:</b>
      * The method scales the raw copy progress to 90% of the total task,
      * leaving the remaining 10% for finalization and email dispatch.
-     * Updates are throttled to every 150ms or every percentage increase
+     * Updates are sent only when the percentage increases <b>and</b> at least 150 ms
+     * have passed since the last update (within the current file),
      * to prevent flooding the WebSocket broker.
      * </p>
      *
      * @param inputStream      The source stream of the file being compressed.
      * @param zos              The target ZIP output stream.
      * @param totalSize        Total size of all files in the batch (for percentage calculation).
-     * @param bytesProcessed   A single-element array tracking cumulative bytes across multiple files.
-     * @param lastPercent      A single-element array tracking the last reported percentage to avoid redundant updates.
+     * @param bytesProcessed   Shared counter of cumulative bytes processed across all files in the batch.
+     * @param lastPercent      Shared holder of the last reported percentage, used to avoid redundant updates.
      * @param progressCallback The functional interface used to push updates to the frontend.
      * @param currFinalName    The name of the file currently being processed (for status messages).
-     * @throws IOException     If a read/write error occurs during the copy process.
+     * @throws IOException If a read/write error occurs during the copy process.
      */
 
     private void copyInputStreamWithProgress(InputStream inputStream, ZipOutputStream zos, long totalSize,
-                                             long[] bytesProcessed, int[] lastPercent, ProgressCallback progressCallback,
+                                             AtomicLong bytesProcessed, AtomicInteger lastPercent, ProgressCallback progressCallback,
                                              String currFinalName) throws IOException {
         byte[] buffer = new byte[8192];
         int length;
@@ -94,19 +97,17 @@ public class ZipArchiveCreator {
 
         while ((length = inputStream.read(buffer)) != -1) {
             zos.write(buffer, 0, length);
-            bytesProcessed[0] += length;
+            bytesProcessed.getAndAdd(length);
 
-            int rawPercent = (int) ((bytesProcessed[0] * 100) / totalSize);
+            int rawPercent = (int) ((bytesProcessed.get() * 100) / totalSize);
             int currPercent = (int) (rawPercent * 0.9);
 
             long currTime = System.currentTimeMillis();
 
-            if (currTime - lastMessageTime > 150 || currPercent > lastPercent[0]) {
-                if (currPercent > lastPercent[0]) {
-                    progressCallback.onUpdate(currPercent, "Processing " + currFinalName);
-                    lastPercent[0] = currPercent;
-                    lastMessageTime = currTime;
-                }
+            if (currTime - lastMessageTime > 150 && currPercent > lastPercent.get()) {
+                progressCallback.onUpdate(currPercent, "Processing " + currFinalName);
+                lastPercent.set(currPercent);
+                lastMessageTime = currTime;
             }
         }
 
