@@ -1,6 +1,5 @@
 package com.jerzymaj.file_researcher_backend.services;
 
-import com.jerzymaj.file_researcher_backend.DTOs.Progress;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +18,9 @@ import java.util.zip.ZipOutputStream;
 @Slf4j
 @Service
 public class ZipArchiveCreator {
+
+    private record Progress(AtomicLong bytesProcessed, AtomicInteger lastPercent, long totalSize) {
+    }
 
     /**
      * Compresses files from given Paths into a single ZIP archive.
