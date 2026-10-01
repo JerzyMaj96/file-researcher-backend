@@ -16,12 +16,6 @@ import java.time.LocalDateTime;
 @ControllerAdvice
 public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @ExceptionHandler(Exception.class)
-    public final ResponseEntity<ErrorDetails> handleAllExceptions(Exception ex, WebRequest request) {
-
-        return buildResponse(ex, request, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorDetails> handleConstraintViolationException(ConstraintViolationException ex, WebRequest request) {
 
@@ -70,6 +64,12 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
         return buildResponse(ex, request, HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(UnauthorizedException.class)
+    public final ResponseEntity<ErrorDetails> handleUnauthorizedException(UnauthorizedException ex, WebRequest request) {
+
+        return buildResponse(ex, request, HttpStatus.UNAUTHORIZED);
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public final ResponseEntity<ErrorDetails> handleAccessDeniedExceptionException(AccessDeniedException ex, WebRequest request) {
 
@@ -84,6 +84,12 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
 
     @ExceptionHandler(IOException.class)
     public final ResponseEntity<ErrorDetails> handleIOException(IOException ex, WebRequest request) {
+
+        return buildResponse(ex, request, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public final ResponseEntity<ErrorDetails> handleAllExceptions(Exception ex, WebRequest request) {
 
         return buildResponse(ex, request, HttpStatus.INTERNAL_SERVER_ERROR);
     }
