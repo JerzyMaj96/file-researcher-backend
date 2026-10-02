@@ -1,184 +1,193 @@
 # File Researcher Backend
 
-A Spring Boot backend service that allows users to upload sets of files, compress them into ZIP archives, send them via
-email, and track the sending history with full security and ownership control.
+A Spring Boot backend that lets users upload sets of files, pack them into a ZIP archive **in the background**, send the archive by email, and follow the progress **live over WebSocket**. Every send attempt is recorded, and all data is scoped to the authenticated user.
 
 ---
 
-## Key Features
+## How it works
 
-### 1. Asynchronous File Processing & ZIP Compression
-
-The application handles file set grouping and the packing of large directory structures (including recursive folder
-scanning) without blocking the main server thread.
-
-- **Non-blocking I/O:** Utilizes `@Async` to execute resource-intensive tasks in the background.
-- **Smart Compression:** Intelligent file filtering (e.g., skipping duplicates, handling `node_modules`) and efficient ZIP generation.
-
-### 2. Real-Time Progress Tracking (WebSockets)
-
-Integrated WebSocket (STOMP) support provides immediate feedback to the frontend.
-
-- **Live Updates:** Users see an exact percentage progress bar (0–100%) for file processing and upload.
-- **Status Broadcasting:** Detailed status messages (e.g., `"Processing: file.txt"`, `"Sending email..."`) are pushed to a dedicated subscription channel (`/topic/progress/{taskId}`).
-
-### 3. Robust Email Delivery System
-
-A complete solution for delivering archives, built on `JavaMailSender` and secure SMTP.
-
-- **Secure Transport:** Supports SMTP with authentication (e.g., Gmail App Password) and TLS.
-- **Resiliency:** Configurable timeouts prevent thread hanging on slow network connections.
-- **Retry & Resend:** Built-in functionality to resend previously generated archives without re-processing files.
-
-### 4. Comprehensive History & Analytics
-
-Full tracking of every operation within the system.
-
-- **Audit Log:** Detailed history tracking of all send attempts, recording both successes and failures.
-- **Statistics:** Dashboard-ready data for archive statistics and filtering based on size, date, or status.
-
-### 5. Security & Access Control
-
-Strict data isolation policies ensure privacy and security.
-
-- **JWT Authentication:** Stateless authentication using JSON Web Tokens.
-- **User-Based Access:** All file operations, archives, and history logs are strictly scoped to the authenticated user.
-- **Ownership Validation:** Users cannot view, manage, or delete data belonging to others.
-
-### 6. Data Integrity & Performance
-
-Advanced database management ensures consistency in a multi-threaded environment.
-
-- **Transaction Management:** Uses `@Transactional` and `saveAndFlush` to guarantee immediate and accurate status updates (`SENT`/`FAILED`) across asynchronous threads.
-- **Data Consistency:** Cascading deletion (`CascadeType.ALL`, `orphanRemoval`) ensures that deleting a File Set automatically cleans up all related archives and logs.
-- **Optimized Queries:** SQL-enhanced JPA queries for efficient data retrieval, sorting, and filtering.
-
----
-
-## Technical Challenges & Solutions
-
-### 1. Asynchronous State Management (Spring Proxy & Transactions)
-
-**Problem:** During the ZIP creation and email dispatching process, updating the database status (e.g., from `ACTIVE` to
-`SENT`) was failing due to Spring's AOP Proxy limitations. Internal method calls within the same service bypassed the
-`@Transactional` context, preventing status persistence.
-
-**Solution:** Decoupled the persistence logic into a dedicated `ZipArchiveStatusService`. This ensured that every
-status change (Success/Failure) is handled in a clean, external transactional context, forcing Hibernate to flush
-changes to the database even during complex asynchronous tasks.
-
-### 2. SMTP Reliability & Provider-Specific Quirks (Gmail 552 5.7.0)
-
-**Problem:** When deploying and testing, the `552 5.7.0` SMTP error was encountered. Gmail's security filters often flag
-automated attachments (especially ZIPs containing system metadata like `.DS_Store`) as potential threats, even if the
-email is physically delivered.
-
-**Solution:**
-- **Defensive Filtering:** Implemented logic to exclude OS-specific metadata and suspicious files from ZIP archives.
-- **Resilient Exception Handling:** Developed a selective error-handling mechanism that differentiates between critical connection failures and provider-specific security warnings, ensuring the system correctly marks a task as completed if the message was accepted by the relay.
-
----
-
-## Tech Stack
-
-- **Java 21**
-- **Spring Boot 3** (Web, Data JPA, Mail, WebSocket, Security)
-- **JWT** (jjwt)
-- **MySQL**
-- **H2** (in-memory database for tests)
-- **JUnit 5 + Mockito** (unit and integration testing)
-
----
-
-## API Overview
-
-All endpoints are prefixed with `/file-researcher`.
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `POST` | `/auth/login` | Public | Authenticate and receive JWT token |
-| `POST` | `/users` | Public | Register a new user |
-| `GET` | `/users/authentication` | Required | Get current authenticated user |
-| `DELETE` | `/users/delete-me` | Required | Delete current user |
-| `POST` | `/file-sets/upload` | Required | Upload files and create a FileSet |
-| `GET` | `/file-sets` | Required | Get all FileSets for current user |
-| `GET` | `/file-sets/{id}` | Required | Get FileSet by ID |
-| `DELETE` | `/file-sets/{id}` | Required | Delete FileSet |
-| `PATCH` | `/file-sets/{id}/status` | Required | Update FileSet status |
-| `PATCH` | `/file-sets/{id}/recipientEmail` | Required | Update recipient email |
-| `POST` | `/file-sets/{id}/zip-archives/send-uploaded-files` | Required | Create and send ZIP archive |
-| `GET` | `/file-sets/{id}/zip-archives` | Required | Get all ZIP archives for FileSet |
-| `GET` | `/file-sets/{id}/zip-archives/{zipId}` | Required | Get ZIP archive by ID |
-| `DELETE` | `/file-sets/{id}/zip-archives/{zipId}` | Required | Delete ZIP archive |
-| `GET` | `/zip-archives/stats` | Required | Get ZIP sending statistics |
-| `GET` | `/zip-archives/large` | Required | Get large ZIP archives |
-| `GET` | `/zip-archives/{zipId}/history` | Required | Get send history for archive |
-| `GET` | `/zip-archives/{zipId}/history/{histId}` | Required | Get single history entry |
-| `DELETE` | `/zip-archives/{zipId}/history/{histId}` | Required | Delete history entry |
-| `POST` | `/explorer/upload` | Required | Scan uploaded files |
-
-**WebSocket:** Connect to `/ws` and subscribe to `/topic/progress/{taskId}` for real-time ZIP progress updates.
-
----
-
-## Module Structure
-
-```text
-├── configuration/         # Security, CORS, JWT, API routes
-├── controllers/           # REST API controllers
-├── DTOs/                  # Data Transfer Objects and request records
-├── exceptions/            # Custom exceptions and global exception handler
-├── models/                # JPA entity models
-├── repositories/          # Spring Data JPA repositories
-├── security/              # AuthFacade, CustomUserDetailsService
-├── services/              # Business logic
-├── translator/            # DTO mappers
-└── FileResearcherBackendApplication.java
+```
+Client ── POST /file-sets/{id}/zip-archives/send-uploaded-files
+   │
+   ▼
+ZipArchiveService
+   1. FileStager copies uploaded files to a per-task temp directory (UUID)
+   2. hands the job to ZipArchiveProcessor (@Async, dedicated thread pool)
+   3. returns taskId immediately
+   │
+   ▼                                   ZipArchiveProcessor (background thread "zip-*")
+Client subscribes to                     a. ZipArchiveCreator builds the ZIP ........ progress 0–90%
+/topic/progress/{taskId}  ◄── STOMP ──   b. archive saved as PENDING
+                                         c. ZipEmailSender sends the email .......... 95%
+                                         d. ZipArchiveStatusService (@Transactional):
+                                            archive → SUCCESS, file set → SENT ...... 100%
+                                         e. finally: temp ZIP and staging dir removed
 ```
 
 ---
 
-## Getting Started
+## Features
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/JerzyMaj96/file-researcher-backend.git
-   ```
-
-2. Configure your database and SMTP settings in `application.properties`:
-   ```properties
-   spring.datasource.url=jdbc:mysql://localhost:3306/your_db
-   spring.datasource.username=your_user
-   spring.datasource.password=your_password
-
-   spring.mail.host=smtp.gmail.com
-   spring.mail.port=587
-   spring.mail.username=your_email@gmail.com
-   spring.mail.password=your_app_password
-
-   app.jwt.secret=your_base64_encoded_secret
-   app.jwt.expiration-ms=86400000
-   ```
-
-3. Build and run:
-   ```bash
-   ./mvnw clean install
-   ./mvnw spring-boot:run
-   ```
+- **JWT authentication** – stateless; the user is resolved from the token on every request.
+- **Ownership checks** – every operation on file sets, archives and history verifies that the resource belongs to the current user.
+- **Background ZIP processing** – packing and sending run on a bounded thread pool, so the HTTP request returns right away.
+- **Live progress** – percentage and status messages are pushed over WebSocket (STOMP); updates are throttled (only on percentage increase and at most every 150 ms).
+- **Email delivery** – archives are sent via `JavaMailSender` over SMTP with TLS.
+- **History and statistics** – every send attempt is logged (success or failure); stats and "large archive" queries are available per user.
+- **Safe file handling** – uploaded file names are validated against path traversal, and temporary files are always cleaned up.
 
 ---
 
-## Development Branch
+## Engineering notes
 
-This repository includes an additional branch used for testing and experimenting with new or alternative versions
-of methods and features. It serves as a sandbox for exploring different implementation ideas before merging stable changes into the main branch.
+Problems found and solved while building and refactoring the project.
+
+**1. `@Async` silently not working (self-invocation)**
+The async method was called from another method of the same class, which bypasses Spring's proxy, so the whole ZIP-and-send flow ran synchronously in the request thread. Fixed by extracting it into a separate bean, `ZipArchiveProcessor`.
+
+**2. Default executor shadowed by WebSocket executors**
+After the fix, logs showed `@Async` tasks running on `SimpleAsyncTaskExecutor` (a new thread per task, unbounded). The STOMP broker registers its own executors, so Spring Boot did not create the default one. Added `AsyncConfig` with a bounded `ThreadPoolTaskExecutor` (`zip-` thread prefix).
+
+**3. Atomic status updates**
+The archive status (`SUCCESS`) and the file set status (`SENT`) must change together. `@Transactional` was ignored for the same proxy reason as above, so the writes ran separately. Moving them into `ZipArchiveStatusService` makes both updates a single transaction.
+
+**4. Uploaded files disappearing before background processing**
+`MultipartFile` content is removed when the HTTP request ends, while packing happens later in another thread. Files are first copied to a per-task staging directory, which is deleted in a `finally` block.
+
+**5. Path traversal in uploaded file names**
+File names come from the client and can contain `../`. The destination path is normalized and rejected if it resolves outside the staging directory.
+
+**6. Progress tracking across multiple files**
+Progress counters are shared between methods through a small `Progress` record holding `AtomicLong` / `AtomicInteger` (Java passes arguments by value). While refactoring, a throttling bug was fixed: the conditions were joined with `||` instead of `&&`, so the time limit had no effect.
+
+**7. Gmail `552-5.7.0` security warning**
+Gmail may flag ZIP attachments and return this error even though the message is delivered. This specific error is logged as a warning and the send is recorded as successful with a note in the history; every other error marks the archive as `FAILED`.
+
+---
+
+## Known limitations and next steps
+
+- **Attachment size** – Gmail limits attachments to 25 MB, while uploads allow up to 200 MB per file. A better approach would be to store archives (e.g. in object storage) and email a download link.
+- **SMTP 5xx handling** – treating `552-5.7.0` as success is a pragmatic trade-off; a dedicated `WARNING` status would be more accurate.
+- **Thread pool sizing** – pool and queue sizes are fixed in code; in production they should come from configuration and be tuned under load, with explicit handling of rejected tasks (e.g. HTTP 503).
+
+---
+
+## Tech stack
+
+- **Java 21**, **Spring Boot 3** (Web, Data JPA, Security, Mail, WebSocket)
+- **JWT** (jjwt)
+- **MySQL** (dev), **PostgreSQL** (prod), **H2** (tests)
+- **JUnit 5**, **Mockito** – unit and integration tests
+- **Docker** – multi-stage build, non-root runtime user
+
+---
+
+## API overview
+
+All endpoints are prefixed with `/file-researcher`. Everything except login and registration requires a JWT (`Authorization: Bearer <token>`).
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `POST` | `/auth/login` | Log in and receive a JWT |
+| `POST` | `/users` | Register a new user |
+| `GET` | `/users/authentication` | Get the current user |
+| `DELETE` | `/users/delete-me` | Delete the current user |
+| `POST` | `/explorer/upload` | Scan uploaded files and return a directory tree |
+| `POST` | `/file-sets/upload` | Upload files and create a file set |
+| `GET` | `/file-sets` | List the user's file sets |
+| `GET` | `/file-sets/{id}` | Get a file set |
+| `DELETE` | `/file-sets/{id}` | Delete a file set (cascades to archives and history) |
+| `PATCH` | `/file-sets/{id}/status` | Update status |
+| `PATCH` | `/file-sets/{id}/recipientEmail` | Update recipient email |
+| `PATCH` | `/file-sets/{id}/name` | Update name |
+| `PATCH` | `/file-sets/{id}/description` | Update description |
+| `POST` | `/file-sets/{id}/zip-archives/send-uploaded-files` | Start ZIP creation and sending; returns `taskId` |
+| `GET` | `/zip-archives` | List the user's archives |
+| `GET` | `/file-sets/{id}/zip-archives` | List archives of a file set |
+| `GET` | `/file-sets/{id}/zip-archives/{zipId}` | Get an archive |
+| `DELETE` | `/file-sets/{id}/zip-archives/{zipId}` | Delete an archive |
+| `GET` | `/zip-archives/stats` | Success / failure statistics |
+| `GET` | `/zip-archives/large` | Archives above a size threshold |
+| `GET` | `/zip-archives/history` | All send history of the user |
+| `GET` | `/zip-archives/{zipId}/history` | Send history of an archive |
+| `GET` | `/zip-archives/{zipId}/history/last-recipient` | Last recipient of an archive |
+| `GET` | `/zip-archives/{zipId}/history/{historyId}` | Single history entry |
+| `DELETE` | `/zip-archives/{zipId}/history/{historyId}` | Delete a history entry |
+
+**WebSocket:** connect to `/ws` and subscribe to `/topic/progress/{taskId}`. Messages contain `percent` (0–100, or `-1` on error) and `status` (a human-readable message).
+
+---
+
+## Project structure
+
+```
+├── configuration/   # Security, JWT, CORS, WebSocket, async thread pool, API routes
+├── controllers/     # REST controllers
+├── DTOs/            # Request/response objects
+├── exceptions/      # Custom exceptions and global exception handler
+├── mapper/          # Entity ↔ DTO mapping
+├── models/          # JPA entities and enums
+├── repositories/    # Spring Data JPA repositories
+├── security/        # AuthFacade, UserDetailsService
+└── services/        # Business logic (staging, ZIP creation, processing, email, statuses)
+```
+
+---
+
+## Getting started
+
+### Run locally
+
+Requirements: Java 21, MySQL.
+
+Set the environment variables used by the `dev` profile:
+
+```bash
+export LOCAL_DB_USERNAME=...
+export LOCAL_DB_PASSWORD=...
+export LOCAL_MAIL_USERNAME=your_email@gmail.com
+export LOCAL_MAIL_PASSWORD=your_app_password
+export JWT_SECRET=your_base64_encoded_secret
+```
+
+Then:
+
+```bash
+./mvnw clean install
+./mvnw spring-boot:run
+```
+
+The API is available at `http://localhost:8080/file-researcher`.
+
+### Run with Docker
+
+The backend ships with a multi-stage `Dockerfile` (Maven build stage, slim JRE runtime, non-root user).
+
+The full stack (backend, frontend, database and [Mailpit](https://mailpit.axllent.org/)) is started with Docker Compose from the parent project folder. In that setup the backend runs with the `dev-docker` profile, which expects a database service named `db` and a Mailpit service named `fr_mailpit`, so emails land in a local test inbox instead of being sent.
+
+To build and run only the backend image:
+
+```bash
+docker build -t file-researcher-backend .
+docker run -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e DB_URL=... -e DB_USERNAME=... -e DB_PASSWORD=... \
+  -e MAIL_USERNAME=... -e MAIL_PASSWORD=... \
+  -e JWT_SECRET=... \
+  file-researcher-backend
+```
+
+### Run tests
+
+```bash
+./mvnw test
+```
 
 ---
 
 ## License
 
-This project is licensed under the MIT License.
-
----
+MIT – see [LICENSE](LICENSE).
 
 Created by **Jerzy Maj**
