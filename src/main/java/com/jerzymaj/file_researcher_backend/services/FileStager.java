@@ -39,7 +39,7 @@ public class FileStager {
         List<Path> savedFiles = new ArrayList<>();
 
         for (MultipartFile file : files) {
-            Path destination = uploadDir.resolve(Objects.requireNonNull(file.getOriginalFilename())).normalize().toAbsolutePath();
+            Path destination = uploadDir.resolve(Objects.requireNonNull(file.getOriginalFilename())).normalize();
 
             if (!destination.startsWith(uploadDir.toAbsolutePath().normalize())) {
                 throw new SecurityException("Invalid file path: " + file.getOriginalFilename());
