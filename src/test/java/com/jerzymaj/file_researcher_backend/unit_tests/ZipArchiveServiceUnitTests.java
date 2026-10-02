@@ -51,9 +51,6 @@ public class ZipArchiveServiceUnitTests {
     private ZipArchiveRepository zipArchiveRepository;
 
     @Mock
-    private SimpMessagingTemplate messagingTemplate;
-
-    @Mock
     private ZipArchiveStatusService zipArchiveStatusService;
 
     @Mock
